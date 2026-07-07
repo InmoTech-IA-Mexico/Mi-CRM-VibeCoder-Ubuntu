@@ -1,10 +1,7 @@
-import { ScreenPlaceholder } from "@/components/screen-placeholder";
+import type { Id } from "../../../../../../convex/_generated/dataModel";
+import { PantallaNuevoRecordatorio } from "./_components/pantalla-nuevo-recordatorio";
 
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  return (
-    <ScreenPlaceholder title="Nuevo recordatorio" design="Nota Recordatorio Form.dc.html" issue="JUA-22">
-      Cliente #{id} — pantalla por construir.
-    </ScreenPlaceholder>
-  );
+  return <PantallaNuevoRecordatorio clienteId={id as Id<"clientes">} />;
 }

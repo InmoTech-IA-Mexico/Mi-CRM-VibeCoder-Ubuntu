@@ -68,6 +68,20 @@ export function fechaLargaES(epoch: number, tz: string): string {
   return `${diaSemanaCap}, ${dia} ${mes}`;
 }
 
+/**
+ * Epoch (ms) del instante que corresponde a una fecha/hora de "reloj de pared"
+ * en la zona `tz`. `fechaISO` = "YYYY-MM-DD"; `hora` = "HH:MM" (vacío → 00:00).
+ * Se usa para programar recordatorios en la zona del negocio (JUA-22), no en UTC.
+ */
+export function epochDesdeFechaHora(fechaISO: string, hora: string, tz: string): number {
+  const [y, m, d] = fechaISO.split("-").map(Number);
+  const [hh, mm] = (hora || "00:00").split(":").map(Number);
+  const comoUTC = Date.UTC(y, m - 1, d, hh || 0, mm || 0);
+  // Corrige por el desfase de la zona en ese instante (aprox.; ver TODO JUA-28).
+  const desfase = desfaseZonaMs(tz, new Date(comoUTC));
+  return comoUTC - desfase;
+}
+
 /** Fecha corta en español, p. ej. "28 jun". */
 export function fechaCortaES(epoch: number, tz: string): string {
   const partes = new Intl.DateTimeFormat("es-MX", {
