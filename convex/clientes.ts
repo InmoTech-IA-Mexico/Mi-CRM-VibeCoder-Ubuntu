@@ -242,3 +242,57 @@ export const crear = mutation({
     });
   },
 });
+
+const CANAL_V = v.union(
+  v.literal("whatsapp"),
+  v.literal("email"),
+  v.literal("web"),
+  v.literal("telefono"),
+  v.literal("referido"),
+  v.literal("redes"),
+);
+const PRIORIDAD_V = v.union(v.literal("alta"), v.literal("media"), v.literal("baja"));
+
+/**
+ * Edita los datos de un cliente (JUA-67). Reutiliza los campos del alta y añade
+ * empresa/canal/prioridad. Mantiene la regla nombre + al menos teléfono o email.
+ * Valida pertenencia al negocio de la sesión (JUA-10) y actualiza `actualizadoEn`.
+ * Estado y papelera se gestionan desde la ficha; aquí no se tocan.
+ */
+export const actualizar = mutation({
+  args: {
+    token: v.string(),
+    clienteId: v.id("clientes"),
+    nombre: v.string(),
+    telefono: v.string(),
+    email: v.string(),
+    empresa: v.string(),
+    canal: v.optional(CANAL_V),
+    prioridad: PRIORIDAD_V,
+  },
+  handler: async (ctx, { token, clienteId, nombre, telefono, email, empresa, canal, prioridad }) => {
+    const sesion = await resolverSesion(ctx, token);
+    if (!sesion) throw new Error("No autorizado");
+
+    const c = await ctx.db.get(clienteId);
+    if (!c || c.negocioId !== sesion.negocioId || c.eliminadoEn != null) {
+      throw new Error("No encontrado");
+    }
+
+    const nombreLimpio = nombre.trim();
+    const telLimpio = telefono.trim();
+    const emailLimpio = email.trim();
+    if (!nombreLimpio) throw new Error("El nombre es obligatorio");
+    if (!telLimpio && !emailLimpio) throw new Error("Indica al menos un teléfono o email");
+
+    await ctx.db.patch(clienteId, {
+      nombre: nombreLimpio,
+      telefono: telLimpio || undefined,
+      email: emailLimpio || undefined,
+      empresa: empresa.trim() || undefined,
+      canal: canal ?? undefined,
+      prioridad,
+      actualizadoEn: Date.now(),
+    });
+  },
+});
