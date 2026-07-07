@@ -1,11 +1,15 @@
 import { mutation } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
+import { hashPassword } from "./auth";
 
 // Datos de demostración para desarrollo (aún no hay altas reales por UI).
 // Ejecutar con:  npx convex run seed:poblarDemo
 // Reiniciar con: npx convex run seed:limpiar
 
 const MS_DIA = 24 * 60 * 60 * 1000;
+
+// Contraseñas demo (JUA-6). Se rehashean en cada seed; la contraseña no cambia.
+const PASSWORD_DEMO = { marta: "Marta1234", carlos: "Carlos1234" } as const;
 
 // El negocio de demostración se identifica SIEMPRE por este email de admin,
 // nunca por "el primer negocio" (evita enganchar datos demo a un negocio real).
@@ -79,6 +83,9 @@ export const poblarDemo = mutation({
       email: "marta@demo.mx",
       rol: "admin",
       estado: "activo",
+      passwordHash: hashPassword(PASSWORD_DEMO.marta),
+      intentosFallidos: 0,
+      bloqueadoHasta: undefined,
     });
 
     const carlosActual = usuariosActuales.find((u) => u.email === "carlos@demo.mx");
@@ -96,6 +103,9 @@ export const poblarDemo = mutation({
       email: "carlos@demo.mx",
       rol: "operativo",
       estado: "activo",
+      passwordHash: hashPassword(PASSWORD_DEMO.carlos),
+      intentosFallidos: 0,
+      bloqueadoHasta: undefined,
     });
 
     const idClientePorNombre: Record<string, Id<"clientes">> = {};

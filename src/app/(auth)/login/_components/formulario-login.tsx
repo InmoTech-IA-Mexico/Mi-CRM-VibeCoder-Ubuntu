@@ -1,41 +1,84 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { AlertCircle, Eye, EyeOff, Lock, Mail } from "lucide-react";
+import { useMutation } from "convex/react";
+import { AlertCircle, Clock, Eye, EyeOff, Lock, Mail } from "lucide-react";
+import { api } from "../../../../../convex/_generated/api";
+import { guardarToken } from "@/components/session/session-provider";
 import { cn } from "@/lib/utils";
 
-// Login fiel a Login.dc.html (estados: normal · error · cargando).
-// TODO(JUA-6/JUA-30): autenticación real. Hoy cualquier email + contraseña no
-// vacíos entran a la sesión simulada.
+// Login con autenticación real (JUA-6). Estados: normal · error genérico ·
+// cargando · bloqueado (5 intentos → 30 min). Diseño: Login.dc.html.
 export function FormularioLogin() {
   const router = useRouter();
+  const iniciarSesion = useMutation(api.auth.iniciarSesion);
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [verPassword, setVerPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [cargando, setCargando] = useState(false);
+  const [bloqueadoHasta, setBloqueadoHasta] = useState<number | null>(null);
+  const [ahora, setAhora] = useState(() => Date.now());
+  const [expirada] = useState(
+    () => typeof window !== "undefined" && new URLSearchParams(window.location.search).has("expirada"),
+  );
 
-  const enviar = (e: FormEvent) => {
+  // Cuenta atrás mientras la cuenta está bloqueada.
+  useEffect(() => {
+    if (bloqueadoHasta === null) return;
+    const id = setInterval(() => {
+      const t = Date.now();
+      setAhora(t);
+      if (t >= bloqueadoHasta) setBloqueadoHasta(null);
+    }, 1000);
+    return () => clearInterval(id);
+  }, [bloqueadoHasta]);
+
+  const bloqueado = bloqueadoHasta !== null;
+
+  const enviar = async (e: FormEvent) => {
     e.preventDefault();
-    if (cargando) return;
+    if (cargando || bloqueado) return;
     if (!email.trim() || !password) {
       setError("Email o contraseña incorrectos");
       return;
     }
     setError(null);
     setCargando(true);
-    // Pequeño retardo para mostrar el estado "Verificando…" antes de entrar.
-    setTimeout(() => router.push("/inicio"), 700);
+    try {
+      const res = await iniciarSesion({ email: email.trim(), password });
+      if (res.ok) {
+        guardarToken(res.token);
+        router.push("/inicio");
+        return; // dejar "Verificando…" mientras navega
+      }
+      setCargando(false);
+      if (res.bloqueadoHasta) {
+        setAhora(Date.now());
+        setBloqueadoHasta(res.bloqueadoHasta);
+      } else {
+        setError("Email o contraseña incorrectos");
+      }
+    } catch {
+      setCargando(false);
+      setError("No se pudo conectar. Inténtalo de nuevo.");
+    }
   };
 
   const limpiarError = () => error && setError(null);
   const hayError = error !== null;
+  const inactivo = cargando || bloqueado;
   const claseCampo = cn(
     "flex h-12 items-center gap-2.5 rounded-input border px-3 transition",
     hayError ? "border-danger ring-[3px] ring-danger/15" : "border-border-input",
   );
+
+  const restanteMs = bloqueadoHasta ? Math.max(0, bloqueadoHasta - ahora) : 0;
+  const mm = String(Math.floor(restanteMs / 60000)).padStart(2, "0");
+  const ss = String(Math.floor((restanteMs % 60000) / 1000)).padStart(2, "0");
 
   return (
     <>
@@ -61,11 +104,32 @@ export function FormularioLogin() {
       >
         <h1 className="mb-5 font-serif text-[22px] font-semibold text-ink">Iniciar sesión</h1>
 
-        {/* Campos: se atenúan y deshabilitan mientras se verifica (Login.dc.html). */}
-        <fieldset
-          disabled={cargando}
-          className={cn("m-0 border-0 p-0", cargando && "opacity-55")}
-        >
+        {expirada && !bloqueado && !hayError && (
+          <div className="mb-4 flex items-center gap-2 rounded-input bg-neutral-50 px-3 py-2.5">
+            <Clock size={16} strokeWidth={1.8} className="text-muted" />
+            <span className="text-[12.5px] text-body">Tu sesión ha expirado, inicia sesión de nuevo.</span>
+          </div>
+        )}
+
+        {/* Estado bloqueado (Login.dc.html Estado 4) */}
+        {bloqueado && (
+          <div className="mb-5 rounded-[14px] border border-danger/25 bg-[#F6E7E0] p-[18px] text-center">
+            <div className="flex items-center justify-center gap-2">
+              <Lock size={20} strokeWidth={1.8} className="text-danger" />
+              <span className="text-[16px] font-bold text-[#8A3F2C]">Cuenta bloqueada</span>
+            </div>
+            <div className="mt-3 flex items-center justify-center gap-1.5">
+              <Clock size={16} strokeWidth={1.8} className="text-danger" />
+              <span className="text-[12.5px] text-[#8A3F2C]">Intenta de nuevo en</span>
+            </div>
+            <div className="mt-1.5 font-serif text-[38px] font-semibold tabular-nums text-danger">
+              {mm}:{ss}
+            </div>
+          </div>
+        )}
+
+        {/* Campos: atenuados/deshabilitados mientras se verifica o está bloqueado. */}
+        <fieldset disabled={inactivo} className={cn("m-0 border-0 p-0", inactivo && "opacity-55")}>
           <label htmlFor="email" className="mb-1.5 block text-[13px] font-medium text-ink">
             Email
           </label>
@@ -124,8 +188,13 @@ export function FormularioLogin() {
 
         <button
           type="submit"
-          disabled={cargando}
-          className="mt-[22px] flex h-12 w-full items-center justify-center gap-2.5 rounded-[24px] bg-gold-500 text-[16px] font-semibold text-ink shadow-[0_4px_14px_rgba(201,162,94,0.35)] transition active:scale-[0.99] disabled:cursor-wait"
+          disabled={inactivo}
+          className={cn(
+            "mt-[22px] flex h-12 w-full items-center justify-center gap-2.5 rounded-[24px] text-[16px] font-semibold transition",
+            bloqueado
+              ? "cursor-not-allowed border border-neutral-100 bg-neutral-50 text-muted"
+              : "bg-gold-500 text-ink shadow-[0_4px_14px_rgba(201,162,94,0.35)] active:scale-[0.99] disabled:cursor-wait",
+          )}
         >
           {cargando ? (
             <>
@@ -137,7 +206,7 @@ export function FormularioLogin() {
           )}
         </button>
 
-        <div className={cn("mt-4 text-center", cargando && "pointer-events-none opacity-55")}>
+        <div className={cn("mt-4 text-center", inactivo && "pointer-events-none opacity-55")}>
           <Link href="/recuperar-password" className="text-[13px] font-semibold text-gold-text">
             ¿Olvidaste tu contraseña?
           </Link>

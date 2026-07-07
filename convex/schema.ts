@@ -57,6 +57,10 @@ export default defineSchema({
     rol,
     estado: v.union(v.literal("activo"), v.literal("pendiente"), v.literal("inactivo")),
     ultimoAcceso: v.optional(v.number()),
+    // Autenticación (JUA-6):
+    passwordHash: v.optional(v.string()), // "saltHex:hashHex" (scrypt)
+    intentosFallidos: v.optional(v.number()),
+    bloqueadoHasta: v.optional(v.number()), // epoch; si > ahora, cuenta bloqueada
   })
     .index("por_email", ["email"])
     .index("por_negocio", ["negocioId"]),
@@ -153,4 +157,13 @@ export default defineSchema({
   })
     .index("por_negocio", ["negocioId"])
     .index("por_cliente", ["clienteId"]),
+
+  // Sesiones de autenticación (JUA-6). El cliente guarda `token` en localStorage;
+  // la sesión expira a las 8 h (deslizante) y está ligada al negocio.
+  sesiones: defineTable({
+    usuarioId: v.id("usuarios"),
+    negocioId: v.id("negocios"),
+    token: v.string(),
+    expiraEn: v.number(),
+  }).index("por_token", ["token"]),
 });

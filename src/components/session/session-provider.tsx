@@ -1,77 +1,78 @@
 "use client";
 
-import { createContext, useCallback, useMemo, useState, type ReactNode } from "react";
-import { useQuery } from "convex/react";
+import { createContext, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
+import { useMutation, useQuery } from "convex/react";
+import type { FunctionReturnType } from "convex/server";
 import { api } from "../../../convex/_generated/api";
-import type { Doc, Id } from "../../../convex/_generated/dataModel";
 
-// Sesión del usuario actual.
-//
-// TODO(JUA-6/JUA-30): mientras no exista login, la sesión se resuelve con la
-// query `sesion.actual` (primer negocio + sus usuarios) y el usuario activo se
-// guarda en localStorage. El menú de perfil ofrece un conmutador (dev) para
-// alternar de rol. Sustituir por autenticación real.
+// Sesión autenticada (JUA-6). El token opaco se guarda en localStorage; la
+// sesión se resuelve contra Convex (`auth.sesionActual`) y expira a las 8 h.
 
-export type Sesion = {
-  negocio: Doc<"negocios">;
-  usuario: Doc<"usuarios">;
-  rol: Doc<"usuarios">["rol"];
-  usuarios: Doc<"usuarios">[];
-  setUsuarioActivo: (id: Id<"usuarios">) => void;
-};
+const CLAVE_TOKEN = "sesion.token";
+
+export function leerToken(): string | null {
+  if (typeof window === "undefined") return null;
+  return window.localStorage.getItem(CLAVE_TOKEN);
+}
+export function guardarToken(token: string) {
+  window.localStorage.setItem(CLAVE_TOKEN, token);
+}
+export function borrarToken() {
+  window.localStorage.removeItem(CLAVE_TOKEN);
+}
+
+type DatosSesion = NonNullable<FunctionReturnType<typeof api.auth.sesionActual>>;
+export type Sesion = DatosSesion & { token: string; cerrarSesion: () => Promise<void> };
 
 export const SessionContext = createContext<Sesion | null>(null);
 
-const CLAVE_LS = "sesion.usuarioActivoId";
+function Cargando() {
+  return (
+    <div className="flex min-h-dvh items-center justify-center p-8 text-sm text-muted">
+      Cargando…
+    </div>
+  );
+}
 
 export function SessionProvider({ children }: { children: ReactNode }) {
-  const datos = useQuery(api.sesion.actual);
-  // Usuario activo persistido en localStorage (inicializador perezoso, seguro
-  // en SSR). Mientras Convex carga se muestra "Cargando…", así no hay desajuste
-  // de hidratación por este valor.
-  const [usuarioActivoId, setUsuarioActivoId] = useState<Id<"usuarios"> | null>(
-    () =>
-      typeof window === "undefined"
-        ? null
-        : (window.localStorage.getItem(CLAVE_LS) as Id<"usuarios"> | null),
+  const router = useRouter();
+  const [token] = useState<string | null>(() => leerToken());
+  const [ahora] = useState(() => Date.now());
+  const cerrarSesionMut = useMutation(api.auth.cerrarSesion);
+  const tocarSesion = useMutation(api.auth.tocarSesion);
+
+  const datos = useQuery(api.auth.sesionActual, token ? { token, ahora } : "skip");
+
+  // Sin token, o sesión inválida/expirada → al login.
+  useEffect(() => {
+    if (!token) {
+      router.replace("/login");
+    } else if (datos === null) {
+      borrarToken();
+      router.replace("/login?expirada=1");
+    }
+  }, [token, datos, router]);
+
+  // Extiende la sesión (expiración deslizante) al entrar.
+  useEffect(() => {
+    if (token && datos) void tocarSesion({ token });
+  }, [token, datos, tocarSesion]);
+
+  const cerrarSesion = useCallback(async () => {
+    if (token) await cerrarSesionMut({ token });
+    borrarToken();
+    router.replace("/login");
+  }, [token, cerrarSesionMut, router]);
+
+  const valor = useMemo<Sesion | null>(
+    () => (token && datos ? { ...datos, token, cerrarSesion } : null),
+    [token, datos, cerrarSesion],
   );
 
-  const setUsuarioActivo = useCallback((id: Id<"usuarios">) => {
-    setUsuarioActivoId(id);
-    window.localStorage.setItem(CLAVE_LS, id);
-  }, []);
-
-  const valor = useMemo<Sesion | null>(() => {
-    if (!datos || datos.usuarios.length === 0) return null;
-    const { negocio, usuarios } = datos;
-    const usuario =
-      usuarios.find((u) => u._id === usuarioActivoId) ??
-      usuarios.find((u) => u.rol === "admin") ??
-      usuarios[0];
-    return { negocio, usuario, rol: usuario.rol, usuarios, setUsuarioActivo };
-  }, [datos, usuarioActivoId, setUsuarioActivo]);
-
-  if (datos === undefined) {
-    return (
-      <div className="flex min-h-full items-center justify-center p-8 text-sm text-muted">
-        Cargando…
-      </div>
-    );
-  }
-
-  if (valor === null) {
-    return (
-      <div className="flex min-h-full flex-col items-center justify-center gap-2 p-8 text-center">
-        <p className="font-serif text-lg text-ink">Sin datos todavía</p>
-        <p className="text-sm text-body">
-          Ejecuta el seed para poblar el negocio de demostración:
-        </p>
-        <code className="rounded-input bg-neutral-50 px-3 py-1.5 text-sm text-gold-text">
-          npx convex run seed:poblarDemo
-        </code>
-      </div>
-    );
-  }
+  // `undefined` (cargando/skip) y `null` (redirigiendo) renderizan lo mismo en
+  // servidor y en el primer render cliente → sin desajuste de hidratación.
+  if (!valor) return <Cargando />;
 
   return <SessionContext.Provider value={valor}>{children}</SessionContext.Provider>;
 }

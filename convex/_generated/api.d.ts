@@ -8,9 +8,9 @@
  * @module
  */
 
+import type * as auth from "../auth.js";
 import type * as inicio from "../inicio.js";
 import type * as seed from "../seed.js";
-import type * as sesion from "../sesion.js";
 
 import type {
   ApiFromModules,
@@ -19,9 +19,9 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  auth: typeof auth;
   inicio: typeof inicio;
   seed: typeof seed;
-  sesion: typeof sesion;
 }>;
 
 /**
