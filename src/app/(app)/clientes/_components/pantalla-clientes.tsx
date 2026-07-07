@@ -22,12 +22,12 @@ type Chip = (typeof CHIPS)[number]["key"];
 const OCULTAR_SCROLL = "[scrollbar-width:none] [&::-webkit-scrollbar]:hidden";
 
 export function PantallaClientes() {
-  const { negocio } = useSesion();
+  const { token } = useSesion();
   const [busqueda, setBusqueda] = useState("");
   const [chip, setChip] = useState<Chip>("todos");
   const [ahora] = useState(() => Date.now());
 
-  const clientes = useQuery(api.clientes.listar, { negocioId: negocio._id });
+  const clientes = useQuery(api.clientes.listar, { token });
 
   const q = busqueda.trim().toLowerCase();
   const porChip = (clientes ?? []).filter((c) =>

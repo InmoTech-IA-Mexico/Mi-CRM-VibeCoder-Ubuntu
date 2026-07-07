@@ -6,12 +6,14 @@ import { useMutation } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
 import { Check } from "lucide-react";
 import { api } from "../../../../../convex/_generated/api";
+import { useSesion } from "@/components/session/use-sesion";
 import { IndicadorPrioridad, bordePrioridadClase } from "@/components/ui/indicador-prioridad";
 import { cn } from "@/lib/utils";
 
 export type ItemAgenda = FunctionReturnType<typeof api.inicio.agendaDelDia>[number];
 
 export function TarjetaRecordatorio({ item }: { item: ItemAgenda }) {
+  const { token } = useSesion();
   const marcarRealizado = useMutation(api.inicio.marcarSeguimientoRealizado);
   const [marcando, setMarcando] = useState(false);
 
@@ -19,7 +21,7 @@ export function TarjetaRecordatorio({ item }: { item: ItemAgenda }) {
     if (marcando) return;
     setMarcando(true);
     try {
-      await marcarRealizado({ seguimientoId: item._id });
+      await marcarRealizado({ token, seguimientoId: item._id });
     } catch (error) {
       console.error("No se pudo marcar el seguimiento como realizado", error);
     } finally {

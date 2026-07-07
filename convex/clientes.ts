@@ -1,15 +1,21 @@
 import { query } from "./_generated/server";
 import { v } from "convex/values";
+import { resolverSesion } from "./auth";
 
 // Lista de clientes del negocio (JUA-14). Devuelve todos (excepto papelera) con
 // los campos para el buscador en tiempo real (nombre/teléfono/email/empresa) y la
 // etapa de la oportunidad abierta más reciente. El filtrado por texto se hace en
-// el cliente (instantáneo, sin round-trip por tecla).
+// el cliente (instantáneo, sin round-trip por tecla). El `negocioId` sale de la
+// sesión (JUA-10), nunca del payload del cliente.
 const ETAPAS_CERRADAS = ["ganada", "perdida", "cancelada"];
 
 export const listar = query({
-  args: { negocioId: v.id("negocios") },
-  handler: async (ctx, { negocioId }) => {
+  args: { token: v.string() },
+  handler: async (ctx, { token }) => {
+    const sesion = await resolverSesion(ctx, token);
+    if (!sesion) return [];
+    const negocioId = sesion.negocioId;
+
     const clientes = await ctx.db
       .query("clientes")
       .withIndex("por_negocio", (q) => q.eq("negocioId", negocioId))

@@ -1,4 +1,5 @@
 import { mutation, query } from "./_generated/server";
+import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { v } from "convex/values";
 import { scrypt } from "@noble/hashes/scrypt.js";
 import { randomBytes, bytesToHex, hexToBytes } from "@noble/hashes/utils.js";
@@ -29,6 +30,30 @@ function verifyPassword(password: string, almacenado: string): boolean {
   return diff === 0;
 }
 
+// Sal fija para "quemar" un scrypt cuando el email no existe: iguala el tiempo
+// de respuesta con el de una cuenta real y evita enumerar usuarios por timing.
+const SAL_DUMMY = hexToBytes("00000000000000000000000000000000");
+
+/**
+ * Resuelve la sesión a partir del token, usando **el tiempo del servidor**
+ * (`Date.now()`), nunca uno enviado por el cliente. Devuelve el usuario y el
+ * `negocioId` de la sesión, o `null` si el token no existe, expiró o el usuario
+ * está inactivo. Base del aislamiento por negocio (JUA-10): el `negocioId` de
+ * toda consulta protegida se obtiene de aquí, jamás del payload del cliente.
+ */
+export async function resolverSesion(ctx: QueryCtx | MutationCtx, token: string) {
+  const sesion = await ctx.db
+    .query("sesiones")
+    .withIndex("por_token", (q) => q.eq("token", token))
+    .first();
+  if (!sesion || sesion.expiraEn <= Date.now()) return null;
+
+  const usuario = await ctx.db.get(sesion.usuarioId);
+  if (!usuario || usuario.estado === "inactivo") return null;
+
+  return { usuario, negocioId: sesion.negocioId };
+}
+
 type ResultadoLogin =
   | { ok: true; token: string }
   | { ok: false; bloqueadoHasta?: number };
@@ -47,8 +72,12 @@ export const iniciarSesion = mutation({
       .withIndex("por_email", (q) => q.eq("email", email.trim().toLowerCase()))
       .first();
 
-    // Sin usuario o sin contraseña configurada → error genérico.
-    if (!usuario || !usuario.passwordHash) return { ok: false };
+    // Sin usuario o sin contraseña configurada → error genérico. Quemamos un
+    // scrypt para igualar el tiempo de respuesta (anti-enumeración por timing).
+    if (!usuario || !usuario.passwordHash) {
+      scrypt(password, SAL_DUMMY, SCRYPT);
+      return { ok: false };
+    }
 
     // Cuenta bloqueada: devolver el tiempo restante.
     if (usuario.bloqueadoHasta && usuario.bloqueadoHasta > ahora) {
@@ -88,17 +117,14 @@ export const iniciarSesion = mutation({
 
 /** Sesión del token actual (o null si no existe / expiró / usuario inactivo). */
 export const sesionActual = query({
-  args: { token: v.string(), ahora: v.number() },
-  handler: async (ctx, { token, ahora }) => {
-    const sesion = await ctx.db
-      .query("sesiones")
-      .withIndex("por_token", (q) => q.eq("token", token))
-      .first();
-    if (!sesion || sesion.expiraEn <= ahora) return null;
+  args: { token: v.string() },
+  handler: async (ctx, { token }) => {
+    const sesion = await resolverSesion(ctx, token);
+    if (!sesion) return null;
 
-    const usuario = await ctx.db.get(sesion.usuarioId);
+    const { usuario } = sesion;
     const negocio = await ctx.db.get(sesion.negocioId);
-    if (!usuario || !negocio || usuario.estado === "inactivo") return null;
+    if (!negocio) return null;
 
     // Nunca exponer el hash de contraseña al cliente.
     return {

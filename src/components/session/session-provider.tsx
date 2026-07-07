@@ -38,11 +38,11 @@ function Cargando() {
 export function SessionProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [token] = useState<string | null>(() => leerToken());
-  const [ahora] = useState(() => Date.now());
   const cerrarSesionMut = useMutation(api.auth.cerrarSesion);
   const tocarSesion = useMutation(api.auth.tocarSesion);
 
-  const datos = useQuery(api.auth.sesionActual, token ? { token, ahora } : "skip");
+  // La expiración se valida con el tiempo del servidor (JUA-10), no del cliente.
+  const datos = useQuery(api.auth.sesionActual, token ? { token } : "skip");
 
   // Sin token, o sesión inválida/expirada → al login.
   useEffect(() => {
@@ -60,9 +60,13 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, [token, datos, tocarSesion]);
 
   const cerrarSesion = useCallback(async () => {
-    if (token) await cerrarSesionMut({ token });
-    borrarToken();
-    router.replace("/login");
+    try {
+      if (token) await cerrarSesionMut({ token });
+    } finally {
+      // Aunque falle el borrado en servidor, cerramos la sesión en el cliente.
+      borrarToken();
+      router.replace("/login");
+    }
   }, [token, cerrarSesionMut, router]);
 
   const valor = useMemo<Sesion | null>(

@@ -1,6 +1,7 @@
 import { query, mutation } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import { v } from "convex/values";
+import { resolverSesion } from "./auth";
 
 // Regla de negocio (PRD): un cliente "requiere atención" a partir de 15 días
 // sin interacción real. Espejo de DIAS_INACTIVIDAD en src/lib/enums.ts.
@@ -14,16 +15,21 @@ const MS_DIA = 24 * 60 * 60 * 1000;
  * Agenda del día (JUA-23): recordatorios a los que hay que atender hoy.
  *
  * Devuelve los seguimientos del negocio dirigidos a un cliente, pendientes,
- * cuya fecha cae hoy o está vencida. El cliente pasa el rango del día ya
- * calculado en la zona horaria del negocio (queda determinista y reactiva).
+ * cuya fecha cae hoy o está vencida. El `negocioId` sale de la sesión (JUA-10);
+ * el cliente solo pasa el rango del día ya calculado en la zona horaria del
+ * negocio (ventana de visualización de sus propios datos, no de seguridad).
  */
 export const agendaDelDia = query({
   args: {
-    negocioId: v.id("negocios"),
+    token: v.string(),
     inicioDia: v.number(),
     finDia: v.number(),
   },
-  handler: async (ctx, { negocioId, inicioDia, finDia }) => {
+  handler: async (ctx, { token, inicioDia, finDia }) => {
+    const sesion = await resolverSesion(ctx, token);
+    if (!sesion) return [];
+    const negocioId = sesion.negocioId;
+
     const seguimientos = await ctx.db
       .query("seguimientos")
       .withIndex("por_negocio", (q) => q.eq("negocioId", negocioId))
@@ -74,15 +80,19 @@ export const agendaDelDia = query({
  * Aparece un cliente si: estado ∈ {prospecto, activo, inactivo} (nunca `nuevo`
  * ni `descartado`), no eliminado, sin interacción real en +15 días (o registrado
  * hace +15 días sin interacción) y SIN recordatorio pendiente en los próximos 3
- * días. `ahora` lo pasa el cliente (zona horaria del negocio) para que la query
- * sea determinista.
+ * días. El `negocioId` sale de la sesión (JUA-10) y `ahora` del tiempo del
+ * servidor (granularidad de día; no requiere zona horaria).
  */
 export const panelInactividad = query({
   args: {
-    negocioId: v.id("negocios"),
-    ahora: v.number(),
+    token: v.string(),
   },
-  handler: async (ctx, { negocioId, ahora }) => {
+  handler: async (ctx, { token }) => {
+    const sesion = await resolverSesion(ctx, token);
+    if (!sesion) return [];
+    const negocioId = sesion.negocioId;
+    const ahora = Date.now();
+
     // Clientes con un recordatorio pendiente en los próximos 3 días: ya tienen
     // seguimiento planificado, así que quedan fuera del panel.
     const limiteProximos = ahora + PROXIMOS_DIAS_RECORDATORIO * MS_DIA;
@@ -137,10 +147,22 @@ export const panelInactividad = query({
 /**
  * Marca un recordatorio como realizado desde la lista, sin abrir la ficha
  * (JUA-23 / JUA-24). Al mutar, `agendaDelDia` se recalcula y la card desaparece.
+ *
+ * Valida que el seguimiento pertenezca al negocio de la sesión (JUA-10): un
+ * recurso de otro negocio devuelve el mismo error genérico que uno inexistente,
+ * sin revelar si existe.
  */
 export const marcarSeguimientoRealizado = mutation({
-  args: { seguimientoId: v.id("seguimientos") },
-  handler: async (ctx, { seguimientoId }) => {
+  args: { token: v.string(), seguimientoId: v.id("seguimientos") },
+  handler: async (ctx, { token, seguimientoId }) => {
+    const sesion = await resolverSesion(ctx, token);
+    if (!sesion) throw new Error("No autorizado");
+
+    const seguimiento = await ctx.db.get(seguimientoId);
+    if (!seguimiento || seguimiento.negocioId !== sesion.negocioId) {
+      throw new Error("No encontrado");
+    }
+
     await ctx.db.patch(seguimientoId, { estado: "realizado" });
   },
 });

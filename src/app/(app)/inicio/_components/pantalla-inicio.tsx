@@ -10,26 +10,19 @@ import { SeccionHoy } from "./seccion-hoy";
 import { SeccionInactividad } from "./seccion-inactividad";
 
 export function PantallaInicio() {
-  const { negocio } = useSesion();
+  const { negocio, token } = useSesion();
 
   // La hora actual se fija una sola vez al montar. A partir de ella, "hoy" se
-  // calcula en la zona horaria del negocio y se pasa como arg a las queries
-  // (quedan deterministas y reactivas).
+  // calcula en la zona horaria del negocio para la ventana de la agenda. El
+  // aislamiento por negocio lo garantiza el token en el servidor (JUA-10).
   const [ahora] = useState(() => Date.now());
   const { inicioDia, finDia } = useMemo(
     () => rangoDiaEnZona(negocio.zonaHoraria, ahora),
     [negocio.zonaHoraria, ahora],
   );
 
-  const agenda = useQuery(api.inicio.agendaDelDia, {
-    negocioId: negocio._id,
-    inicioDia,
-    finDia,
-  });
-  const inactivos = useQuery(api.inicio.panelInactividad, {
-    negocioId: negocio._id,
-    ahora,
-  });
+  const agenda = useQuery(api.inicio.agendaDelDia, { token, inicioDia, finDia });
+  const inactivos = useQuery(api.inicio.panelInactividad, { token });
 
   return (
     <div className="px-4 pt-2">

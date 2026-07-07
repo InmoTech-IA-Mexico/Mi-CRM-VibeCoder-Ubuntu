@@ -202,6 +202,7 @@ export const limpiar = mutation({
   args: {},
   handler: async (ctx) => {
     const tablas = [
+      "sesiones",
       "seguimientos",
       "notas",
       "oportunidades",
