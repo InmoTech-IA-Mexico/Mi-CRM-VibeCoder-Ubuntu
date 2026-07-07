@@ -1,5 +1,7 @@
-import { ScreenPlaceholder } from "@/components/screen-placeholder";
+import { PantallaClientes } from "./_components/pantalla-clientes";
 
+// Lista de clientes + buscador en tiempo real (JUA-14).
+// Diseño: design/design_handoff_inmotech_crm/Lista Clientes.dc.html
 export default function Page() {
-  return <ScreenPlaceholder title="Clientes" design="Lista Clientes.dc.html" issue="JUA-14" />;
+  return <PantallaClientes />;
 }

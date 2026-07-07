@@ -36,6 +36,15 @@ const SEGUIMIENTOS = [
   { titulo: "Cita agendada", cliente: "Sofía Beltrán", hora: "10:00", prioridad: "alta", offsetDias: 2 },
 ] as const;
 
+// Oportunidades abiertas → etapa de venta visible en la lista de clientes (JUA-14).
+const OPORTUNIDADES = [
+  { cliente: "Ana García", nombre: "Departamento Polanco", etapa: "en_contacto" },
+  { cliente: "María López", nombre: "Casa Del Valle", etapa: "propuesta" },
+  { cliente: "TechStart S.A.", nombre: "Oficinas corporativas", etapa: "negociacion" },
+  { cliente: "Carlos Ruiz", nombre: "Terreno sur", etapa: "nueva" },
+  { cliente: "Roberto Silva", nombre: "Local comercial", etapa: "nueva" },
+] as const;
+
 export const poblarDemo = mutation({
   args: {},
   handler: async (ctx) => {
@@ -164,12 +173,26 @@ export const poblarDemo = mutation({
       }
     }
 
+    for (const o of OPORTUNIDADES) {
+      const clienteId = idClientePorNombre[o.cliente];
+      if (!clienteId) continue;
+      const existentes = await ctx.db
+        .query("oportunidades")
+        .withIndex("por_cliente", (q) => q.eq("clienteId", clienteId))
+        .collect();
+      const datosOpo = { negocioId, clienteId, nombre: o.nombre, etapa: o.etapa, responsableId: carlosId };
+      const prev = existentes.find((e) => e.nombre === o.nombre);
+      if (prev) await ctx.db.patch(prev._id, datosOpo);
+      else await ctx.db.insert("oportunidades", datosOpo);
+    }
+
     return {
       negocioId,
       martaId,
       carlosId,
       clientes: CLIENTES.length,
       seguimientos: SEGUIMIENTOS.length,
+      oportunidades: OPORTUNIDADES.length,
       nota: negocioExistente ? "demo actualizado" : "demo creado",
     };
   },
