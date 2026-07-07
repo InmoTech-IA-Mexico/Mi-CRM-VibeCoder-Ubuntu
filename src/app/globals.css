@@ -1,0 +1,70 @@
+@import "tailwindcss";
+
+/*
+  InmoTech IA México — Design tokens
+  Handoff de diseño "InmoTech IA": base cream cálida sobre petróleo profundo,
+  acento dorado, tipografía Lora (serif) + Geist (sans).
+  Especificación completa: design/design_handoff_inmotech_crm/README.md
+*/
+@theme {
+  /* ── Neutros cálidos ── */
+  --color-bg: #fbf8f1;
+  --color-surface: #ffffff;
+  --color-neutral-50: #f4f1e9;
+  --color-neutral-100: #ece6da;
+  --color-border-input: #ddd6c6;
+  --color-divider: #f1ece3;
+  --color-row-hover: #faf7f0;
+  --color-neutral-300: #cfc6b2;
+  --color-neutral-400: #a7a395;
+  --color-neutral-500: #80847b;
+  --color-body: #5e6e70;
+  --color-muted: #9aa199;
+  --color-ink: #15333a;
+
+  /* ── Marca · Petróleo ── */
+  --color-teal-tint: #e2edee;
+  --color-teal-tint-border: #c9dddf;
+  --color-teal-tint-fg: #1c4e55;
+  --color-teal-700: #16454c;
+  --color-teal-800: #0e2e34;
+  --color-teal-900: #0b252a;
+
+  /* ── Acento · Dorado ── */
+  --color-gold-tint: #f4ecdb;
+  --color-gold-tint-border: #e0c795;
+  --color-gold-500: #c9a25e;
+  --color-gold-600: #b68e45;
+  --color-gold-700: #9a7327;
+  --color-gold-text: #a87e33;
+
+  /* ── Semánticos ── */
+  --color-success: #2e7d6b;
+  --color-warning: #c9a25e;
+  --color-danger: #b0573f;
+  --color-info: #2e6e78;
+
+  /* ── Tipografía ── */
+  --font-sans: var(--font-geist), system-ui, sans-serif;
+  --font-serif: var(--font-lora), Georgia, serif;
+
+  /* ── Radios ── */
+  --radius-input: 12px;
+  --radius-card: 16px;
+  --radius-modal: 20px;
+  --radius-sheet: 24px;
+  --radius-pill: 999px;
+}
+
+@layer base {
+  html {
+    height: 100%;
+  }
+  body {
+    min-height: 100%;
+    background: var(--color-bg);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+}

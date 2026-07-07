@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;0,700;1,500&family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <meta name="design_doc_mode" content="canvas">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Geist', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+    .scrl::-webkit-scrollbar { display: none; }
+    .scrl { scrollbar-width: none; }
+  </style>
+</helmet>
+
+<!-- ============ VARIANTE 1 — SEGUIMIENTO A CLIENTE ============ -->
+<div style="position:absolute; left:0px; top:0px; width:390px;">
+  <div data-drags-parent="1" style="font-family:'Geist',sans-serif; font-size:12px; font-weight:600; color:#9AA199; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:14px; cursor:default;">Variante 1 · Seguimiento a cliente</div>
+
+  <div data-screen-label="Seguimiento — Cliente" style="width:390px; height:844px; background:#FBF8F1; border-radius:30px; overflow:hidden; position:relative; box-shadow:0 16px 36px rgba(14,46,52,0.14); border:1px solid #ECE6DA;">
+
+    <div style="height:44px; display:flex; align-items:center; justify-content:space-between; padding:0 22px;">
+      <span style="font-size:14px; font-weight:600; color:#15333A;">9:41</span>
+      <div style="display:flex; gap:6px; align-items:center; color:#15333A;">
+        <svg width="17" height="11" viewBox="0 0 17 11" fill="none"><rect x="0" y="3" width="3" height="5" rx="1" fill="currentColor"/><rect x="4.5" y="1.5" width="3" height="6.5" rx="1" fill="currentColor"/><rect x="9" y="0" width="3" height="8" rx="1" fill="currentColor"/><rect x="13.5" y="0" width="3" height="8" rx="1" fill="currentColor" opacity="0.35"/></svg>
+        <svg width="22" height="11" viewBox="0 0 22 11" fill="none"><rect x="0.5" y="0.5" width="18" height="10" rx="2.5" stroke="currentColor" opacity="0.45"/><rect x="2" y="2" width="14" height="7" rx="1.2" fill="currentColor"/><rect x="20" y="3.5" width="1.5" height="4" rx="0.75" fill="currentColor" opacity="0.45"/></svg>
+      </div>
+    </div>
+
+    <!-- header -->
+    <div style="height:56px; display:flex; align-items:center; justify-content:center; padding:0 14px; position:relative;">
+      <div style="position:absolute; left:14px; width:44px; height:44px; border-radius:12px; background:#FFFFFF; border:1px solid #DDD6C6; box-shadow:0 1px 2px rgba(14,46,52,0.06); display:flex; align-items:center; justify-content:center; cursor:pointer;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#15333A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </div>
+      <div style="font-family:'Lora',serif; font-size:16px; font-weight:600; color:#15333A; letter-spacing:-0.01em;">Programar seguimiento</div>
+      <div style="position:absolute; right:14px; padding:8px 14px; border-radius:999px; background:#C9A25E; box-shadow:0 2px 6px rgba(201,162,94,0.32); cursor:pointer;">
+        <span style="font-size:14px; font-weight:600; color:#15333A;">Guardar</span>
+      </div>
+    </div>
+
+    <div class="scrl" style="position:absolute; top:100px; left:0; right:0; bottom:0; overflow-y:auto; padding:8px 16px 24px; display:flex; flex-direction:column; gap:20px;">
+
+      <!-- tipo segmentado -->
+      <div style="display:flex; gap:6px; background:#F0ECE2; border:1px solid #E0D9C9; border-radius:14px; padding:5px;">
+        <div style="flex:1; display:flex; align-items:center; justify-content:center; gap:7px; height:42px; border-radius:10px; background:#FFFFFF; border:1.5px solid #C9A25E; box-shadow:0 2px 8px rgba(201,162,94,0.22);">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#9A7327" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <span style="font-size:14px; font-weight:600; color:#9A7327;">Cliente</span>
+        </div>
+        <div style="flex:1; display:flex; align-items:center; justify-content:center; gap:7px; height:42px; border-radius:10px;">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#80847B" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <span style="font-size:14px; font-weight:500; color:#5E6E70;">Empleado</span>
+        </div>
+      </div>
+
+      <!-- cliente select -->
+      <div>
+        <div style="font-size:12px; font-weight:600; color:#A87E33; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:12px;">Cliente</div>
+        <div style="background:#FFFFFF; border:1px solid #ECE6DA; border-radius:18px; box-shadow:0 1px 2px rgba(14,46,52,0.05); padding:14px 16px; display:flex; align-items:center; gap:12px; cursor:pointer;">
+          <div style="width:40px; height:40px; border-radius:50%; background:#F4ECDB; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><span style="font-family:'Lora',serif; font-size:16px; font-weight:600; color:#9A7327;">A</span></div>
+          <div style="flex:1;">
+            <div style="font-size:15px; font-weight:600; color:#15333A;">Ana García</div>
+            <div style="font-size:12.5px; color:#9AA199; margin-top:1px;">García &amp; Asociados</div>
+          </div>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A7A395" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+        </div>
+      </div>
+
+      <!-- seguimiento -->
+      <div>
+        <div style="font-size:12px; font-weight:600; color:#A87E33; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:12px;">Seguimiento</div>
+        <div style="background:#FFFFFF; border:1px solid #ECE6DA; border-radius:18px; box-shadow:0 1px 2px rgba(14,46,52,0.05); overflow:hidden;">
+          <div style="padding:16px;">
+            <div style="font-size:13px; font-weight:500; color:#15333A; margin-bottom:7px;">Título</div>
+            <div style="height:48px; border:1px solid #DDD6C6; border-radius:12px; display:flex; align-items:center; gap:10px; padding:0 12px;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A7A395" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+              <span style="font-size:15px; font-weight:500; color:#15333A;">Llamar para revisar propuesta</span>
+            </div>
+          </div>
+          <div style="height:1px; background:#F1ECE3; margin:0 16px;"></div>
+          <div style="padding:14px 16px; display:flex; align-items:center; gap:12px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#A7A395" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <span style="flex:1; font-size:14.5px; color:#15333A;">Fecha</span>
+            <span style="font-size:14.5px; font-weight:500; color:#15333A; font-variant-numeric:tabular-nums;">Jue, 26 jun</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A7A395" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+          </div>
+          <div style="height:1px; background:#F1ECE3; margin:0 16px;"></div>
+          <div style="padding:14px 16px; display:flex; align-items:center; gap:12px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#A7A395" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+            <span style="flex:1; font-size:14.5px; color:#15333A;">Hora</span>
+            <span style="font-size:14.5px; font-weight:500; color:#15333A; font-variant-numeric:tabular-nums;">10:00</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A7A395" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- prioridad -->
+      <div>
+        <div style="font-size:12px; font-weight:600; color:#A87E33; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:12px;">Prioridad</div>
+        <div style="display:flex; gap:8px; background:#F0ECE2; border:1px solid #E0D9C9; border-radius:14px; padding:5px;">
+          <div style="flex:1; display:flex; align-items:center; justify-content:center; gap:7px; height:42px; border-radius:10px; background:#FFFFFF; border:1.5px solid #B0573F; box-shadow:0 2px 8px rgba(176,87,63,0.22);"><span style="width:8px; height:8px; border-radius:50%; background:#B0573F;"></span><span style="font-size:14px; font-weight:600; color:#8A3F2C;">Alta</span></div>
+          <div style="flex:1; display:flex; align-items:center; justify-content:center; gap:7px; height:42px; border-radius:10px;"><span style="width:8px; height:8px; border-radius:50%; background:#C9A25E;"></span><span style="font-size:14px; font-weight:500; color:#5E6E70;">Media</span></div>
+          <div style="flex:1; display:flex; align-items:center; justify-content:center; gap:7px; height:42px; border-radius:10px;"><span style="width:8px; height:8px; border-radius:50%; background:#80847B;"></span><span style="font-size:14px; font-weight:500; color:#5E6E70;">Baja</span></div>
+        </div>
+      </div>
+
+      <!-- frecuencia -->
+      <div>
+        <div style="font-size:12px; font-weight:600; color:#A87E33; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:12px;">Frecuencia</div>
+        <div style="display:flex; gap:8px; background:#F0ECE2; border:1px solid #E0D9C9; border-radius:14px; padding:5px;">
+          <div style="flex:1; display:flex; align-items:center; justify-content:center; height:42px; border-radius:10px; background:#FFFFFF; border:1.5px solid #C9A25E; box-shadow:0 2px 8px rgba(201,162,94,0.22);"><span style="font-size:14px; font-weight:600; color:#9A7327;">Una vez</span></div>
+          <div style="flex:1; display:flex; align-items:center; justify-content:center; height:42px; border-radius:10px;"><span style="font-size:14px; font-weight:500; color:#5E6E70;">Semanal</span></div>
+          <div style="flex:1; display:flex; align-items:center; justify-content:center; height:42px; border-radius:10px;"><span style="font-size:14px; font-weight:500; color:#5E6E70;">Mensual</span></div>
+        </div>
+      </div>
+
+      <!-- asignar a (admin) -->
+      <div>
+        <div style="display:flex; align-items:center; gap:6px; margin-bottom:12px;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#A87E33" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.4 8.5 8 11 4.6-2.5 8-6 8-11V5l-8-3z"/></svg>
+          <span style="font-size:12px; font-weight:600; color:#A87E33; letter-spacing:0.1em; text-transform:uppercase;">Asignar seguimiento a</span>
+        </div>
+        <div style="background:#FFFFFF; border:1px solid #ECE6DA; border-radius:18px; box-shadow:0 1px 2px rgba(14,46,52,0.05); padding:14px 16px; display:flex; align-items:center; gap:12px; cursor:pointer;">
+          <div style="width:38px; height:38px; border-radius:50%; background:linear-gradient(140deg,#D2B074,#B68E45); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><span style="font-family:'Lora',serif; font-size:15px; font-weight:600; color:#FFFFFF;">M</span></div>
+          <div style="flex:1;">
+            <div style="display:flex; align-items:center; gap:7px;">
+              <span style="font-size:15px; font-weight:600; color:#15333A;">Marta Rodríguez</span>
+              <span style="font-size:10.5px; font-weight:600; color:#80847B; background:#F0ECE2; padding:2px 7px; border-radius:6px;">Tú</span>
+            </div>
+            <div style="font-size:12.5px; color:#9AA199; margin-top:1px;">Administrador</div>
+          </div>
+          <span style="font-size:12.5px; font-weight:600; color:#A87E33;">Cambiar</span>
+        </div>
+        <div style="font-size:12px; line-height:1.45; color:#9AA199; margin-top:9px; padding:0 2px;">Puedes redirigir este seguimiento a otro miembro del equipo, como Carlos.</div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ============ VARIANTE 2 — SEGUIMIENTO A EMPLEADO ============ -->
+<div style="position:absolute; left:470px; top:0px; width:390px;">
+  <div data-drags-parent="1" style="font-family:'Geist',sans-serif; font-size:12px; font-weight:600; color:#9AA199; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:14px; cursor:default;">Variante 2 · Seguimiento a empleado</div>
+
+  <div data-screen-label="Seguimiento — Empleado" style="width:390px; height:844px; background:#FBF8F1; border-radius:30px; overflow:hidden; position:relative; box-shadow:0 16px 36px rgba(14,46,52,0.14); border:1px solid #ECE6DA;">
+
+    <div style="height:44px; display:flex; align-items:center; justify-content:space-between; padding:0 22px;">
+      <span style="font-size:14px; font-weight:600; color:#15333A;">9:41</span>
+      <div style="display:flex; gap:6px; align-items:center; color:#15333A;">
+        <svg width="17" height="11" viewBox="0 0 17 11" fill="none"><rect x="0" y="3" width="3" height="5" rx="1" fill="currentColor"/><rect x="4.5" y="1.5" width="3" height="6.5" rx="1" fill="currentColor"/><rect x="9" y="0" width="3" height="8" rx="1" fill="currentColor"/><rect x="13.5" y="0" width="3" height="8" rx="1" fill="currentColor" opacity="0.35"/></svg>
+        <svg width="22" height="11" viewBox="0 0 22 11" fill="none"><rect x="0.5" y="0.5" width="18" height="10" rx="2.5" stroke="currentColor" opacity="0.45"/><rect x="2" y="2" width="14" height="7" rx="1.2" fill="currentColor"/><rect x="20" y="3.5" width="1.5" height="4" rx="0.75" fill="currentColor" opacity="0.45"/></svg>
+      </div>
+    </div>
+
+    <div style="height:56px; display:flex; align-items:center; justify-content:center; padding:0 14px; position:relative;">
+      <div style="position:absolute; left:14px; width:44px; height:44px; border-radius:12px; background:#FFFFFF; border:1px solid #DDD6C6; box-shadow:0 1px 2px rgba(14,46,52,0.06); display:flex; align-items:center; justify-content:center; cursor:pointer;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#15333A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </div>
+      <div style="font-family:'Lora',serif; font-size:16px; font-weight:600; color:#15333A; letter-spacing:-0.01em;">Programar seguimiento</div>
+      <div style="position:absolute; right:14px; padding:8px 14px; border-radius:999px; background:#C9A25E; box-shadow:0 2px 6px rgba(201,162,94,0.32); cursor:pointer;">
+        <span style="font-size:14px; font-weight:600; color:#15333A;">Guardar</span>
+      </div>
+    </div>
+
+    <div class="scrl" style="position:absolute; top:100px; left:0; right:0; bottom:0; overflow-y:auto; padding:8px 16px 24px; display:flex; flex-direction:column; gap:20px;">
+
+      <!-- tipo segmentado (Empleado activo) -->
+      <div style="display:flex; gap:6px; background:#F0ECE2; border:1px solid #E0D9C9; border-radius:14px; padding:5px;">
+        <div style="flex:1; display:flex; align-items:center; justify-content:center; gap:7px; height:42px; border-radius:10px;">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#80847B" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <span style="font-size:14px; font-weight:500; color:#5E6E70;">Cliente</span>
+        </div>
+        <div style="flex:1; display:flex; align-items:center; justify-content:center; gap:7px; height:42px; border-radius:10px; background:#FFFFFF; border:1.5px solid #C9A25E; box-shadow:0 2px 8px rgba(201,162,94,0.22);">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#9A7327" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <span style="font-size:14px; font-weight:600; color:#9A7327;">Empleado</span>
+        </div>
+      </div>
+
+      <!-- empleado select -->
+      <div>
+        <div style="font-size:12px; font-weight:600; color:#A87E33; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:12px;">Empleado</div>
+        <div style="background:#FFFFFF; border:1px solid #ECE6DA; border-radius:18px; box-shadow:0 1px 2px rgba(14,46,52,0.05); padding:14px 16px; display:flex; align-items:center; gap:12px; cursor:pointer;">
+          <div style="width:40px; height:40px; border-radius:50%; background:#E2EDEE; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><span style="font-family:'Lora',serif; font-size:16px; font-weight:600; color:#1C4E55;">C</span></div>
+          <div style="flex:1;">
+            <div style="font-size:15px; font-weight:600; color:#15333A;">Carlos Rodríguez</div>
+            <div style="font-size:12.5px; color:#9AA199; margin-top:1px;">Operativo · 12 clientes</div>
+          </div>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A7A395" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+        </div>
+      </div>
+
+      <!-- seguimiento -->
+      <div>
+        <div style="font-size:12px; font-weight:600; color:#A87E33; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:12px;">Seguimiento</div>
+        <div style="background:#FFFFFF; border:1px solid #ECE6DA; border-radius:18px; box-shadow:0 1px 2px rgba(14,46,52,0.05); overflow:hidden;">
+          <div style="padding:16px;">
+            <div style="font-size:13px; font-weight:500; color:#15333A; margin-bottom:7px;">Título</div>
+            <div style="height:48px; border:1px solid #DDD6C6; border-radius:12px; display:flex; align-items:center; gap:10px; padding:0 12px;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A7A395" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              <span style="font-size:15px; font-weight:500; color:#15333A;">Revisar avance con TechStart S.A.</span>
+            </div>
+          </div>
+          <div style="height:1px; background:#F1ECE3; margin:0 16px;"></div>
+          <div style="padding:14px 16px; display:flex; align-items:center; gap:12px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#A7A395" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <span style="flex:1; font-size:14.5px; color:#15333A;">Fecha</span>
+            <span style="font-size:14.5px; font-weight:500; color:#15333A; font-variant-numeric:tabular-nums;">Lun, 30 jun</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A7A395" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+          </div>
+          <div style="height:1px; background:#F1ECE3; margin:0 16px;"></div>
+          <div style="padding:14px 16px; display:flex; align-items:center; gap:12px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#A7A395" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+            <span style="flex:1; font-size:14.5px; color:#15333A;">Hora</span>
+            <span style="font-size:14.5px; font-weight:500; color:#15333A; font-variant-numeric:tabular-nums;">09:30</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A7A395" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- prioridad -->
+      <div>
+        <div style="font-size:12px; font-weight:600; color:#A87E33; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:12px;">Prioridad</div>
+        <div style="display:flex; gap:8px; background:#F0ECE2; border:1px solid #E0D9C9; border-radius:14px; padding:5px;">
+          <div style="flex:1; display:flex; align-items:center; justify-content:center; gap:7px; height:42px; border-radius:10px;"><span style="width:8px; height:8px; border-radius:50%; background:#B0573F;"></span><span style="font-size:14px; font-weight:500; color:#5E6E70;">Alta</span></div>
+          <div style="flex:1; display:flex; align-items:center; justify-content:center; gap:7px; height:42px; border-radius:10px; background:#FFFFFF; border:1.5px solid #C9A25E; box-shadow:0 2px 8px rgba(201,162,94,0.22);"><span style="width:8px; height:8px; border-radius:50%; background:#C9A25E;"></span><span style="font-size:14px; font-weight:600; color:#9A7327;">Media</span></div>
+          <div style="flex:1; display:flex; align-items:center; justify-content:center; gap:7px; height:42px; border-radius:10px;"><span style="width:8px; height:8px; border-radius:50%; background:#80847B;"></span><span style="font-size:14px; font-weight:500; color:#5E6E70;">Baja</span></div>
+        </div>
+      </div>
+
+      <!-- frecuencia -->
+      <div>
+        <div style="font-size:12px; font-weight:600; color:#A87E33; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:12px;">Frecuencia</div>
+        <div style="display:flex; gap:8px; background:#F0ECE2; border:1px solid #E0D9C9; border-radius:14px; padding:5px;">
+          <div style="flex:1; display:flex; align-items:center; justify-content:center; height:42px; border-radius:10px;"><span style="font-size:14px; font-weight:500; color:#5E6E70;">Una vez</span></div>
+          <div style="flex:1; display:flex; align-items:center; justify-content:center; height:42px; border-radius:10px; background:#FFFFFF; border:1.5px solid #C9A25E; box-shadow:0 2px 8px rgba(201,162,94,0.22);"><span style="font-size:14px; font-weight:600; color:#9A7327;">Semanal</span></div>
+          <div style="flex:1; display:flex; align-items:center; justify-content:center; height:42px; border-radius:10px;"><span style="font-size:14px; font-weight:500; color:#5E6E70;">Mensual</span></div>
+        </div>
+        <div style="display:flex; align-items:center; gap:7px; margin-top:10px; padding:0 2px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9A7327" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+          <span style="font-size:12px; font-weight:500; color:#9A7327;">Se repetirá cada lunes · puedes definir una fecha de fin</span>
+        </div>
+      </div>
+
+      <!-- notificar -->
+      <div style="background:#FFFFFF; border:1px solid #ECE6DA; border-radius:18px; box-shadow:0 1px 2px rgba(14,46,52,0.05); padding:14px 16px; display:flex; align-items:center; gap:12px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1C4E55" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+        <div style="flex:1;">
+          <div style="font-size:14.5px; font-weight:600; color:#15333A;">Notificar a Carlos</div>
+          <div style="font-size:12px; color:#9AA199; margin-top:1px;">Recibirá un aviso de este seguimiento</div>
+        </div>
+        <div style="width:46px; height:27px; border-radius:999px; background:#C9A25E; padding:3px; display:flex; align-items:center; justify-content:flex-end;">
+          <div style="width:21px; height:21px; border-radius:50%; background:#FFFFFF; box-shadow:0 1px 3px rgba(14,46,52,0.25);"></div>
+        </div>
+      </div>
+
+      <div style="display:flex; align-items:flex-start; gap:9px; padding:0 2px;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9AA199" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; margin-top:1px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        <span style="font-size:12px; line-height:1.45; color:#9AA199;">Como administrador, este seguimiento aparecerá en la agenda de Carlos y en tu panel de supervisión.</span>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ============ VARIANTE 3 — REDIRIGIR (sheet) ============ -->
+<div style="position:absolute; left:940px; top:0px; width:390px;">
+  <div data-drags-parent="1" style="font-family:'Geist',sans-serif; font-size:12px; font-weight:600; color:#9AA199; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:14px; cursor:default;">Variante 3 · Redirigir seguimiento</div>
+
+  <div data-screen-label="Seguimiento — Redirigir" style="width:390px; height:844px; background:#FBF8F1; border-radius:30px; overflow:hidden; position:relative; box-shadow:0 16px 36px rgba(14,46,52,0.14); border:1px solid #ECE6DA;">
+
+    <!-- dimmed base -->
+    <div style="position:absolute; inset:0;">
+      <div style="height:44px; display:flex; align-items:center; justify-content:space-between; padding:0 22px;">
+        <span style="font-size:14px; font-weight:600; color:#15333A;">9:41</span>
+        <div style="display:flex; gap:6px; align-items:center; color:#15333A;">
+          <svg width="17" height="11" viewBox="0 0 17 11" fill="none"><rect x="0" y="3" width="3" height="5" rx="1" fill="currentColor"/><rect x="4.5" y="1.5" width="3" height="6.5" rx="1" fill="currentColor"/><rect x="9" y="0" width="3" height="8" rx="1" fill="currentColor"/><rect x="13.5" y="0" width="3" height="8" rx="1" fill="currentColor" opacity="0.35"/></svg>
+        </div>
+      </div>
+      <div style="height:56px; display:flex; align-items:center; justify-content:center; position:relative;">
+        <div style="position:absolute; left:14px; width:44px; height:44px; border-radius:12px; background:#FFFFFF; border:1px solid #DDD6C6; display:flex; align-items:center; justify-content:center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#15333A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div>
+        <div style="font-family:'Lora',serif; font-size:19px; font-weight:600; color:#15333A;">Programar seguimiento</div>
+      </div>
+      <div style="padding:14px 16px; display:flex; flex-direction:column; gap:16px;">
+        <div style="height:52px; background:#F0ECE2; border:1px solid #E0D9C9; border-radius:14px;"></div>
+        <div style="height:70px; background:#FFFFFF; border:1px solid #ECE6DA; border-radius:18px;"></div>
+        <div style="height:140px; background:#FFFFFF; border:1px solid #ECE6DA; border-radius:18px;"></div>
+      </div>
+    </div>
+
+    <!-- overlay -->
+    <div style="position:absolute; inset:0; background:rgba(11,37,42,0.45);"></div>
+
+    <!-- sheet -->
+    <div style="position:absolute; left:0; right:0; bottom:0; background:#FFFFFF; border-radius:24px 24px 0 0; box-shadow:0 -16px 36px rgba(14,46,52,0.18); padding:12px 20px 24px;">
+      <div style="width:40px; height:4px; border-radius:999px; background:#E0D9C9; margin:0 auto 18px;"></div>
+      <div style="font-family:'Lora',serif; font-size:20px; font-weight:600; color:#15333A; letter-spacing:-0.01em;">Asignar seguimiento a</div>
+      <div style="font-size:13px; line-height:1.5; color:#5E6E70; margin-top:6px;">Elige quién dará seguimiento a Ana García</div>
+
+      <div style="display:flex; flex-direction:column; gap:10px; margin-top:20px;">
+        <!-- Marta selected -->
+        <div style="display:flex; align-items:center; gap:12px; background:#F4ECDB; border:1.5px solid #C9A25E; border-radius:14px; padding:13px 14px; cursor:pointer;">
+          <div style="width:42px; height:42px; border-radius:50%; background:linear-gradient(140deg,#D2B074,#B68E45); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><span style="font-family:'Lora',serif; font-size:16px; font-weight:600; color:#FFFFFF;">M</span></div>
+          <div style="flex:1;">
+            <div style="display:flex; align-items:center; gap:7px;">
+              <span style="font-size:15px; font-weight:600; color:#15333A;">Marta Rodríguez</span>
+              <span style="font-size:10.5px; font-weight:600; color:#80847B; background:#FFFFFF; padding:2px 7px; border-radius:6px;">Tú</span>
+            </div>
+            <div style="font-size:12.5px; color:#9A7327; margin-top:1px;">Administrador</div>
+          </div>
+          <div style="width:24px; height:24px; border-radius:50%; background:#C9A25E; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+        </div>
+
+        <!-- Carlos -->
+        <div style="display:flex; align-items:center; gap:12px; background:#FFFFFF; border:1px solid #DDD6C6; border-radius:14px; padding:13px 14px; cursor:pointer;">
+          <div style="width:42px; height:42px; border-radius:50%; background:#E2EDEE; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><span style="font-family:'Lora',serif; font-size:16px; font-weight:600; color:#1C4E55;">C</span></div>
+          <div style="flex:1;">
+            <div style="font-size:15px; font-weight:600; color:#15333A;">Carlos Rodríguez</div>
+            <div style="font-size:12.5px; color:#9AA199; margin-top:1px;">Operativo · 12 clientes</div>
+          </div>
+          <div style="width:24px; height:24px; border-radius:50%; border:1.5px solid #CFC6B2; flex-shrink:0;"></div>
+        </div>
+
+        <!-- Lucía -->
+        <div style="display:flex; align-items:center; gap:12px; background:#FFFFFF; border:1px solid #DDD6C6; border-radius:14px; padding:13px 14px; cursor:pointer;">
+          <div style="width:42px; height:42px; border-radius:50%; background:#E8ECE2; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><span style="font-family:'Lora',serif; font-size:16px; font-weight:600; color:#586353;">L</span></div>
+          <div style="flex:1;">
+            <div style="font-size:15px; font-weight:600; color:#15333A;">Lucía Sánchez</div>
+            <div style="font-size:12.5px; color:#9AA199; margin-top:1px;">Operativo · 8 clientes</div>
+          </div>
+          <div style="width:24px; height:24px; border-radius:50%; border:1.5px solid #CFC6B2; flex-shrink:0;"></div>
+        </div>
+      </div>
+
+      <div style="height:1px; background:#F1ECE3; margin:18px 0;"></div>
+
+      <div style="height:50px; border-radius:24px; background:#C9A25E; box-shadow:0 4px 14px rgba(201,162,94,0.35); display:flex; align-items:center; justify-content:center; cursor:pointer;">
+        <span style="font-size:16px; font-weight:600; color:#15333A;">Confirmar responsable</span>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

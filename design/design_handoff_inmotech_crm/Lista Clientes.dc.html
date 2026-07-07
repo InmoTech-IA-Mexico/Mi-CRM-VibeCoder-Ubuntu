@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;0,700;1,500&family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <meta name="design_doc_mode" content="canvas">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Geist', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+    .scrl::-webkit-scrollbar { display: none; }
+    .scrl { scrollbar-width: none; }
+  </style>
+</helmet>
+
+<!-- ============ VARIANTE 1 — LISTA CON CONTENIDO ============ -->
+<div style="position:absolute; left:0px; top:0px; width:390px;">
+  <div data-drags-parent="1" style="font-family:'Geist',sans-serif; font-size:12px; font-weight:600; color:#9AA199; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:14px; cursor:default;">Variante 1 · Lista con contenido</div>
+
+  <div data-screen-label="Clientes — Lista" style="width:390px; height:844px; background:#FBF8F1; border-radius:30px; overflow:hidden; position:relative; box-shadow:0 16px 36px rgba(14,46,52,0.14); border:1px solid #ECE6DA;">
+
+    <div style="height:44px; display:flex; align-items:center; justify-content:space-between; padding:0 22px;">
+      <span style="font-size:14px; font-weight:600; color:#15333A;">9:41</span>
+      <div style="display:flex; gap:6px; align-items:center; color:#15333A;">
+        <svg width="17" height="11" viewBox="0 0 17 11" fill="none"><rect x="0" y="3" width="3" height="5" rx="1" fill="currentColor"/><rect x="4.5" y="1.5" width="3" height="6.5" rx="1" fill="currentColor"/><rect x="9" y="0" width="3" height="8" rx="1" fill="currentColor"/><rect x="13.5" y="0" width="3" height="8" rx="1" fill="currentColor" opacity="0.35"/></svg>
+        <svg width="22" height="11" viewBox="0 0 22 11" fill="none"><rect x="0.5" y="0.5" width="18" height="10" rx="2.5" stroke="currentColor" opacity="0.45"/><rect x="2" y="2" width="14" height="7" rx="1.2" fill="currentColor"/><rect x="20" y="3.5" width="1.5" height="4" rx="0.75" fill="currentColor" opacity="0.45"/></svg>
+      </div>
+    </div>
+
+    <!-- header -->
+    <div style="height:56px; display:flex; align-items:center; justify-content:space-between; padding:0 18px;">
+      <div style="display:flex; align-items:baseline; gap:8px;">
+        <span style="font-family:'Lora',serif; font-size:24px; font-weight:600; color:#15333A; letter-spacing:-0.01em;">Clientes</span>
+        <span style="font-size:13px; font-weight:600; color:#A87E33; font-variant-numeric:tabular-nums;">24</span>
+      </div>
+      <div style="width:36px; height:36px; border-radius:50%; background:linear-gradient(140deg,#D2B074,#B68E45); box-shadow:0 3px 10px rgba(201,162,94,0.35); display:flex; align-items:center; justify-content:center;">
+        <span style="font-family:'Lora',serif; font-size:16px; font-weight:600; color:#FFFFFF;">M</span>
+      </div>
+    </div>
+
+    <!-- search -->
+    <div style="padding:6px 16px 0;">
+      <div style="height:44px; background:#FFFFFF; border:1px solid #DDD6C6; border-radius:12px; display:flex; align-items:center; gap:10px; padding:0 12px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A7A395" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <span style="font-size:14px; color:#9AA199;">Buscar clientes...</span>
+      </div>
+    </div>
+
+    <!-- chips -->
+    <div class="scrl" style="display:flex; gap:8px; overflow-x:auto; padding:14px 16px 4px;">
+      <div style="flex:0 0 auto; display:flex; align-items:center; padding:7px 14px; border-radius:999px; background:#F4ECDB; border:1px solid #C9A25E;"><span style="font-size:13px; font-weight:600; color:#9A7327;">Todos</span></div>
+      <div style="flex:0 0 auto; display:flex; align-items:center; padding:7px 14px; border-radius:999px; background:#FFFFFF; border:1px solid #DDD6C6;"><span style="font-size:13px; font-weight:500; color:#5E6E70;">Activos</span></div>
+      <div style="flex:0 0 auto; display:flex; align-items:center; padding:7px 14px; border-radius:999px; background:#FFFFFF; border:1px solid #DDD6C6;"><span style="font-size:13px; font-weight:500; color:#5E6E70;">Prospectos</span></div>
+      <div style="flex:0 0 auto; display:flex; align-items:center; padding:7px 14px; border-radius:999px; background:#FFFFFF; border:1px solid #DDD6C6;"><span style="font-size:13px; font-weight:500; color:#5E6E70;">Alta prioridad</span></div>
+      <div style="flex:0 0 auto; width:36px; height:36px; display:flex; align-items:center; justify-content:center; border-radius:999px; background:#FFFFFF; border:1px solid #DDD6C6;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5E6E70" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+      </div>
+    </div>
+
+    <!-- list -->
+    <div class="scrl" style="position:absolute; top:206px; left:0; right:0; bottom:84px; overflow-y:auto; padding:8px 16px 90px; display:flex; flex-direction:column; gap:10px;">
+
+      <!-- 1 Ana -->
+      <div style="background:#FFFFFF; border:1px solid #ECE6DA; border-left:3px solid #B0573F; border-radius:16px; box-shadow:0 1px 2px rgba(14,46,52,0.05); padding:12px 16px;">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+          <span style="font-size:15px; font-weight:600; color:#15333A;">Ana García</span>
+          <span style="display:flex; align-items:center; gap:4px; background:#E2EFEB; padding:3px 9px; border-radius:8px;"><span style="width:5px; height:5px; border-radius:50%; background:#2E7D6B;"></span><span style="font-size:11px; font-weight:600; color:#1B5446;">Activo</span></span>
+        </div>
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:7px;">
+          <span style="font-size:12.5px; font-weight:600; color:#B0573F;">Hace 23 días</span>
+          <span style="display:flex; align-items:center; gap:5px;"><span style="width:6px; height:6px; border-radius:50%; background:#2E6E78;"></span><span style="font-size:12px; color:#5E6E70;">En contacto</span></span>
+        </div>
+      </div>
+
+      <!-- 2 Roberto -->
+      <div style="background:#FFFFFF; border:1px solid #ECE6DA; border-left:3px solid #B0573F; border-radius:16px; box-shadow:0 1px 2px rgba(14,46,52,0.05); padding:12px 16px;">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+          <span style="font-size:15px; font-weight:600; color:#15333A;">Roberto Silva</span>
+          <span style="display:flex; align-items:center; gap:4px; background:#E2EDEE; padding:3px 9px; border-radius:8px;"><span style="width:5px; height:5px; border-radius:50%; background:#2E6E78;"></span><span style="font-size:11px; font-weight:600; color:#1C4E55;">Prospecto</span></span>
+        </div>
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:7px;">
+          <span style="font-size:12.5px; font-weight:600; color:#2E7D6B;">Hace 5 días</span>
+          <span style="display:flex; align-items:center; gap:5px;"><span style="width:6px; height:6px; border-radius:50%; background:#80847B;"></span><span style="font-size:12px; color:#5E6E70;">Nueva</span></span>
+        </div>
+      </div>
+
+      <!-- 3 María -->
+      <div style="background:#FFFFFF; border:1px solid #ECE6DA; border-left:3px solid #C9A25E; border-radius:16px; box-shadow:0 1px 2px rgba(14,46,52,0.05); padding:12px 16px;">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+          <span style="font-size:15px; font-weight:600; color:#15333A;">María López</span>
+          <span style="display:flex; align-items:center; gap:4px; background:#E2EFEB; padding:3px 9px; border-radius:8px;"><span style="width:5px; height:5px; border-radius:50%; background:#2E7D6B;"></span><span style="font-size:11px; font-weight:600; color:#1B5446;">Activo</span></span>
+        </div>
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:7px;">
+          <span style="font-size:12.5px; font-weight:600; color:#9A7327;">Hace 17 días</span>
+          <span style="display:flex; align-items:center; gap:5px;"><span style="width:6px; height:6px; border-radius:50%; background:#0E2E34;"></span><span style="font-size:12px; color:#5E6E70;">Propuesta</span></span>
+        </div>
+      </div>
+
+      <!-- 4 TechStart -->
+      <div style="background:#FFFFFF; border:1px solid #ECE6DA; border-left:3px solid #C9A25E; border-radius:16px; box-shadow:0 1px 2px rgba(14,46,52,0.05); padding:12px 16px;">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+          <span style="font-size:15px; font-weight:600; color:#15333A;">TechStart S.A.</span>
+          <span style="display:flex; align-items:center; gap:4px; background:#E2EFEB; padding:3px 9px; border-radius:8px;"><span style="width:5px; height:5px; border-radius:50%; background:#2E7D6B;"></span><span style="font-size:11px; font-weight:600; color:#1B5446;">Activo</span></span>
+        </div>
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:7px;">
+          <span style="font-size:12.5px; font-weight:600; color:#2E7D6B;">Hace 2 días</span>
+          <span style="display:flex; align-items:center; gap:5px;"><span style="width:6px; height:6px; border-radius:50%; background:#C9A25E;"></span><span style="font-size:12px; color:#5E6E70;">Negociación</span></span>
+        </div>
+      </div>
+
+      <!-- 5 Carlos -->
+      <div style="background:#FFFFFF; border:1px solid #ECE6DA; border-left:3px solid #CFC6B2; border-radius:16px; box-shadow:0 1px 2px rgba(14,46,52,0.05); padding:12px 16px;">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+          <span style="font-size:15px; font-weight:600; color:#15333A;">Carlos Ruiz</span>
+          <span style="display:flex; align-items:center; gap:4px; background:#E2EFEB; padding:3px 9px; border-radius:8px;"><span style="width:5px; height:5px; border-radius:50%; background:#2E7D6B;"></span><span style="font-size:11px; font-weight:600; color:#1B5446;">Activo</span></span>
+        </div>
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:7px;">
+          <span style="font-size:12.5px; font-weight:600; color:#2E7D6B;">Hace 10 días</span>
+          <span style="display:flex; align-items:center; gap:5px;"><span style="width:6px; height:6px; border-radius:50%; background:#80847B;"></span><span style="font-size:12px; color:#5E6E70;">Nueva</span></span>
+        </div>
+      </div>
+
+      <!-- 6 Lucía -->
+      <div style="background:#FFFFFF; border:1px solid #ECE6DA; border-left:3px solid #CFC6B2; border-radius:16px; box-shadow:0 1px 2px rgba(14,46,52,0.05); padding:12px 16px;">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+          <span style="font-size:15px; font-weight:600; color:#15333A;">Lucía Fernández</span>
+          <span style="display:flex; align-items:center; gap:4px; background:#E2EDEE; padding:3px 9px; border-radius:8px;"><span style="width:5px; height:5px; border-radius:50%; background:#2E6E78;"></span><span style="font-size:11px; font-weight:600; color:#1C4E55;">Prospecto</span></span>
+        </div>
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:7px;">
+          <span style="font-size:12.5px; font-weight:600; color:#2E7D6B;">Hace 7 días</span>
+          <span style="display:flex; align-items:center; gap:5px;"><span style="width:6px; height:6px; border-radius:50%; background:#80847B;"></span><span style="font-size:12px; color:#5E6E70;">Nueva</span></span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- FAB -->
+    <div style="position:absolute; right:16px; bottom:100px; width:56px; height:56px; border-radius:50%; background:#C9A25E; box-shadow:0 8px 24px rgba(201,162,94,0.45); display:flex; align-items:center; justify-content:center; cursor:pointer;">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#15333A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </div>
+
+    <!-- bottom nav -->
+    <div style="position:absolute; left:0; right:0; bottom:0; height:84px; background:rgba(255,255,255,0.92); backdrop-filter:blur(20px); border-top:1px solid #ECE6DA; display:flex; padding:8px 8px 22px;">
+      <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9AA199" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span style="font-size:10.5px; font-weight:500; color:#9AA199;">Inicio</span>
+      </div>
+      <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0E2E34" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span style="font-size:10.5px; font-weight:600; color:#0E2E34;">Clientes</span>
+      </div>
+      <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9AA199" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>
+        <span style="font-size:10.5px; font-weight:500; color:#9AA199;">Pipeline</span>
+      </div>
+      <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9AA199" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span style="font-size:10.5px; font-weight:500; color:#9AA199;">Ajustes</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ VARIANTE 2 — BÚSQUEDA ACTIVA ============ -->
+<div style="position:absolute; left:470px; top:0px; width:390px;">
+  <div data-drags-parent="1" style="font-family:'Geist',sans-serif; font-size:12px; font-weight:600; color:#9AA199; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:14px; cursor:default;">Variante 2 · Búsqueda activa</div>
+
+  <div data-screen-label="Clientes — Búsqueda" style="width:390px; height:844px; background:#FBF8F1; border-radius:30px; overflow:hidden; position:relative; box-shadow:0 16px 36px rgba(14,46,52,0.14); border:1px solid #ECE6DA;">
+
+    <div style="height:44px; display:flex; align-items:center; justify-content:space-between; padding:0 22px;">
+      <span style="font-size:14px; font-weight:600; color:#15333A;">9:41</span>
+      <div style="display:flex; gap:6px; align-items:center; color:#15333A;">
+        <svg width="17" height="11" viewBox="0 0 17 11" fill="none"><rect x="0" y="3" width="3" height="5" rx="1" fill="currentColor"/><rect x="4.5" y="1.5" width="3" height="6.5" rx="1" fill="currentColor"/><rect x="9" y="0" width="3" height="8" rx="1" fill="currentColor"/><rect x="13.5" y="0" width="3" height="8" rx="1" fill="currentColor" opacity="0.35"/></svg>
+        <svg width="22" height="11" viewBox="0 0 22 11" fill="none"><rect x="0.5" y="0.5" width="18" height="10" rx="2.5" stroke="currentColor" opacity="0.45"/><rect x="2" y="2" width="14" height="7" rx="1.2" fill="currentColor"/><rect x="20" y="3.5" width="1.5" height="4" rx="0.75" fill="currentColor" opacity="0.45"/></svg>
+      </div>
+    </div>
+
+    <div style="height:56px; display:flex; align-items:center; justify-content:space-between; padding:0 18px;">
+      <div style="display:flex; align-items:baseline; gap:8px;">
+        <span style="font-family:'Lora',serif; font-size:24px; font-weight:600; color:#15333A; letter-spacing:-0.01em;">Clientes</span>
+        <span style="font-size:13px; font-weight:600; color:#A87E33; font-variant-numeric:tabular-nums;">24</span>
+      </div>
+      <div style="width:36px; height:36px; border-radius:50%; background:linear-gradient(140deg,#D2B074,#B68E45); box-shadow:0 3px 10px rgba(201,162,94,0.35); display:flex; align-items:center; justify-content:center;">
+        <span style="font-family:'Lora',serif; font-size:16px; font-weight:600; color:#FFFFFF;">M</span>
+      </div>
+    </div>
+
+    <!-- search active -->
+    <div style="padding:6px 16px 0;">
+      <div style="height:44px; background:#FFFFFF; border:1.5px solid #C9A25E; box-shadow:0 0 0 3px rgba(201,162,94,0.18); border-radius:12px; display:flex; align-items:center; gap:10px; padding:0 12px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9A7327" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <span style="flex:1; font-size:15px; color:#15333A;">ana</span>
+        <div style="width:22px; height:22px; border-radius:50%; background:#F0ECE2; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#5E6E70" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <div style="padding:16px 16px 8px;">
+      <span style="font-size:12.5px; color:#9AA199;">2 resultados para <span style="font-weight:600; color:#5E6E70;">"ana"</span></span>
+    </div>
+
+    <div style="padding:0 16px; display:flex; flex-direction:column; gap:10px;">
+      <div style="background:#FFFFFF; border:1px solid #ECE6DA; border-left:3px solid #B0573F; border-radius:16px; box-shadow:0 1px 2px rgba(14,46,52,0.05); padding:12px 16px;">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+          <span style="font-size:15px; font-weight:600; color:#15333A;"><span style="background:#F4ECDB; border-radius:3px; padding:0 2px;">Ana</span> García</span>
+          <span style="display:flex; align-items:center; gap:4px; background:#E2EFEB; padding:3px 9px; border-radius:8px;"><span style="width:5px; height:5px; border-radius:50%; background:#2E7D6B;"></span><span style="font-size:11px; font-weight:600; color:#1B5446;">Activo</span></span>
+        </div>
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:7px;">
+          <span style="font-size:12.5px; font-weight:600; color:#B0573F;">Hace 23 días</span>
+          <span style="display:flex; align-items:center; gap:5px;"><span style="width:6px; height:6px; border-radius:50%; background:#2E6E78;"></span><span style="font-size:12px; color:#5E6E70;">En contacto</span></span>
+        </div>
+      </div>
+
+      <div style="background:#FFFFFF; border:1px solid #ECE6DA; border-left:3px solid #CFC6B2; border-radius:16px; box-shadow:0 1px 2px rgba(14,46,52,0.05); padding:12px 16px;">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+          <span style="font-size:15px; font-weight:600; color:#15333A;">Di<span style="background:#F4ECDB; border-radius:3px; padding:0 2px;">ana</span> Martín</span>
+          <span style="display:flex; align-items:center; gap:4px; background:#E2EDEE; padding:3px 9px; border-radius:8px;"><span style="width:5px; height:5px; border-radius:50%; background:#2E6E78;"></span><span style="font-size:11px; font-weight:600; color:#1C4E55;">Prospecto</span></span>
+        </div>
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:7px;">
+          <span style="font-size:12.5px; font-weight:600; color:#2E7D6B;">Hace 4 días</span>
+          <span style="display:flex; align-items:center; gap:5px;"><span style="width:6px; height:6px; border-radius:50%; background:#80847B;"></span><span style="font-size:12px; color:#5E6E70;">Nueva</span></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- bottom nav -->
+    <div style="position:absolute; left:0; right:0; bottom:0; height:84px; background:rgba(255,255,255,0.92); backdrop-filter:blur(20px); border-top:1px solid #ECE6DA; display:flex; padding:8px 8px 22px;">
+      <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9AA199" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span style="font-size:10.5px; font-weight:500; color:#9AA199;">Inicio</span></div>
+      <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0E2E34" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span style="font-size:10.5px; font-weight:600; color:#0E2E34;">Clientes</span></div>
+      <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9AA199" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg><span style="font-size:10.5px; font-weight:500; color:#9AA199;">Pipeline</span></div>
+      <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9AA199" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span style="font-size:10.5px; font-weight:500; color:#9AA199;">Ajustes</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ VARIANTE 3 — SIN RESULTADOS ============ -->
+<div style="position:absolute; left:0px; top:920px; width:390px;">
+  <div data-drags-parent="1" style="font-family:'Geist',sans-serif; font-size:12px; font-weight:600; color:#9AA199; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:14px; cursor:default;">Variante 3 · Sin resultados</div>
+
+  <div data-screen-label="Clientes — Sin resultados" style="width:390px; height:844px; background:#FBF8F1; border-radius:30px; overflow:hidden; position:relative; box-shadow:0 16px 36px rgba(14,46,52,0.14); border:1px solid #ECE6DA;">
+
+    <div style="height:44px; display:flex; align-items:center; justify-content:space-between; padding:0 22px;">
+      <span style="font-size:14px; font-weight:600; color:#15333A;">9:41</span>
+      <div style="display:flex; gap:6px; align-items:center; color:#15333A;">
+        <svg width="17" height="11" viewBox="0 0 17 11" fill="none"><rect x="0" y="3" width="3" height="5" rx="1" fill="currentColor"/><rect x="4.5" y="1.5" width="3" height="6.5" rx="1" fill="currentColor"/><rect x="9" y="0" width="3" height="8" rx="1" fill="currentColor"/><rect x="13.5" y="0" width="3" height="8" rx="1" fill="currentColor" opacity="0.35"/></svg>
+        <svg width="22" height="11" viewBox="0 0 22 11" fill="none"><rect x="0.5" y="0.5" width="18" height="10" rx="2.5" stroke="currentColor" opacity="0.45"/><rect x="2" y="2" width="14" height="7" rx="1.2" fill="currentColor"/><rect x="20" y="3.5" width="1.5" height="4" rx="0.75" fill="currentColor" opacity="0.45"/></svg>
+      </div>
+    </div>
+
+    <div style="height:56px; display:flex; align-items:center; justify-content:space-between; padding:0 18px;">
+      <div style="display:flex; align-items:baseline; gap:8px;">
+        <span style="font-family:'Lora',serif; font-size:24px; font-weight:600; color:#15333A; letter-spacing:-0.01em;">Clientes</span>
+        <span style="font-size:13px; font-weight:600; color:#A87E33; font-variant-numeric:tabular-nums;">24</span>
+      </div>
+      <div style="width:36px; height:36px; border-radius:50%; background:linear-gradient(140deg,#D2B074,#B68E45); box-shadow:0 3px 10px rgba(201,162,94,0.35); display:flex; align-items:center; justify-content:center;">
+        <span style="font-family:'Lora',serif; font-size:16px; font-weight:600; color:#FFFFFF;">M</span>
+      </div>
+    </div>
+
+    <div style="padding:6px 16px 0;">
+      <div style="height:44px; background:#FFFFFF; border:1px solid #DDD6C6; border-radius:12px; display:flex; align-items:center; gap:10px; padding:0 12px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A7A395" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <span style="flex:1; font-size:15px; color:#15333A;">xyz</span>
+        <div style="width:22px; height:22px; border-radius:50%; background:#F0ECE2; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#5E6E70" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <div style="position:absolute; top:150px; left:0; right:0; bottom:84px; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:0 44px; text-align:center;">
+      <div style="width:80px; height:80px; border-radius:24px; background:#F4F1E9; border:1px solid #E0D9C9; display:flex; align-items:center; justify-content:center; margin-bottom:18px;">
+        <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#A7A395" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      </div>
+      <div style="font-size:16px; font-weight:600; color:#15333A;">No encontramos "xyz"</div>
+      <div style="font-size:13px; color:#9AA199; margin-top:6px;">Prueba con otro nombre o empresa</div>
+      <div style="display:flex; align-items:center; gap:8px; height:42px; padding:0 18px; border-radius:24px; background:#FFFFFF; border:1px solid #DDD6C6; box-shadow:0 1px 2px rgba(14,46,52,0.06); margin-top:22px; cursor:pointer;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#15333A" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <span style="font-size:14px; font-weight:600; color:#15333A;">Crear nuevo cliente</span>
+      </div>
+    </div>
+
+    <!-- bottom nav -->
+    <div style="position:absolute; left:0; right:0; bottom:0; height:84px; background:rgba(255,255,255,0.92); backdrop-filter:blur(20px); border-top:1px solid #ECE6DA; display:flex; padding:8px 8px 22px;">
+      <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9AA199" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span style="font-size:10.5px; font-weight:500; color:#9AA199;">Inicio</span></div>
+      <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0E2E34" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span style="font-size:10.5px; font-weight:600; color:#0E2E34;">Clientes</span></div>
+      <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9AA199" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg><span style="font-size:10.5px; font-weight:500; color:#9AA199;">Pipeline</span></div>
+      <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9AA199" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span style="font-size:10.5px; font-weight:500; color:#9AA199;">Ajustes</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ VARIANTE 4 — FILTROS (bottom sheet) ============ -->
+<div style="position:absolute; left:470px; top:920px; width:390px;">
+  <div data-drags-parent="1" style="font-family:'Geist',sans-serif; font-size:12px; font-weight:600; color:#9AA199; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:14px; cursor:default;">Variante 4 · Bottom sheet de filtros</div>
+
+  <div data-screen-label="Clientes — Filtros" style="width:390px; height:844px; background:#FBF8F1; border-radius:30px; overflow:hidden; position:relative; box-shadow:0 16px 36px rgba(14,46,52,0.14); border:1px solid #ECE6DA;">
+
+    <!-- dimmed base -->
+    <div style="position:absolute; inset:0;">
+      <div style="height:44px; display:flex; align-items:center; justify-content:space-between; padding:0 22px;">
+        <span style="font-size:14px; font-weight:600; color:#15333A;">9:41</span>
+        <div style="display:flex; gap:6px; align-items:center; color:#15333A;">
+          <svg width="17" height="11" viewBox="0 0 17 11" fill="none"><rect x="0" y="3" width="3" height="5" rx="1" fill="currentColor"/><rect x="4.5" y="1.5" width="3" height="6.5" rx="1" fill="currentColor"/><rect x="9" y="0" width="3" height="8" rx="1" fill="currentColor"/><rect x="13.5" y="0" width="3" height="8" rx="1" fill="currentColor" opacity="0.35"/></svg>
+        </div>
+      </div>
+      <div style="height:56px; display:flex; align-items:center; justify-content:space-between; padding:0 18px;">
+        <div style="display:flex; align-items:baseline; gap:8px;"><span style="font-family:'Lora',serif; font-size:24px; font-weight:600; color:#15333A;">Clientes</span><span style="font-size:13px; font-weight:600; color:#A87E33;">24</span></div>
+        <div style="width:36px; height:36px; border-radius:50%; background:linear-gradient(140deg,#D2B074,#B68E45);"></div>
+      </div>
+      <div style="padding:6px 16px 0;"><div style="height:44px; background:#FFFFFF; border:1px solid #DDD6C6; border-radius:12px;"></div></div>
+      <div style="padding:14px 16px; display:flex; flex-direction:column; gap:10px;">
+        <div style="background:#FFFFFF; border:1px solid #ECE6DA; border-left:3px solid #B0573F; border-radius:16px; height:66px;"></div>
+        <div style="background:#FFFFFF; border:1px solid #ECE6DA; border-left:3px solid #C9A25E; border-radius:16px; height:66px;"></div>
+      </div>
+    </div>
+
+    <!-- overlay -->
+    <div style="position:absolute; inset:0; background:rgba(11,37,42,0.45);"></div>
+
+    <!-- sheet -->
+    <div style="position:absolute; left:0; right:0; bottom:0; background:#FFFFFF; border-radius:24px 24px 0 0; box-shadow:0 -16px 36px rgba(14,46,52,0.18); padding:12px 20px 24px;">
+      <div style="width:40px; height:4px; border-radius:999px; background:#E0D9C9; margin:0 auto 18px;"></div>
+      <div style="font-family:'Lora',serif; font-size:20px; font-weight:600; color:#15333A; letter-spacing:-0.01em;">Filtrar clientes</div>
+
+      <!-- por estado -->
+      <div style="font-size:12px; font-weight:600; color:#A87E33; letter-spacing:0.1em; text-transform:uppercase; margin:20px 0 10px;">Por estado</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+        <div style="display:flex; align-items:center; gap:6px; height:42px; padding:0 12px; border-radius:12px; background:#F4ECDB; border:1.5px solid #C9A25E;"><span style="width:7px; height:7px; border-radius:50%; background:#2E7D6B;"></span><span style="font-size:13.5px; font-weight:600; color:#15333A;">Activo</span></div>
+        <div style="display:flex; align-items:center; gap:6px; height:42px; padding:0 12px; border-radius:12px; background:#F4ECDB; border:1.5px solid #C9A25E;"><span style="width:7px; height:7px; border-radius:50%; background:#2E6E78;"></span><span style="font-size:13.5px; font-weight:600; color:#15333A;">Prospecto</span></div>
+        <div style="display:flex; align-items:center; gap:6px; height:42px; padding:0 12px; border-radius:12px; background:#FFFFFF; border:1px solid #DDD6C6;"><span style="width:7px; height:7px; border-radius:50%; background:#80847B;"></span><span style="font-size:13.5px; font-weight:500; color:#5E6E70;">Nuevo</span></div>
+        <div style="display:flex; align-items:center; gap:6px; height:42px; padding:0 12px; border-radius:12px; background:#FFFFFF; border:1px solid #DDD6C6;"><span style="width:7px; height:7px; border-radius:50%; background:#C9A25E;"></span><span style="font-size:13.5px; font-weight:500; color:#5E6E70;">Inactivo</span></div>
+      </div>
+
+      <!-- por prioridad -->
+      <div style="font-size:12px; font-weight:600; color:#A87E33; letter-spacing:0.1em; text-transform:uppercase; margin:18px 0 10px;">Por prioridad</div>
+      <div style="display:flex; gap:8px;">
+        <div style="flex:1; display:flex; align-items:center; justify-content:center; gap:6px; height:42px; border-radius:12px; background:#F6E7E0; border:1.5px solid #B0573F;"><span style="width:7px; height:7px; border-radius:50%; background:#B0573F;"></span><span style="font-size:13.5px; font-weight:600; color:#8A3F2C;">Alta</span></div>
+        <div style="flex:1; display:flex; align-items:center; justify-content:center; gap:6px; height:42px; border-radius:12px; background:#FFFFFF; border:1px solid #DDD6C6;"><span style="width:7px; height:7px; border-radius:50%; background:#C9A25E;"></span><span style="font-size:13.5px; font-weight:500; color:#5E6E70;">Media</span></div>
+        <div style="flex:1; display:flex; align-items:center; justify-content:center; gap:6px; height:42px; border-radius:12px; background:#FFFFFF; border:1px solid #DDD6C6;"><span style="width:7px; height:7px; border-radius:50%; background:#80847B;"></span><span style="font-size:13.5px; font-weight:500; color:#5E6E70;">Baja</span></div>
+      </div>
+
+      <!-- ordenar por -->
+      <div style="font-size:12px; font-weight:600; color:#A87E33; letter-spacing:0.1em; text-transform:uppercase; margin:18px 0 10px;">Ordenar por</div>
+      <div style="display:flex; flex-direction:column; gap:2px;">
+        <div style="display:flex; align-items:center; gap:11px; height:44px;">
+          <span style="width:20px; height:20px; border-radius:50%; border:6px solid #C9A25E; background:#FFFFFF; box-sizing:border-box;"></span>
+          <span style="font-size:14.5px; font-weight:500; color:#15333A;">Nombre A-Z</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:11px; height:44px;">
+          <span style="width:20px; height:20px; border-radius:50%; border:1.5px solid #CFC6B2; background:#FFFFFF; box-sizing:border-box;"></span>
+          <span style="font-size:14.5px; color:#5E6E70;">Último contacto</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:11px; height:44px;">
+          <span style="width:20px; height:20px; border-radius:50%; border:1.5px solid #CFC6B2; background:#FFFFFF; box-sizing:border-box;"></span>
+          <span style="font-size:14.5px; color:#5E6E70;">Prioridad</span>
+        </div>
+      </div>
+
+      <div style="height:1px; background:#F1ECE3; margin:14px 0 16px;"></div>
+
+      <div style="height:46px; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+        <span style="font-size:14.5px; font-weight:600; color:#5E6E70;">Limpiar</span>
+      </div>
+      <div style="height:50px; border-radius:24px; background:#C9A25E; box-shadow:0 4px 14px rgba(201,162,94,0.35); display:flex; align-items:center; justify-content:center; margin-top:8px; cursor:pointer;">
+        <span style="font-size:16px; font-weight:600; color:#15333A;">Aplicar filtros</span>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

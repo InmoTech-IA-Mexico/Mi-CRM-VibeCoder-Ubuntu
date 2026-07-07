@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;0,700;1,500&family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <meta name="design_doc_mode" content="canvas">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Geist', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+    .scrl::-webkit-scrollbar { display: none; }
+    .scrl { scrollbar-width: none; }
+  </style>
+</helmet>
+
+<!-- ============ VARIANTE 1 — VENTAS (CON DATOS) ============ -->
+<div style="position:absolute; left:0px; top:0px; width:390px;">
+  <div data-drags-parent="1" style="font-family:'Geist',sans-serif; font-size:12px; font-weight:600; color:#9AA199; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:14px; cursor:default;">Variante 1 · Ventas (con datos)</div>
+
+  <div data-screen-label="Ventas — Panel" style="width:390px; height:844px; background:#FBF8F1; border-radius:30px; overflow:hidden; position:relative; box-shadow:0 16px 36px rgba(14,46,52,0.14); border:1px solid #ECE6DA;">
+
+    <div style="height:44px; display:flex; align-items:center; justify-content:space-between; padding:0 22px;">
+      <span style="font-size:14px; font-weight:600; color:#15333A;">9:41</span>
+      <div style="display:flex; gap:6px; align-items:center; color:#15333A;">
+        <svg width="17" height="11" viewBox="0 0 17 11" fill="none"><rect x="0" y="3" width="3" height="5" rx="1" fill="currentColor"/><rect x="4.5" y="1.5" width="3" height="6.5" rx="1" fill="currentColor"/><rect x="9" y="0" width="3" height="8" rx="1" fill="currentColor"/><rect x="13.5" y="0" width="3" height="8" rx="1" fill="currentColor" opacity="0.35"/></svg>
+        <svg width="22" height="11" viewBox="0 0 22 11" fill="none"><rect x="0.5" y="0.5" width="18" height="10" rx="2.5" stroke="currentColor" opacity="0.45"/><rect x="2" y="2" width="14" height="7" rx="1.2" fill="currentColor"/><rect x="20" y="3.5" width="1.5" height="4" rx="0.75" fill="currentColor" opacity="0.45"/></svg>
+      </div>
+    </div>
+
+    <!-- header -->
+    <div style="height:56px; display:flex; align-items:center; justify-content:space-between; padding:0 18px;">
+      <div style="font-family:'Lora',serif; font-size:24px; font-weight:600; color:#15333A; letter-spacing:-0.01em;">Ventas</div>
+      <div style="width:36px; height:36px; border-radius:50%; background:linear-gradient(140deg,#D2B074,#B68E45); box-shadow:0 3px 10px rgba(201,162,94,0.35); display:flex; align-items:center; justify-content:center;">
+        <span style="font-family:'Lora',serif; font-size:16px; font-weight:600; color:#FFFFFF;">M</span>
+      </div>
+    </div>
+
+    <div class="scrl" style="position:absolute; top:100px; left:0; right:0; bottom:84px; overflow-y:auto; padding:8px 16px 20px;">
+
+      <!-- period chips -->
+      <div style="display:flex; gap:8px; margin-bottom:16px;">
+        <div style="display:flex; align-items:center; padding:7px 14px; border-radius:999px; background:#F4ECDB; border:1px solid #C9A25E;"><span style="font-size:13px; font-weight:600; color:#9A7327;">Este mes</span></div>
+        <div style="display:flex; align-items:center; padding:7px 14px; border-radius:999px; background:#FFFFFF; border:1px solid #DDD6C6;"><span style="font-size:13px; font-weight:500; color:#5E6E70;">Trimestre</span></div>
+        <div style="display:flex; align-items:center; padding:7px 14px; border-radius:999px; background:#FFFFFF; border:1px solid #DDD6C6;"><span style="font-size:13px; font-weight:500; color:#5E6E70;">Año</span></div>
+      </div>
+
+      <!-- filtro cliente (desplegable) -->
+      <div style="height:50px; background:#FFFFFF; border:1px solid #DDD6C6; border-radius:12px; display:flex; align-items:center; gap:10px; padding:0 14px; margin-bottom:16px; cursor:pointer;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9A7327" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span style="font-size:14.5px; font-weight:600; color:#15333A;">Todos los clientes</span>
+        <span style="font-size:12.5px; color:#9AA199;">· 24</span>
+        <span style="flex:1;"></span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A7A395" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+      </div>
+
+      <!-- hero total (petróleo) -->
+      <div style="background:linear-gradient(150deg,#16454C,#0E2E34); border-radius:20px; padding:20px; box-shadow:0 10px 26px rgba(14,46,52,0.22); position:relative; overflow:hidden;">
+        <div style="position:absolute; top:-40px; right:-30px; width:160px; height:160px; background:radial-gradient(circle, rgba(201,162,94,0.20), transparent 70%); pointer-events:none;"></div>
+        <div style="font-size:12px; font-weight:600; color:#C9A25E; letter-spacing:0.1em; text-transform:uppercase;">Total vendido · Este mes</div>
+        <div style="font-family:'Lora',serif; font-size:38px; font-weight:600; color:#F1EAD8; letter-spacing:-0.02em; margin-top:8px; font-variant-numeric:tabular-nums;">€24.800</div>
+        <div style="display:flex; align-items:center; gap:6px; margin-top:8px;">
+          <span style="display:flex; align-items:center; gap:3px; background:rgba(46,125,107,0.30); padding:3px 8px; border-radius:8px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7FD1B8" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15" transform="rotate(180 12 12)"/><polyline points="6 9 12 15 18 9"/></svg>
+            <span style="font-size:12px; font-weight:600; color:#9FE0CC;">+18%</span>
+          </span>
+          <span style="font-size:12.5px; color:#B8C2BF;">vs. mes anterior</span>
+        </div>
+      </div>
+
+      <!-- two KPIs -->
+      <div style="display:flex; gap:10px; margin-top:12px;">
+        <div style="flex:1; background:#FFFFFF; border:1px solid #ECE6DA; border-radius:16px; box-shadow:0 1px 2px rgba(14,46,52,0.05); padding:15px;">
+          <div style="font-size:11.5px; font-weight:600; color:#9AA199; letter-spacing:0.06em; text-transform:uppercase;">Ventas</div>
+          <div style="font-family:'Lora',serif; font-size:24px; font-weight:600; color:#15333A; margin-top:5px; font-variant-numeric:tabular-nums;">12</div>
+        </div>
+        <div style="flex:1; background:#FFFFFF; border:1px solid #ECE6DA; border-radius:16px; box-shadow:0 1px 2px rgba(14,46,52,0.05); padding:15px;">
+          <div style="font-size:11.5px; font-weight:600; color:#9AA199; letter-spacing:0.06em; text-transform:uppercase;">Ticket medio</div>
+          <div style="font-family:'Lora',serif; font-size:24px; font-weight:600; color:#15333A; margin-top:5px; font-variant-numeric:tabular-nums;">€2.067</div>
+        </div>
+      </div>
+
+      <!-- por canal -->
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin:24px 0 14px;">
+        <span style="font-family:'Lora',serif; font-size:18px; font-weight:600; color:#15333A;">Por canal</span>
+        <span style="font-size:12px; font-weight:600; color:#A87E33; letter-spacing:0.04em; text-transform:uppercase;">Origen</span>
+      </div>
+      <div style="background:#FFFFFF; border:1px solid #ECE6DA; border-radius:18px; box-shadow:0 1px 2px rgba(14,46,52,0.05); padding:16px; display:flex; flex-direction:column; gap:15px;">
+        <!-- whatsapp -->
+        <div>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#1C4E55" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+            <span style="flex:1; font-size:14px; font-weight:500; color:#15333A;">WhatsApp</span>
+            <span style="font-size:14px; font-weight:600; color:#15333A; font-variant-numeric:tabular-nums;">€11.200</span>
+            <span style="font-size:12px; color:#9AA199; width:34px; text-align:right;">45%</span>
+          </div>
+          <div style="height:7px; border-radius:4px; background:#F0ECE2; margin-top:8px; overflow:hidden;"><div style="width:45%; height:100%; border-radius:4px; background:#16454C;"></div></div>
+        </div>
+        <!-- referido -->
+        <div>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#1C4E55" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <span style="flex:1; font-size:14px; font-weight:500; color:#15333A;">Referido</span>
+            <span style="font-size:14px; font-weight:600; color:#15333A; font-variant-numeric:tabular-nums;">€6.400</span>
+            <span style="font-size:12px; color:#9AA199; width:34px; text-align:right;">26%</span>
+          </div>
+          <div style="height:7px; border-radius:4px; background:#F0ECE2; margin-top:8px; overflow:hidden;"><div style="width:26%; height:100%; border-radius:4px; background:#2E6E78;"></div></div>
+        </div>
+        <!-- web -->
+        <div>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#1C4E55" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            <span style="flex:1; font-size:14px; font-weight:500; color:#15333A;">Web</span>
+            <span style="font-size:14px; font-weight:600; color:#15333A; font-variant-numeric:tabular-nums;">€4.200</span>
+            <span style="font-size:12px; color:#9AA199; width:34px; text-align:right;">17%</span>
+          </div>
+          <div style="height:7px; border-radius:4px; background:#F0ECE2; margin-top:8px; overflow:hidden;"><div style="width:17%; height:100%; border-radius:4px; background:#5E8A90;"></div></div>
+        </div>
+        <!-- email -->
+        <div>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#1C4E55" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 5L2 7"/></svg>
+            <span style="flex:1; font-size:14px; font-weight:500; color:#15333A;">Email</span>
+            <span style="font-size:14px; font-weight:600; color:#15333A; font-variant-numeric:tabular-nums;">€3.000</span>
+            <span style="font-size:12px; color:#9AA199; width:34px; text-align:right;">12%</span>
+          </div>
+          <div style="height:7px; border-radius:4px; background:#F0ECE2; margin-top:8px; overflow:hidden;"><div style="width:12%; height:100%; border-radius:4px; background:#8FB0B4;"></div></div>
+        </div>
+      </div>
+
+      <!-- por responsable -->
+      <div style="margin:24px 0 14px;">
+        <span style="font-family:'Lora',serif; font-size:18px; font-weight:600; color:#15333A;">Por responsable</span>
+      </div>
+      <div style="background:#FFFFFF; border:1px solid #ECE6DA; border-radius:18px; box-shadow:0 1px 2px rgba(14,46,52,0.05); overflow:hidden;">
+        <div style="padding:13px 16px; display:flex; align-items:center; gap:12px;">
+          <div style="width:36px; height:36px; border-radius:50%; background:linear-gradient(140deg,#D2B074,#B68E45); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><span style="font-family:'Lora',serif; font-size:14px; font-weight:600; color:#FFFFFF;">M</span></div>
+          <div style="flex:1;"><div style="font-size:14.5px; font-weight:600; color:#15333A;">Marta Rodríguez</div><div style="font-size:12px; color:#9AA199; margin-top:1px;">6 ventas</div></div>
+          <span style="font-size:15px; font-weight:600; color:#15333A; font-variant-numeric:tabular-nums;">€14.800</span>
+        </div>
+        <div style="height:1px; background:#F1ECE3; margin:0 16px;"></div>
+        <div style="padding:13px 16px; display:flex; align-items:center; gap:12px;">
+          <div style="width:36px; height:36px; border-radius:50%; background:#E2EDEE; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><span style="font-family:'Lora',serif; font-size:14px; font-weight:600; color:#1C4E55;">C</span></div>
+          <div style="flex:1;"><div style="font-size:14.5px; font-weight:600; color:#15333A;">Carlos Rodríguez</div><div style="font-size:12px; color:#9AA199; margin-top:1px;">4 ventas</div></div>
+          <span style="font-size:15px; font-weight:600; color:#15333A; font-variant-numeric:tabular-nums;">€8.000</span>
+        </div>
+        <div style="height:1px; background:#F1ECE3; margin:0 16px;"></div>
+        <div style="padding:13px 16px; display:flex; align-items:center; gap:12px;">
+          <div style="width:36px; height:36px; border-radius:50%; background:#E8ECE2; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><span style="font-family:'Lora',serif; font-size:14px; font-weight:600; color:#586353;">L</span></div>
+          <div style="flex:1;"><div style="font-size:14.5px; font-weight:600; color:#15333A;">Lucía Sánchez</div><div style="font-size:12px; color:#9AA199; margin-top:1px;">2 ventas</div></div>
+          <span style="font-size:15px; font-weight:600; color:#15333A; font-variant-numeric:tabular-nums;">€2.000</span>
+        </div>
+      </div>
+
+      <!-- ventas recientes -->
+      <div style="margin:24px 0 14px;">
+        <span style="font-family:'Lora',serif; font-size:18px; font-weight:600; color:#15333A;">Ventas recientes</span>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <div style="background:#FFFFFF; border:1px solid #ECE6DA; border-radius:16px; box-shadow:0 1px 2px rgba(14,46,52,0.05); padding:13px 14px;">
+          <div style="display:flex; align-items:center; justify-content:space-between;">
+            <span style="font-size:14.5px; font-weight:600; color:#15333A;">Ana García</span>
+            <span style="font-size:15px; font-weight:700; color:#2E7D6B; font-variant-numeric:tabular-nums;">€8.000</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px; margin-top:6px;">
+            <span style="display:flex; align-items:center; gap:4px; background:#E2EDEE; padding:2px 8px; border-radius:8px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#1C4E55" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg><span style="font-size:11px; font-weight:600; color:#1C4E55;">WhatsApp</span></span>
+            <span style="font-size:12px; color:#9AA199;">Carlos · Hoy</span>
+          </div>
+        </div>
+        <div style="background:#FFFFFF; border:1px solid #ECE6DA; border-radius:16px; box-shadow:0 1px 2px rgba(14,46,52,0.05); padding:13px 14px;">
+          <div style="display:flex; align-items:center; justify-content:space-between;">
+            <span style="font-size:14.5px; font-weight:600; color:#15333A;">TechStart S.A.</span>
+            <span style="font-size:15px; font-weight:700; color:#2E7D6B; font-variant-numeric:tabular-nums;">€4.200</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px; margin-top:6px;">
+            <span style="display:flex; align-items:center; gap:4px; background:#E2EDEE; padding:2px 8px; border-radius:8px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#1C4E55" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg><span style="font-size:11px; font-weight:600; color:#1C4E55;">Web</span></span>
+            <span style="font-size:12px; color:#9AA199;">Marta · 23 jun</span>
+          </div>
+        </div>
+        <div style="background:#FFFFFF; border:1px solid #ECE6DA; border-radius:16px; box-shadow:0 1px 2px rgba(14,46,52,0.05); padding:13px 14px;">
+          <div style="display:flex; align-items:center; justify-content:space-between;">
+            <span style="font-size:14.5px; font-weight:600; color:#15333A;">Roberto Silva</span>
+            <span style="font-size:15px; font-weight:700; color:#2E7D6B; font-variant-numeric:tabular-nums;">€3.600</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px; margin-top:6px;">
+            <span style="display:flex; align-items:center; gap:4px; background:#F0ECE2; padding:2px 8px; border-radius:8px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#6B7268" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span style="font-size:11px; font-weight:600; color:#6B7268;">Referido</span></span>
+            <span style="font-size:12px; color:#9AA199;">Lucía · 21 jun</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- FAB nueva venta -->
+    <div style="position:absolute; right:16px; bottom:100px; height:52px; border-radius:26px; background:#C9A25E; box-shadow:0 8px 24px rgba(201,162,94,0.45); display:flex; align-items:center; gap:8px; padding:0 20px 0 16px; cursor:pointer;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#15333A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      <span style="font-size:15px; font-weight:700; color:#15333A;">Nueva venta</span>
+    </div>
+
+    <!-- bottom nav -->
+    <div style="position:absolute; left:0; right:0; bottom:0; height:84px; background:rgba(255,255,255,0.92); backdrop-filter:blur(20px); border-top:1px solid #ECE6DA; display:flex; padding:8px 4px 22px;">
+      <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#9AA199" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span style="font-size:10px; font-weight:500; color:#9AA199;">Inicio</span></div>
+      <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#9AA199" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span style="font-size:10px; font-weight:500; color:#9AA199;">Clientes</span></div>
+      <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#0E2E34" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 12h.01M18 12h.01"/></svg><span style="font-size:10px; font-weight:600; color:#0E2E34;">Ventas</span></div>
+      <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#9AA199" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg><span style="font-size:10px; font-weight:500; color:#9AA199;">Pipeline</span></div>
+      <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#9AA199" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span style="font-size:10px; font-weight:500; color:#9AA199;">Ajustes</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ VARIANTE 3 — SELECTOR DE CLIENTE ============ -->
+<div style="position:absolute; left:940px; top:0px; width:390px;">
+  <div data-drags-parent="1" style="font-family:'Geist',sans-serif; font-size:12px; font-weight:600; color:#9AA199; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:14px; cursor:default;">Variante 3 · Filtrar por cliente</div>
+
+  <div data-screen-label="Ventas — Selector cliente" style="width:390px; height:844px; background:#FBF8F1; border-radius:30px; overflow:hidden; position:relative; box-shadow:0 16px 36px rgba(14,46,52,0.14); border:1px solid #ECE6DA;">
+
+    <!-- dimmed base -->
+    <div style="position:absolute; inset:0;">
+      <div style="height:44px; display:flex; align-items:center; justify-content:space-between; padding:0 22px;">
+        <span style="font-size:14px; font-weight:600; color:#15333A;">9:41</span>
+        <div style="display:flex; gap:6px; align-items:center; color:#15333A;">
+          <svg width="17" height="11" viewBox="0 0 17 11" fill="none"><rect x="0" y="3" width="3" height="5" rx="1" fill="currentColor"/><rect x="4.5" y="1.5" width="3" height="6.5" rx="1" fill="currentColor"/><rect x="9" y="0" width="3" height="8" rx="1" fill="currentColor"/><rect x="13.5" y="0" width="3" height="8" rx="1" fill="currentColor" opacity="0.35"/></svg>
+        </div>
+      </div>
+      <div style="height:56px; display:flex; align-items:center; justify-content:space-between; padding:0 18px;">
+        <div style="font-family:'Lora',serif; font-size:24px; font-weight:600; color:#15333A;">Ventas</div>
+        <div style="width:36px; height:36px; border-radius:50%; background:linear-gradient(140deg,#D2B074,#B68E45);"></div>
+      </div>
+      <div style="padding:14px 16px;">
+        <div style="height:50px; background:#FFFFFF; border:1.5px solid #C9A25E; box-shadow:0 0 0 3px rgba(201,162,94,0.18); border-radius:12px; display:flex; align-items:center; gap:10px; padding:0 14px; margin-bottom:16px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9A7327" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <span style="font-size:14.5px; font-weight:600; color:#15333A;">Todos los clientes</span>
+          <span style="flex:1;"></span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9A7327" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
+        </div>
+        <div style="background:linear-gradient(150deg,#16454C,#0E2E34); border-radius:20px; padding:20px; height:118px;">
+          <div style="font-size:12px; font-weight:600; color:#C9A25E; letter-spacing:0.1em; text-transform:uppercase;">Total vendido · Este mes</div>
+          <div style="font-family:'Lora',serif; font-size:38px; font-weight:600; color:#F1EAD8; margin-top:8px;">€24.800</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- overlay -->
+    <div style="position:absolute; inset:0; background:rgba(11,37,42,0.45);"></div>
+
+    <!-- sheet -->
+    <div style="position:absolute; left:0; right:0; bottom:0; background:#FFFFFF; border-radius:24px 24px 0 0; box-shadow:0 -16px 36px rgba(14,46,52,0.18); padding:12px 20px 24px;">
+      <div style="width:40px; height:4px; border-radius:999px; background:#E0D9C9; margin:0 auto 16px;"></div>
+      <div style="font-family:'Lora',serif; font-size:20px; font-weight:600; color:#15333A; letter-spacing:-0.01em;">Ventas por cliente</div>
+
+      <!-- search -->
+      <div style="height:44px; background:#FBF8F1; border:1px solid #DDD6C6; border-radius:12px; display:flex; align-items:center; gap:10px; padding:0 12px; margin-top:14px;">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#A7A395" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <span style="font-size:14px; color:#9AA199;">Buscar cliente...</span>
+      </div>
+
+      <div class="scrl" style="margin-top:14px; max-height:340px; overflow-y:auto; display:flex; flex-direction:column; gap:8px;">
+        <!-- todos (selected) -->
+        <div style="display:flex; align-items:center; gap:12px; background:#F4ECDB; border:1.5px solid #C9A25E; border-radius:14px; padding:12px 14px; cursor:pointer;">
+          <div style="width:38px; height:38px; border-radius:50%; background:#0E2E34; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F3ECDC" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+          <div style="flex:1;"><div style="font-size:14.5px; font-weight:600; color:#15333A;">Todos los clientes</div><div style="font-size:12px; color:#9A7327; margin-top:1px;">24 clientes · 12 ventas</div></div>
+          <span style="font-size:15px; font-weight:700; color:#15333A; font-variant-numeric:tabular-nums;">€24.800</span>
+        </div>
+        <!-- ana -->
+        <div style="display:flex; align-items:center; gap:12px; background:#FFFFFF; border:1px solid #ECE6DA; border-radius:14px; padding:12px 14px; cursor:pointer;">
+          <div style="width:38px; height:38px; border-radius:50%; background:#F4ECDB; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><span style="font-family:'Lora',serif; font-size:15px; font-weight:600; color:#9A7327;">A</span></div>
+          <div style="flex:1;"><div style="font-size:14.5px; font-weight:600; color:#15333A;">Ana García</div><div style="font-size:12px; color:#9AA199; margin-top:1px;">2 ventas</div></div>
+          <span style="font-size:15px; font-weight:600; color:#15333A; font-variant-numeric:tabular-nums;">€8.000</span>
+        </div>
+        <!-- techstart -->
+        <div style="display:flex; align-items:center; gap:12px; background:#FFFFFF; border:1px solid #ECE6DA; border-radius:14px; padding:12px 14px; cursor:pointer;">
+          <div style="width:38px; height:38px; border-radius:50%; background:#E2EDEE; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><span style="font-family:'Lora',serif; font-size:15px; font-weight:600; color:#1C4E55;">T</span></div>
+          <div style="flex:1;"><div style="font-size:14.5px; font-weight:600; color:#15333A;">TechStart S.A.</div><div style="font-size:12px; color:#9AA199; margin-top:1px;">1 venta</div></div>
+          <span style="font-size:15px; font-weight:600; color:#15333A; font-variant-numeric:tabular-nums;">€4.200</span>
+        </div>
+        <!-- roberto -->
+        <div style="display:flex; align-items:center; gap:12px; background:#FFFFFF; border:1px solid #ECE6DA; border-radius:14px; padding:12px 14px; cursor:pointer;">
+          <div style="width:38px; height:38px; border-radius:50%; background:#E8ECE2; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><span style="font-family:'Lora',serif; font-size:15px; font-weight:600; color:#586353;">R</span></div>
+          <div style="flex:1;"><div style="font-size:14.5px; font-weight:600; color:#15333A;">Roberto Silva</div><div style="font-size:12px; color:#9AA199; margin-top:1px;">1 venta</div></div>
+          <span style="font-size:15px; font-weight:600; color:#15333A; font-variant-numeric:tabular-nums;">€3.600</span>
+        </div>
+        <!-- maría -->
+        <div style="display:flex; align-items:center; gap:12px; background:#FFFFFF; border:1px solid #ECE6DA; border-radius:14px; padding:12px 14px; cursor:pointer;">
+          <div style="width:38px; height:38px; border-radius:50%; background:#F6E7E0; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><span style="font-family:'Lora',serif; font-size:15px; font-weight:600; color:#8A3F2C;">M</span></div>
+          <div style="flex:1;"><div style="font-size:14.5px; font-weight:600; color:#15333A;">María López</div><div style="font-size:12px; color:#9AA199; margin-top:1px;">1 venta</div></div>
+          <span style="font-size:15px; font-weight:600; color:#15333A; font-variant-numeric:tabular-nums;">€2.400</span>
+        </div>
+      </div>
+
+      <div style="height:50px; border-radius:24px; background:#C9A25E; box-shadow:0 4px 14px rgba(201,162,94,0.35); display:flex; align-items:center; justify-content:center; margin-top:16px; cursor:pointer;">
+        <span style="font-size:16px; font-weight:600; color:#15333A;">Ver ventas</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ VARIANTE 4 — REGISTRAR VENTA (form) ============ -->
+<div style="position:absolute; left:1410px; top:0px; width:390px;">
+  <div data-drags-parent="1" style="font-family:'Geist',sans-serif; font-size:12px; font-weight:600; color:#9AA199; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:14px; cursor:default;">Variante 4 · Registrar venta (alta)</div>
+
+  <div data-screen-label="Ventas — Nueva venta" style="width:390px; height:844px; background:#FBF8F1; border-radius:30px; overflow:hidden; position:relative; box-shadow:0 16px 36px rgba(14,46,52,0.14); border:1px solid #ECE6DA;">
+
+    <div style="height:44px; display:flex; align-items:center; justify-content:space-between; padding:0 22px;">
+      <span style="font-size:14px; font-weight:600; color:#15333A;">9:41</span>
+      <div style="display:flex; gap:6px; align-items:center; color:#15333A;">
+        <svg width="17" height="11" viewBox="0 0 17 11" fill="none"><rect x="0" y="3" width="3" height="5" rx="1" fill="currentColor"/><rect x="4.5" y="1.5" width="3" height="6.5" rx="1" fill="currentColor"/><rect x="9" y="0" width="3" height="8" rx="1" fill="currentColor"/><rect x="13.5" y="0" width="3" height="8" rx="1" fill="currentColor" opacity="0.35"/></svg>
+        <svg width="22" height="11" viewBox="0 0 22 11" fill="none"><rect x="0.5" y="0.5" width="18" height="10" rx="2.5" stroke="currentColor" opacity="0.45"/><rect x="2" y="2" width="14" height="7" rx="1.2" fill="currentColor"/><rect x="20" y="3.5" width="1.5" height="4" rx="0.75" fill="currentColor" opacity="0.45"/></svg>
+      </div>
+    </div>
+
+    <!-- header -->
+    <div style="height:56px; display:flex; align-items:center; justify-content:center; padding:0 14px; position:relative;">
+      <div style="position:absolute; left:14px; width:44px; height:44px; border-radius:12px; background:#FFFFFF; border:1px solid #DDD6C6; box-shadow:0 1px 2px rgba(14,46,52,0.06); display:flex; align-items:center; justify-content:center; cursor:pointer;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#15333A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </div>
+      <div style="font-family:'Lora',serif; font-size:18px; font-weight:600; color:#15333A; letter-spacing:-0.01em;">Registrar venta</div>
+      <div style="position:absolute; right:14px; padding:8px 14px; border-radius:999px; background:#C9A25E; box-shadow:0 2px 6px rgba(201,162,94,0.32); cursor:pointer;">
+        <span style="font-size:14px; font-weight:600; color:#15333A;">Guardar</span>
+      </div>
+    </div>
+
+    <div class="scrl" style="position:absolute; top:100px; left:0; right:0; bottom:0; overflow-y:auto; padding:8px 16px 24px; display:flex; flex-direction:column; gap:20px;">
+
+      <!-- cliente -->
+      <div>
+        <div style="font-size:12px; font-weight:600; color:#A87E33; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:12px;">Cliente <span style="color:#B0573F;">*</span></div>
+        <div style="background:#FFFFFF; border:1px solid #ECE6DA; border-radius:18px; box-shadow:0 1px 2px rgba(14,46,52,0.05); padding:14px 16px; display:flex; align-items:center; gap:12px; cursor:pointer;">
+          <div style="width:40px; height:40px; border-radius:50%; background:#F4ECDB; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><span style="font-family:'Lora',serif; font-size:16px; font-weight:600; color:#9A7327;">A</span></div>
+          <div style="flex:1;">
+            <div style="font-size:15px; font-weight:600; color:#15333A;">Ana García</div>
+            <div style="font-size:12.5px; color:#9AA199; margin-top:1px;">García &amp; Asociados</div>
+          </div>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A7A395" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+      </div>
+
+      <!-- venta -->
+      <div>
+        <div style="font-size:12px; font-weight:600; color:#A87E33; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:12px;">Venta</div>
+        <div style="background:#FFFFFF; border:1px solid #ECE6DA; border-radius:18px; box-shadow:0 1px 2px rgba(14,46,52,0.05); overflow:hidden;">
+          <div style="padding:16px;">
+            <div style="font-size:13px; font-weight:500; color:#15333A; margin-bottom:7px;">Importe <span style="color:#B0573F;">*</span></div>
+            <div style="height:54px; border:1px solid #DDD6C6; border-radius:12px; display:flex; align-items:center; gap:8px; padding:0 14px;">
+              <span style="font-size:22px; font-weight:600; color:#9AA199;">€</span>
+              <span style="flex:1; font-size:22px; font-weight:600; color:#15333A; font-variant-numeric:tabular-nums;">8.000</span>
+            </div>
+          </div>
+          <div style="height:1px; background:#F1ECE3; margin:0 16px;"></div>
+          <div style="padding:14px 16px; display:flex; align-items:center; gap:12px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#A7A395" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <span style="flex:1; font-size:14.5px; color:#15333A;">Fecha</span>
+            <span style="font-size:14.5px; font-weight:500; color:#15333A;">Hoy, 25 jun</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A7A395" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+          </div>
+          <div style="height:1px; background:#F1ECE3; margin:0 16px;"></div>
+          <div style="padding:14px 16px; display:flex; align-items:center; gap:12px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#A7A395" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></svg>
+            <span style="flex:1; font-size:14.5px; color:#15333A;">Oportunidad</span>
+            <span style="font-size:14.5px; font-weight:500; color:#15333A;">Contrato anual</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A7A395" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- canal -->
+      <div>
+        <div style="font-size:12px; font-weight:600; color:#A87E33; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:12px;">¿Cómo nos contactó?</div>
+        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px;">
+          <div style="display:flex; flex-direction:column; align-items:center; gap:6px; padding:11px 0; border-radius:12px; background:#F4ECDB; border:1.5px solid #C9A25E; box-shadow:0 2px 10px rgba(201,162,94,0.25);"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#9A7327" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg><span style="font-size:12px; font-weight:600; color:#15333A;">WhatsApp</span></div>
+          <div style="display:flex; flex-direction:column; align-items:center; gap:6px; padding:11px 0; border-radius:12px; background:#FFFFFF; border:1px solid #DDD6C6;"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#A7A395" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 5L2 7"/></svg><span style="font-size:12px; font-weight:500; color:#5E6E70;">Email</span></div>
+          <div style="display:flex; flex-direction:column; align-items:center; gap:6px; padding:11px 0; border-radius:12px; background:#FFFFFF; border:1px solid #DDD6C6;"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#A7A395" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg><span style="font-size:12px; font-weight:500; color:#5E6E70;">Web</span></div>
+          <div style="display:flex; flex-direction:column; align-items:center; gap:6px; padding:11px 0; border-radius:12px; background:#FFFFFF; border:1px solid #DDD6C6;"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#A7A395" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg><span style="font-size:12px; font-weight:500; color:#5E6E70;">Teléfono</span></div>
+          <div style="display:flex; flex-direction:column; align-items:center; gap:6px; padding:11px 0; border-radius:12px; background:#FFFFFF; border:1px solid #DDD6C6;"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#A7A395" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span style="font-size:12px; font-weight:500; color:#5E6E70;">Referido</span></div>
+          <div style="display:flex; flex-direction:column; align-items:center; gap:6px; padding:11px 0; border-radius:12px; background:#FFFFFF; border:1px solid #DDD6C6;"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#A7A395" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8"/></svg><span style="font-size:12px; font-weight:500; color:#5E6E70;">Redes</span></div>
+        </div>
+      </div>
+
+      <!-- registrado por -->
+      <div>
+        <div style="font-size:12px; font-weight:600; color:#A87E33; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:12px;">Registrado por</div>
+        <div style="background:#FFFFFF; border:1px solid #ECE6DA; border-radius:18px; box-shadow:0 1px 2px rgba(14,46,52,0.05); padding:14px 16px; display:flex; align-items:center; gap:12px; cursor:pointer;">
+          <div style="width:36px; height:36px; border-radius:50%; background:#E2EDEE; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><span style="font-family:'Lora',serif; font-size:14px; font-weight:600; color:#1C4E55;">C</span></div>
+          <span style="flex:1; font-size:14.5px; font-weight:500; color:#15333A;">Carlos Rodríguez</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A7A395" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+      </div>
+
+      <!-- note -->
+      <div style="display:flex; align-items:flex-start; gap:9px; background:#F4F1E9; border:1px solid #E0D9C9; border-radius:12px; padding:12px 13px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#80847B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; margin-top:1px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        <span style="font-size:12px; line-height:1.45; color:#5E6E70;">Se añadirá al historial del cliente. El estado se mantiene en <span style="font-weight:600; color:#1B5446;">Activo</span>.</span>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ============ VARIANTE 2 — VENTAS (VACÍO) ============ -->
+<div style="position:absolute; left:470px; top:0px; width:390px;">
+  <div data-drags-parent="1" style="font-family:'Geist',sans-serif; font-size:12px; font-weight:600; color:#9AA199; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:14px; cursor:default;">Variante 2 · Ventas (sin registros)</div>
+
+  <div data-screen-label="Ventas — Vacío" style="width:390px; height:844px; background:#FBF8F1; border-radius:30px; overflow:hidden; position:relative; box-shadow:0 16px 36px rgba(14,46,52,0.14); border:1px solid #ECE6DA;">
+
+    <div style="height:44px; display:flex; align-items:center; justify-content:space-between; padding:0 22px;">
+      <span style="font-size:14px; font-weight:600; color:#15333A;">9:41</span>
+      <div style="display:flex; gap:6px; align-items:center; color:#15333A;">
+        <svg width="17" height="11" viewBox="0 0 17 11" fill="none"><rect x="0" y="3" width="3" height="5" rx="1" fill="currentColor"/><rect x="4.5" y="1.5" width="3" height="6.5" rx="1" fill="currentColor"/><rect x="9" y="0" width="3" height="8" rx="1" fill="currentColor"/><rect x="13.5" y="0" width="3" height="8" rx="1" fill="currentColor" opacity="0.35"/></svg>
+        <svg width="22" height="11" viewBox="0 0 22 11" fill="none"><rect x="0.5" y="0.5" width="18" height="10" rx="2.5" stroke="currentColor" opacity="0.45"/><rect x="2" y="2" width="14" height="7" rx="1.2" fill="currentColor"/><rect x="20" y="3.5" width="1.5" height="4" rx="0.75" fill="currentColor" opacity="0.45"/></svg>
+      </div>
+    </div>
+
+    <div style="height:56px; display:flex; align-items:center; justify-content:space-between; padding:0 18px;">
+      <div style="font-family:'Lora',serif; font-size:24px; font-weight:600; color:#15333A; letter-spacing:-0.01em;">Ventas</div>
+      <div style="width:36px; height:36px; border-radius:50%; background:linear-gradient(140deg,#D2B074,#B68E45); box-shadow:0 3px 10px rgba(201,162,94,0.35); display:flex; align-items:center; justify-content:center;">
+        <span style="font-family:'Lora',serif; font-size:16px; font-weight:600; color:#FFFFFF;">M</span>
+      </div>
+    </div>
+
+    <div style="position:absolute; top:140px; left:0; right:0; bottom:84px; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:0 44px; text-align:center;">
+      <div style="position:relative; margin-bottom:22px;">
+        <div style="position:absolute; inset:-16px; background:radial-gradient(circle, rgba(201,162,94,0.18), transparent 70%); pointer-events:none;"></div>
+        <div style="position:relative; width:88px; height:88px; border-radius:24px; background:#F4ECDB; border:1px solid #E0C795; display:flex; align-items:center; justify-content:center; box-shadow:0 8px 24px rgba(201,162,94,0.25);">
+          <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#C9A25E" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 12h.01M18 12h.01"/></svg>
+        </div>
+      </div>
+      <div style="font-family:'Lora',serif; font-size:22px; font-weight:600; color:#15333A; letter-spacing:-0.01em;">Aún no hay ventas</div>
+      <div style="font-size:14px; line-height:1.5; color:#9AA199; margin-top:8px; max-width:270px;">Cuando registres una venta desde la ficha de un cliente, aquí verás el total, el desglose por canal y por responsable.</div>
+      <div style="display:flex; align-items:center; gap:8px; height:46px; padding:0 20px; border-radius:24px; background:#C9A25E; box-shadow:0 4px 14px rgba(201,162,94,0.35); margin-top:24px; cursor:pointer;">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#15333A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span style="font-size:15px; font-weight:600; color:#15333A;">Ir a clientes</span>
+      </div>
+    </div>
+
+    <!-- bottom nav -->
+    <div style="position:absolute; left:0; right:0; bottom:0; height:84px; background:rgba(255,255,255,0.92); backdrop-filter:blur(20px); border-top:1px solid #ECE6DA; display:flex; padding:8px 4px 22px;">
+      <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#9AA199" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span style="font-size:10px; font-weight:500; color:#9AA199;">Inicio</span></div>
+      <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#9AA199" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span style="font-size:10px; font-weight:500; color:#9AA199;">Clientes</span></div>
+      <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#0E2E34" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 12h.01M18 12h.01"/></svg><span style="font-size:10px; font-weight:600; color:#0E2E34;">Ventas</span></div>
+      <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#9AA199" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg><span style="font-size:10px; font-weight:500; color:#9AA199;">Pipeline</span></div>
+      <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#9AA199" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span style="font-size:10px; font-weight:500; color:#9AA199;">Ajustes</span></div>
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

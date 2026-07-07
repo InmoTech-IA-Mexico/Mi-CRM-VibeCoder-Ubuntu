@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;0,700;1,500&family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <meta name="design_doc_mode" content="canvas">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Geist', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+    @keyframes glowpulse { 0%,100% { opacity:0.5; transform:scale(1); } 50% { opacity:0.9; transform:scale(1.08); } }
+  </style>
+</helmet>
+
+<!-- ============ ADMIN PASO 1 ============ -->
+<div style="position:absolute; left:0px; top:0px; width:390px;">
+  <div data-drags-parent="1" style="font-family:'Geist',sans-serif; font-size:12px; font-weight:600; color:#9AA199; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:14px; cursor:default;">Admin · Paso 1 — Crear contraseña</div>
+
+  <div data-screen-label="Activación Admin — Paso 1" style="width:390px; height:844px; background:#FBF8F1; border-radius:30px; overflow:hidden; position:relative; box-shadow:0 16px 36px rgba(14,46,52,0.14); border:1px solid #ECE6DA;">
+    <div style="position:absolute; inset:0; background:radial-gradient(circle at 50% 24%, rgba(201,162,94,0.10), transparent 56%); pointer-events:none;"></div>
+
+    <div style="height:44px; display:flex; align-items:center; justify-content:space-between; padding:0 22px;">
+      <span style="font-size:14px; font-weight:600; color:#15333A;">9:41</span>
+      <div style="display:flex; gap:6px; align-items:center; color:#15333A;">
+        <svg width="17" height="11" viewBox="0 0 17 11" fill="none"><rect x="0" y="3" width="3" height="5" rx="1" fill="currentColor"/><rect x="4.5" y="1.5" width="3" height="6.5" rx="1" fill="currentColor"/><rect x="9" y="0" width="3" height="8" rx="1" fill="currentColor"/><rect x="13.5" y="0" width="3" height="8" rx="1" fill="currentColor" opacity="0.35"/></svg>
+        <svg width="22" height="11" viewBox="0 0 22 11" fill="none"><rect x="0.5" y="0.5" width="18" height="10" rx="2.5" stroke="currentColor" opacity="0.45"/><rect x="2" y="2" width="14" height="7" rx="1.2" fill="currentColor"/><rect x="20" y="3.5" width="1.5" height="4" rx="0.75" fill="currentColor" opacity="0.45"/></svg>
+      </div>
+    </div>
+
+    <div style="padding:24px 24px 0;">
+      <!-- progress -->
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+        <div style="width:26px; height:7px; border-radius:4px; background:#C9A25E;"></div>
+        <div style="width:7px; height:7px; border-radius:50%; background:#E0D9C9;"></div>
+        <div style="width:7px; height:7px; border-radius:50%; background:#E0D9C9;"></div>
+        <span style="font-size:12px; font-weight:600; color:#A87E33; margin-left:auto; letter-spacing:0.04em;">Paso 1 de 3</span>
+      </div>
+    </div>
+
+    <div style="padding:24px;">
+      <div style="font-family:'Lora',serif; font-size:30px; font-weight:600; color:#15333A; letter-spacing:-0.02em;">Hola, <span style="color:#C9A25E;">Marta</span></div>
+      <div style="font-size:14.5px; color:#5E6E70; margin-top:8px;">Crea una contraseña segura para tu cuenta</div>
+
+      <div style="background:#FFFFFF; border:1px solid #ECE6DA; border-radius:20px; box-shadow:0 8px 24px rgba(14,46,52,0.08); padding:20px; margin-top:24px;">
+        <div style="font-size:13px; font-weight:500; color:#15333A; margin-bottom:7px;">Nueva contraseña</div>
+        <div style="height:48px; border:1px solid #DDD6C6; border-radius:12px; display:flex; align-items:center; gap:10px; padding:0 12px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A7A395" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <span style="flex:1; font-size:15px; color:#15333A;">••••••••••</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A7A395" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px; margin-top:10px;">
+          <div style="flex:1; display:flex; gap:5px;">
+            <div style="flex:1; height:5px; border-radius:3px; background:#2E7D6B;"></div>
+            <div style="flex:1; height:5px; border-radius:3px; background:#2E7D6B;"></div>
+            <div style="flex:1; height:5px; border-radius:3px; background:#2E7D6B;"></div>
+            <div style="flex:1; height:5px; border-radius:3px; background:#ECE6DA;"></div>
+          </div>
+          <span style="font-size:11.5px; font-weight:600; color:#1B5446;">Fuerte</span>
+        </div>
+
+        <div style="font-size:13px; font-weight:500; color:#15333A; margin:16px 0 7px;">Confirmar contraseña</div>
+        <div style="height:48px; border:1px solid #DDD6C6; border-radius:12px; display:flex; align-items:center; gap:10px; padding:0 12px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A7A395" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <span style="flex:1; font-size:15px; color:#15333A;">••••••••••</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A7A395" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+        </div>
+      </div>
+
+      <div style="height:50px; border-radius:24px; background:#C9A25E; box-shadow:0 4px 14px rgba(201,162,94,0.35); display:flex; align-items:center; justify-content:center; margin-top:24px; cursor:pointer;">
+        <span style="font-size:16px; font-weight:600; color:#15333A;">Continuar</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ OPERATIVO PASO 1 ============ -->
+<div style="position:absolute; left:470px; top:0px; width:390px;">
+  <div data-drags-parent="1" style="font-family:'Geist',sans-serif; font-size:12px; font-weight:600; color:#9AA199; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:14px; cursor:default;">Operativo · Paso 1 — Crear contraseña</div>
+
+  <div data-screen-label="Activación Operativo — Paso 1" style="width:390px; height:844px; background:#FBF8F1; border-radius:30px; overflow:hidden; position:relative; box-shadow:0 16px 36px rgba(14,46,52,0.14); border:1px solid #ECE6DA;">
+    <div style="position:absolute; inset:0; background:radial-gradient(circle at 50% 24%, rgba(201,162,94,0.10), transparent 56%); pointer-events:none;"></div>
+
+    <div style="height:44px; display:flex; align-items:center; justify-content:space-between; padding:0 22px;">
+      <span style="font-size:14px; font-weight:600; color:#15333A;">9:41</span>
+      <div style="display:flex; gap:6px; align-items:center; color:#15333A;">
+        <svg width="17" height="11" viewBox="0 0 17 11" fill="none"><rect x="0" y="3" width="3" height="5" rx="1" fill="currentColor"/><rect x="4.5" y="1.5" width="3" height="6.5" rx="1" fill="currentColor"/><rect x="9" y="0" width="3" height="8" rx="1" fill="currentColor"/><rect x="13.5" y="0" width="3" height="8" rx="1" fill="currentColor" opacity="0.35"/></svg>
+        <svg width="22" height="11" viewBox="0 0 22 11" fill="none"><rect x="0.5" y="0.5" width="18" height="10" rx="2.5" stroke="currentColor" opacity="0.45"/><rect x="2" y="2" width="14" height="7" rx="1.2" fill="currentColor"/><rect x="20" y="3.5" width="1.5" height="4" rx="0.75" fill="currentColor" opacity="0.45"/></svg>
+      </div>
+    </div>
+
+    <div style="padding:24px 24px 0;">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+        <div style="width:26px; height:7px; border-radius:4px; background:#C9A25E;"></div>
+        <div style="width:7px; height:7px; border-radius:50%; background:#E0D9C9;"></div>
+        <span style="font-size:12px; font-weight:600; color:#A87E33; margin-left:auto; letter-spacing:0.04em;">Paso 1 de 2</span>
+      </div>
+    </div>
+
+    <div style="padding:24px;">
+      <div style="font-family:'Lora',serif; font-size:30px; font-weight:600; color:#15333A; letter-spacing:-0.02em;">Hola, <span style="color:#C9A25E;">Carlos</span></div>
+      <div style="font-size:14.5px; color:#5E6E70; margin-top:8px;">Crea tu contraseña para acceder al CRM</div>
+
+      <div style="background:#FFFFFF; border:1px solid #ECE6DA; border-radius:20px; box-shadow:0 8px 24px rgba(14,46,52,0.08); padding:20px; margin-top:24px;">
+        <div style="font-size:13px; font-weight:500; color:#15333A; margin-bottom:7px;">Nueva contraseña</div>
+        <div style="height:48px; border:1px solid #DDD6C6; border-radius:12px; display:flex; align-items:center; gap:10px; padding:0 12px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A7A395" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <span style="flex:1; font-size:15px; color:#15333A;">••••••••</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A7A395" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px; margin-top:10px;">
+          <div style="flex:1; display:flex; gap:5px;">
+            <div style="flex:1; height:5px; border-radius:3px; background:#C9A25E;"></div>
+            <div style="flex:1; height:5px; border-radius:3px; background:#C9A25E;"></div>
+            <div style="flex:1; height:5px; border-radius:3px; background:#ECE6DA;"></div>
+            <div style="flex:1; height:5px; border-radius:3px; background:#ECE6DA;"></div>
+          </div>
+          <span style="font-size:11.5px; font-weight:600; color:#9A7327;">Media</span>
+        </div>
+
+        <div style="font-size:13px; font-weight:500; color:#15333A; margin:16px 0 7px;">Confirmar contraseña</div>
+        <div style="height:48px; border:1px solid #DDD6C6; border-radius:12px; display:flex; align-items:center; gap:10px; padding:0 12px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A7A395" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <span style="flex:1; font-size:15px; color:#15333A;">••••••••</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A7A395" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+        </div>
+      </div>
+
+      <div style="height:50px; border-radius:24px; background:#C9A25E; box-shadow:0 4px 14px rgba(201,162,94,0.35); display:flex; align-items:center; justify-content:center; margin-top:24px; cursor:pointer;">
+        <span style="font-size:16px; font-weight:600; color:#15333A;">Continuar</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ ADMIN PASO 2 ============ -->
+<div style="position:absolute; left:0px; top:920px; width:390px;">
+  <div data-drags-parent="1" style="font-family:'Geist',sans-serif; font-size:12px; font-weight:600; color:#9AA199; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:14px; cursor:default;">Admin · Paso 2 — Datos del negocio</div>
+
+  <div data-screen-label="Activación Admin — Paso 2" style="width:390px; height:844px; background:#FBF8F1; border-radius:30px; overflow:hidden; position:relative; box-shadow:0 16px 36px rgba(14,46,52,0.14); border:1px solid #ECE6DA;">
+    <div style="position:absolute; inset:0; background:radial-gradient(circle at 50% 24%, rgba(201,162,94,0.10), transparent 56%); pointer-events:none;"></div>
+
+    <div style="height:44px; display:flex; align-items:center; justify-content:space-between; padding:0 22px;">
+      <span style="font-size:14px; font-weight:600; color:#15333A;">9:41</span>
+      <div style="display:flex; gap:6px; align-items:center; color:#15333A;">
+        <svg width="17" height="11" viewBox="0 0 17 11" fill="none"><rect x="0" y="3" width="3" height="5" rx="1" fill="currentColor"/><rect x="4.5" y="1.5" width="3" height="6.5" rx="1" fill="currentColor"/><rect x="9" y="0" width="3" height="8" rx="1" fill="currentColor"/><rect x="13.5" y="0" width="3" height="8" rx="1" fill="currentColor" opacity="0.35"/></svg>
+        <svg width="22" height="11" viewBox="0 0 22 11" fill="none"><rect x="0.5" y="0.5" width="18" height="10" rx="2.5" stroke="currentColor" opacity="0.45"/><rect x="2" y="2" width="14" height="7" rx="1.2" fill="currentColor"/><rect x="20" y="3.5" width="1.5" height="4" rx="0.75" fill="currentColor" opacity="0.45"/></svg>
+      </div>
+    </div>
+
+    <div style="padding:24px 24px 0;">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+        <div style="width:26px; height:7px; border-radius:4px; background:#C9A25E;"></div>
+        <div style="width:26px; height:7px; border-radius:4px; background:#C9A25E;"></div>
+        <div style="width:7px; height:7px; border-radius:50%; background:#E0D9C9;"></div>
+        <span style="font-size:12px; font-weight:600; color:#A87E33; margin-left:auto; letter-spacing:0.04em;">Paso 2 de 3</span>
+      </div>
+    </div>
+
+    <div style="padding:24px;">
+      <div style="font-family:'Lora',serif; font-size:28px; font-weight:600; color:#15333A; letter-spacing:-0.02em;">Configura tu negocio</div>
+      <div style="font-size:14.5px; color:#5E6E70; margin-top:8px;">Este nombre aparecerá en tu CRM</div>
+
+      <div style="background:#FFFFFF; border:1px solid #ECE6DA; border-radius:20px; box-shadow:0 8px 24px rgba(14,46,52,0.08); padding:20px; margin-top:24px;">
+        <div style="font-size:13px; font-weight:500; color:#15333A; margin-bottom:7px;">Nombre del negocio</div>
+        <div style="height:48px; border:1px solid #DDD6C6; border-radius:12px; display:flex; align-items:center; gap:10px; padding:0 12px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A7A395" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01M16 6h.01M12 6h.01M12 10h.01M12 14h.01M16 10h.01M16 14h.01M8 10h.01M8 14h.01"/></svg>
+          <span style="font-size:15px; font-weight:500; color:#15333A;">InmoTech</span>
+        </div>
+
+        <div style="font-size:13px; font-weight:500; color:#15333A; margin:16px 0 7px;">Zona horaria</div>
+        <div style="height:48px; border:1px solid #DDD6C6; border-radius:12px; display:flex; align-items:center; gap:10px; padding:0 12px; cursor:pointer;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A7A395" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          <span style="flex:1; font-size:15px; font-weight:500; color:#15333A;">América/Mexico_City</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A7A395" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+
+        <div style="display:flex; align-items:flex-start; gap:9px; background:#F4F1E9; border:1px solid #E0D9C9; border-radius:12px; padding:12px 13px; margin-top:16px;">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#80847B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; margin-top:1px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          <span style="font-size:12.5px; line-height:1.45; color:#5E6E70;">Todas las fechas y recordatorios se mostrarán en esta zona horaria</span>
+        </div>
+      </div>
+
+      <div style="height:50px; border-radius:24px; background:#C9A25E; box-shadow:0 4px 14px rgba(201,162,94,0.35); display:flex; align-items:center; justify-content:center; margin-top:24px; cursor:pointer;">
+        <span style="font-size:16px; font-weight:600; color:#15333A;">Continuar</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ OPERATIVO PASO 2 — BIENVENIDA ============ -->
+<div style="position:absolute; left:470px; top:920px; width:390px;">
+  <div data-drags-parent="1" style="font-family:'Geist',sans-serif; font-size:12px; font-weight:600; color:#9AA199; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:14px; cursor:default;">Operativo · Paso 2 — Bienvenida</div>
+
+  <div data-screen-label="Activación Operativo — Bienvenida" style="width:390px; height:844px; background:#FBF8F1; border-radius:30px; overflow:hidden; position:relative; box-shadow:0 16px 36px rgba(14,46,52,0.14); border:1px solid #ECE6DA;">
+    <div style="position:absolute; inset:0; background:radial-gradient(circle at 50% 32%, rgba(46,125,107,0.12), transparent 58%); pointer-events:none;"></div>
+
+    <div style="height:44px; display:flex; align-items:center; justify-content:space-between; padding:0 22px;">
+      <span style="font-size:14px; font-weight:600; color:#15333A;">9:41</span>
+      <div style="display:flex; gap:6px; align-items:center; color:#15333A;">
+        <svg width="17" height="11" viewBox="0 0 17 11" fill="none"><rect x="0" y="3" width="3" height="5" rx="1" fill="currentColor"/><rect x="4.5" y="1.5" width="3" height="6.5" rx="1" fill="currentColor"/><rect x="9" y="0" width="3" height="8" rx="1" fill="currentColor"/><rect x="13.5" y="0" width="3" height="8" rx="1" fill="currentColor" opacity="0.35"/></svg>
+        <svg width="22" height="11" viewBox="0 0 22 11" fill="none"><rect x="0.5" y="0.5" width="18" height="10" rx="2.5" stroke="currentColor" opacity="0.45"/><rect x="2" y="2" width="14" height="7" rx="1.2" fill="currentColor"/><rect x="20" y="3.5" width="1.5" height="4" rx="0.75" fill="currentColor" opacity="0.45"/></svg>
+      </div>
+    </div>
+
+    <div style="position:absolute; top:0; left:0; right:0; bottom:0; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:0 40px; text-align:center;">
+      <div style="position:relative; margin-bottom:28px;">
+        <div style="position:absolute; inset:-22px; background:radial-gradient(circle, rgba(46,125,107,0.28), transparent 70%); pointer-events:none; animation:glowpulse 2.6s ease-in-out infinite;"></div>
+        <div style="position:relative; width:104px; height:104px; border-radius:28px; background:#E2EFEB; border:1px solid #BFE0D5; display:flex; align-items:center; justify-content:center; box-shadow:0 8px 26px rgba(46,125,107,0.22);">
+          <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#2E7D6B" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        </div>
+      </div>
+
+      <div style="font-family:'Lora',serif; font-size:28px; font-weight:600; color:#15333A; letter-spacing:-0.02em;">¡Bienvenido, <span style="color:#C9A25E;">Carlos</span>!</div>
+      <div style="font-size:14.5px; line-height:1.55; color:#5E6E70; margin-top:12px; max-width:270px;">Ya puedes empezar a gestionar tus clientes.</div>
+
+      <div style="width:100%; height:50px; border-radius:24px; background:#C9A25E; box-shadow:0 4px 14px rgba(201,162,94,0.35); display:flex; align-items:center; justify-content:center; margin-top:36px; cursor:pointer;">
+        <span style="font-size:16px; font-weight:600; color:#15333A;">Empezar</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ ADMIN PASO 3 — BIENVENIDA ============ -->
+<div style="position:absolute; left:0px; top:1840px; width:390px;">
+  <div data-drags-parent="1" style="font-family:'Geist',sans-serif; font-size:12px; font-weight:600; color:#9AA199; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:14px; cursor:default;">Admin · Paso 3 — Bienvenida</div>
+
+  <div data-screen-label="Activación Admin — Bienvenida" style="width:390px; height:844px; background:#FBF8F1; border-radius:30px; overflow:hidden; position:relative; box-shadow:0 16px 36px rgba(14,46,52,0.14); border:1px solid #ECE6DA;">
+    <div style="position:absolute; inset:0; background:radial-gradient(circle at 50% 32%, rgba(201,162,94,0.14), transparent 58%); pointer-events:none;"></div>
+
+    <div style="height:44px; display:flex; align-items:center; justify-content:space-between; padding:0 22px;">
+      <span style="font-size:14px; font-weight:600; color:#15333A;">9:41</span>
+      <div style="display:flex; gap:6px; align-items:center; color:#15333A;">
+        <svg width="17" height="11" viewBox="0 0 17 11" fill="none"><rect x="0" y="3" width="3" height="5" rx="1" fill="currentColor"/><rect x="4.5" y="1.5" width="3" height="6.5" rx="1" fill="currentColor"/><rect x="9" y="0" width="3" height="8" rx="1" fill="currentColor"/><rect x="13.5" y="0" width="3" height="8" rx="1" fill="currentColor" opacity="0.35"/></svg>
+        <svg width="22" height="11" viewBox="0 0 22 11" fill="none"><rect x="0.5" y="0.5" width="18" height="10" rx="2.5" stroke="currentColor" opacity="0.45"/><rect x="2" y="2" width="14" height="7" rx="1.2" fill="currentColor"/><rect x="20" y="3.5" width="1.5" height="4" rx="0.75" fill="currentColor" opacity="0.45"/></svg>
+      </div>
+    </div>
+
+    <div style="padding:24px 24px 0;">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <div style="width:26px; height:7px; border-radius:4px; background:#C9A25E;"></div>
+        <div style="width:26px; height:7px; border-radius:4px; background:#C9A25E;"></div>
+        <div style="width:26px; height:7px; border-radius:4px; background:#C9A25E;"></div>
+        <span style="font-size:12px; font-weight:600; color:#A87E33; margin-left:auto; letter-spacing:0.04em;">Paso 3 de 3</span>
+      </div>
+    </div>
+
+    <div style="position:absolute; top:0; left:0; right:0; bottom:0; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:0 40px; text-align:center;">
+      <div style="position:relative; margin-bottom:28px;">
+        <div style="position:absolute; inset:-24px; background:radial-gradient(circle, rgba(201,162,94,0.35), transparent 70%); pointer-events:none; animation:glowpulse 2.6s ease-in-out infinite;"></div>
+        <div style="position:relative; width:104px; height:104px; border-radius:28px; background:#F4ECDB; border:1px solid #E0C795; display:flex; align-items:center; justify-content:center; box-shadow:0 8px 26px rgba(201,162,94,0.30);">
+          <svg width="54" height="54" viewBox="0 0 24 24" fill="none" stroke="#B68E45" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.6 4.3L18 9l-4.4 1.7L12 15l-1.6-4.3L6 9l4.4-1.7L12 3z"/><path d="M19 14l.8 2.2L22 17l-2.2.8L19 20l-.8-2.2L16 17l2.2-.8L19 14z"/><path d="M5 14l.8 2.2L8 17l-2.2.8L5 20l-.8-2.2L2 17l2.2-.8L5 14z"/></svg>
+        </div>
+      </div>
+
+      <div style="font-family:'Lora',serif; font-size:28px; font-weight:600; color:#15333A; letter-spacing:-0.02em;">¡Todo listo, <span style="color:#C9A25E;">Marta</span>!</div>
+      <div style="font-size:14.5px; line-height:1.55; color:#5E6E70; margin-top:12px; max-width:290px;">Tu negocio InmoTech está configurado. Ya puedes empezar a gestionar tus clientes.</div>
+
+      <div style="width:100%; height:50px; border-radius:24px; background:#C9A25E; box-shadow:0 4px 14px rgba(201,162,94,0.35); display:flex; align-items:center; justify-content:center; margin-top:36px; cursor:pointer;">
+        <span style="font-size:16px; font-weight:600; color:#15333A;">Empezar</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ ENLACE EXPIRADO ============ -->
+<div style="position:absolute; left:470px; top:1840px; width:390px;">
+  <div data-drags-parent="1" style="font-family:'Geist',sans-serif; font-size:12px; font-weight:600; color:#9AA199; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:14px; cursor:default;">Estado · Enlace expirado</div>
+
+  <div data-screen-label="Activación — Enlace expirado" style="width:390px; height:844px; background:#FBF8F1; border-radius:30px; overflow:hidden; position:relative; box-shadow:0 16px 36px rgba(14,46,52,0.14); border:1px solid #ECE6DA;">
+    <div style="position:absolute; inset:0; background:radial-gradient(circle at 50% 32%, rgba(176,87,63,0.10), transparent 58%); pointer-events:none;"></div>
+
+    <div style="height:44px; display:flex; align-items:center; justify-content:space-between; padding:0 22px;">
+      <span style="font-size:14px; font-weight:600; color:#15333A;">9:41</span>
+      <div style="display:flex; gap:6px; align-items:center; color:#15333A;">
+        <svg width="17" height="11" viewBox="0 0 17 11" fill="none"><rect x="0" y="3" width="3" height="5" rx="1" fill="currentColor"/><rect x="4.5" y="1.5" width="3" height="6.5" rx="1" fill="currentColor"/><rect x="9" y="0" width="3" height="8" rx="1" fill="currentColor"/><rect x="13.5" y="0" width="3" height="8" rx="1" fill="currentColor" opacity="0.35"/></svg>
+        <svg width="22" height="11" viewBox="0 0 22 11" fill="none"><rect x="0.5" y="0.5" width="18" height="10" rx="2.5" stroke="currentColor" opacity="0.45"/><rect x="2" y="2" width="14" height="7" rx="1.2" fill="currentColor"/><rect x="20" y="3.5" width="1.5" height="4" rx="0.75" fill="currentColor" opacity="0.45"/></svg>
+      </div>
+    </div>
+
+    <div style="position:absolute; top:0; left:0; right:0; bottom:0; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:0 40px; text-align:center;">
+      <div style="position:relative; margin-bottom:28px;">
+        <div style="position:absolute; inset:-22px; background:radial-gradient(circle, rgba(176,87,63,0.22), transparent 70%); pointer-events:none;"></div>
+        <div style="position:relative; width:104px; height:104px; border-radius:28px; background:#F6E7E0; border:1px solid rgba(176,87,63,0.24); display:flex; align-items:center; justify-content:center; box-shadow:0 8px 26px rgba(176,87,63,0.16);">
+          <svg width="54" height="54" viewBox="0 0 24 24" fill="none" stroke="#B0573F" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </div>
+      </div>
+
+      <div style="font-family:'Lora',serif; font-size:26px; font-weight:600; color:#15333A; letter-spacing:-0.015em;">Este enlace ya no es válido</div>
+      <div style="font-size:14px; line-height:1.55; color:#5E6E70; margin-top:12px; max-width:300px;">El enlace de invitación ha expirado o ya fue usado. Pide a tu administrador que te envíe uno nuevo.</div>
+
+      <div style="width:100%; height:50px; border-radius:24px; background:#FFFFFF; border:1px solid #DDD6C6; box-shadow:0 1px 2px rgba(14,46,52,0.06); display:flex; align-items:center; justify-content:center; margin-top:36px; cursor:pointer;">
+        <span style="font-size:15px; font-weight:600; color:#15333A;">Entendido</span>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>
