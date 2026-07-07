@@ -77,6 +77,22 @@ export const eliminar = mutation({
     const nota = await ctx.db.get(notaId);
     if (!nota || nota.negocioId !== sesion.negocioId) throw new Error("No encontrado");
 
+    const clienteId = nota.clienteId;
+    const eraContactoReal = TIPOS_CONTACTO_REAL.includes(nota.tipo);
     await ctx.db.delete(notaId);
+
+    // JUA-19: si se borra un contacto real, `ultimaInteraccion` deja de ser
+    // válida → se recalcula a partir de las notas de contacto real que queden
+    // (la más reciente), o se limpia si no queda ninguna. Borrar un "interno"
+    // no la toca (nunca contó como contacto).
+    if (eraContactoReal) {
+      const restantes = await ctx.db
+        .query("notas")
+        .withIndex("por_cliente", (q) => q.eq("clienteId", clienteId))
+        .collect();
+      const reales = restantes.filter((n) => TIPOS_CONTACTO_REAL.includes(n.tipo));
+      const ultima = reales.length ? Math.max(...reales.map((n) => n.fecha)) : undefined;
+      await ctx.db.patch(clienteId, { ultimaInteraccion: ultima });
+    }
   },
 });
