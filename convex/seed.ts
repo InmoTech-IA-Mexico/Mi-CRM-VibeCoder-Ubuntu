@@ -1,10 +1,15 @@
-import { mutation } from "./_generated/server";
+import { internalMutation } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import { hashPassword } from "./auth";
 
 // Datos de demostración para desarrollo (aún no hay altas reales por UI).
 // Ejecutar con:  npx convex run seed:poblarDemo
 // Reiniciar con: npx convex run seed:limpiar
+//
+// SEGURIDAD (JUA-10): son `internalMutation` a propósito → NO forman parte del
+// API público (`api.seed.*`), así que ningún cliente puede invocarlas. Solo se
+// ejecutan desde el CLI/dashboard con credenciales de administrador. `limpiar`
+// es destructiva (borra tablas enteras); nunca debe quedar expuesta al cliente.
 
 const MS_DIA = 24 * 60 * 60 * 1000;
 
@@ -45,7 +50,7 @@ const OPORTUNIDADES = [
   { cliente: "Roberto Silva", nombre: "Local comercial", etapa: "nueva" },
 ] as const;
 
-export const poblarDemo = mutation({
+export const poblarDemo = internalMutation({
   args: {},
   handler: async (ctx) => {
     const ahora = Date.now();
@@ -198,7 +203,7 @@ export const poblarDemo = mutation({
   },
 });
 
-export const limpiar = mutation({
+export const limpiar = internalMutation({
   args: {},
   handler: async (ctx) => {
     const tablas = [
