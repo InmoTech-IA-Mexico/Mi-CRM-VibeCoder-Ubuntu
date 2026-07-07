@@ -163,3 +163,82 @@ export const enviarAPapelera = mutation({
     await ctx.db.patch(clienteId, { eliminadoEn: ahora, actualizadoEn: ahora });
   },
 });
+
+// Normalización para comparar duplicados: teléfono solo dígitos, email en
+// minúsculas. Un mismo contacto escrito distinto ("55 1234" vs "551234") coincide.
+const soloDigitos = (s: string) => s.replace(/\D/g, "");
+const normalizarEmail = (s: string) => s.trim().toLowerCase();
+
+/**
+ * Busca un cliente del negocio con el mismo teléfono o email (JUA-12). Sirve
+ * para avisar de duplicados **antes** de guardar (avisa, no bloquea). Deriva el
+ * negocio de la sesión (JUA-10). Devuelve el primer coincidente o null.
+ */
+export const buscarDuplicado = query({
+  args: { token: v.string(), telefono: v.string(), email: v.string() },
+  handler: async (ctx, { token, telefono, email }) => {
+    const sesion = await resolverSesion(ctx, token);
+    if (!sesion) return null;
+
+    const tel = soloDigitos(telefono);
+    const mail = normalizarEmail(email);
+    if (!tel && !mail) return null;
+
+    const clientes = await ctx.db
+      .query("clientes")
+      .withIndex("por_negocio", (q) => q.eq("negocioId", sesion.negocioId))
+      .collect();
+
+    const match = clientes.find(
+      (c) =>
+        c.eliminadoEn == null &&
+        ((tel && c.telefono && soloDigitos(c.telefono) === tel) ||
+          (mail && c.email && normalizarEmail(c.email) === mail)),
+    );
+    if (!match) return null;
+    const porTelefono = !!(tel && match.telefono && soloDigitos(match.telefono) === tel);
+    return {
+      _id: match._id,
+      nombre: match.nombre,
+      telefono: match.telefono ?? null,
+      email: match.email ?? null,
+      campo: porTelefono ? ("telefono" as const) : ("email" as const),
+    };
+  },
+});
+
+/**
+ * Alta rápida de cliente (JUA-12). Requiere nombre + al menos teléfono o email.
+ * Estado inicial "nuevo" (automático), responsable = quien lo crea, negocio de
+ * la sesión (JUA-10). Devuelve el id para abrir su ficha. No bloquea por
+ * duplicados (el aviso es en la UI).
+ */
+export const crear = mutation({
+  args: {
+    token: v.string(),
+    nombre: v.string(),
+    telefono: v.string(),
+    email: v.string(),
+  },
+  handler: async (ctx, { token, nombre, telefono, email }) => {
+    const sesion = await resolverSesion(ctx, token);
+    if (!sesion) throw new Error("No autorizado");
+
+    const nombreLimpio = nombre.trim();
+    const telLimpio = telefono.trim();
+    const emailLimpio = email.trim();
+    if (!nombreLimpio) throw new Error("El nombre es obligatorio");
+    if (!telLimpio && !emailLimpio) throw new Error("Indica al menos un teléfono o email");
+
+    const ahora = Date.now();
+    return await ctx.db.insert("clientes", {
+      negocioId: sesion.negocioId,
+      nombre: nombreLimpio,
+      telefono: telLimpio || undefined,
+      email: emailLimpio || undefined,
+      estado: "nuevo",
+      responsableId: sesion.usuario._id,
+      actualizadoEn: ahora,
+    });
+  },
+});

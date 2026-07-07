@@ -1,5 +1,5 @@
-import { ScreenPlaceholder } from "@/components/screen-placeholder";
+import { PantallaNuevoCliente } from "./_components/pantalla-nuevo-cliente";
 
 export default function Page() {
-  return <ScreenPlaceholder title="Nuevo cliente" design="Nuevo Cliente Form.dc.html" issue="JUA-12" />;
+  return <PantallaNuevoCliente />;
 }
