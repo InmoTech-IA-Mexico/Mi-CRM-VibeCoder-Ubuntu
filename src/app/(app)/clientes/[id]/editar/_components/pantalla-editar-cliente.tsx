@@ -131,6 +131,7 @@ function Formulario({
             <Etiqueta obligatorio>Nombre completo</Etiqueta>
             <Input
               icon={User}
+              label="Nombre completo"
               value={nombre}
               onChange={setNombre}
               placeholder="Nombre del cliente"
@@ -146,7 +147,7 @@ function Formulario({
                 <span className="text-[15px] font-semibold text-ink">+52</span>
               </div>
               <div className="flex-1">
-                <Input icon={Phone} value={telefono} onChange={setTelefono} placeholder="55 1234 5678" tabular inputMode="tel" />
+                <Input icon={Phone} label="Teléfono" value={telefono} onChange={setTelefono} placeholder="55 1234 5678" tabular inputMode="tel" />
               </div>
             </div>
           </div>
@@ -156,12 +157,12 @@ function Formulario({
         <Seccion titulo="Información adicional">
           <div className="p-4">
             <Etiqueta>Email</Etiqueta>
-            <Input icon={Mail} value={email} onChange={setEmail} placeholder="cliente@empresa.mx" inputMode="email" />
+            <Input icon={Mail} label="Email" value={email} onChange={setEmail} placeholder="cliente@empresa.mx" inputMode="email" />
           </div>
           <Divisor />
           <div className="p-4">
             <Etiqueta>Empresa</Etiqueta>
-            <Input icon={Building2} value={empresa} onChange={setEmpresa} placeholder="Nombre de la empresa" />
+            <Input icon={Building2} label="Empresa" value={empresa} onChange={setEmpresa} placeholder="Nombre de la empresa" />
           </div>
         </Seccion>
 
@@ -256,6 +257,7 @@ function Divisor() {
 
 function Input({
   icon: Icon,
+  label,
   value,
   onChange,
   placeholder,
@@ -264,6 +266,7 @@ function Input({
   inputMode,
 }: {
   icon: typeof User;
+  label: string;
   value: string;
   onChange: (v: string) => void;
   placeholder: string;
@@ -285,6 +288,7 @@ function Input({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
+        aria-label={label}
         inputMode={inputMode}
         autoCapitalize={inputMode === "email" ? "none" : undefined}
         className={cn("w-full bg-transparent text-[15px] text-ink outline-none placeholder:text-muted", tabular && "tabular-nums")}
