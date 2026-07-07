@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
-import { ChevronLeft, RotateCcw, Trash2, AlertTriangle } from "lucide-react";
+import { ChevronLeft, RotateCcw, Trash2, AlertTriangle, AlertCircle } from "lucide-react";
 import { api } from "../../../../../convex/_generated/api";
 import { useSesion } from "@/components/session/use-sesion";
 
@@ -25,18 +25,27 @@ export function PantallaPapelera() {
 
   const [confirmacion, setConfirmacion] = useState<Confirmacion>(null);
   const [ocupado, setOcupado] = useState(false);
+  const [aviso, setAviso] = useState<string | null>(null);
+
+  const abrirModal = (c: Confirmacion) => {
+    setAviso(null);
+    setConfirmacion(c);
+  };
 
   const onRestaurar = async (item: ItemPapelera) => {
+    setAviso(null);
     try {
       await restaurar({ token, clienteId: item._id });
     } catch (error) {
       console.error("No se pudo restaurar", error);
+      setAviso("No se pudo restaurar el cliente. Inténtalo de nuevo.");
     }
   };
 
   const onConfirmar = async () => {
     if (!confirmacion || ocupado) return;
     setOcupado(true);
+    setAviso(null);
     try {
       if (confirmacion.tipo === "uno") {
         await eliminarDefinitivo({ token, clienteId: confirmacion.item._id });
@@ -46,6 +55,7 @@ export function PantallaPapelera() {
       setConfirmacion(null);
     } catch (error) {
       console.error("No se pudo eliminar", error);
+      setAviso("No se pudo completar el borrado. Inténtalo de nuevo.");
     } finally {
       setOcupado(false);
     }
@@ -69,7 +79,7 @@ export function PantallaPapelera() {
         {esAdmin && items && items.length > 0 ? (
           <button
             type="button"
-            onClick={() => setConfirmacion({ tipo: "todo" })}
+            onClick={() => abrirModal({ tipo: "todo" })}
             className="px-1 py-2 text-[14px] font-semibold text-danger active:opacity-70"
           >
             Vaciar todo
@@ -82,6 +92,13 @@ export function PantallaPapelera() {
       <p className="px-[18px] pb-4 pt-0.5 text-[13px] leading-snug text-muted">
         Los clientes en papelera no aparecen en tu CRM
       </p>
+
+      {aviso && !confirmacion && (
+        <div className="mx-4 mb-3 flex items-center gap-2.5 rounded-2xl border border-danger/30 bg-[#F9ECE7] p-3.5">
+          <AlertCircle size={18} strokeWidth={1.9} className="flex-shrink-0 text-danger" />
+          <p className="text-[13px] font-medium text-[#8A3F2C]">{aviso}</p>
+        </div>
+      )}
 
       {!esAdmin ? (
         <NoAutorizado />
@@ -96,7 +113,7 @@ export function PantallaPapelera() {
               key={item._id}
               item={item}
               onRestaurar={() => onRestaurar(item)}
-              onEliminar={() => setConfirmacion({ tipo: "uno", item })}
+              onEliminar={() => abrirModal({ tipo: "uno", item })}
             />
           ))}
         </div>
@@ -109,8 +126,12 @@ export function PantallaPapelera() {
               ? `¿Eliminar a ${confirmacion.item.nombre}?`
               : "¿Vaciar toda la papelera?"
           }
+          aviso={aviso}
           ocupado={ocupado}
-          onCancelar={() => setConfirmacion(null)}
+          onCancelar={() => {
+            setAviso(null);
+            setConfirmacion(null);
+          }}
           onConfirmar={onConfirmar}
         />
       )}
@@ -172,11 +193,13 @@ function TarjetaEliminado({
 
 function ModalConfirmar({
   titulo,
+  aviso,
   ocupado,
   onCancelar,
   onConfirmar,
 }: {
   titulo: string;
+  aviso: string | null;
   ocupado: boolean;
   onCancelar: () => void;
   onConfirmar: () => void;
@@ -197,6 +220,12 @@ function ModalConfirmar({
         <p className="mt-2.5 text-center text-[14px] leading-relaxed text-body">
           Esta acción no se puede deshacer. Todos sus datos, notas e historial se eliminarán permanentemente.
         </p>
+        {aviso && (
+          <div className="mt-4 flex w-full items-center gap-2 rounded-xl border border-danger/30 bg-[#F9ECE7] px-3 py-2.5">
+            <AlertCircle size={16} strokeWidth={1.9} className="flex-shrink-0 text-danger" />
+            <p className="text-[12.5px] font-medium text-[#8A3F2C]">{aviso}</p>
+          </div>
+        )}
         <div className="my-5 h-px w-full bg-neutral-100" />
         <div className="flex w-full flex-col gap-2.5">
           <button
