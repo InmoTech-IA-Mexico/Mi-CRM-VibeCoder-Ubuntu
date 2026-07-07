@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import {
   Phone,
   Calendar,
@@ -17,6 +17,7 @@ import {
   MessageSquare,
   MapPin,
   Lock,
+  Trash2,
 } from "lucide-react";
 import { api } from "../../../../../../convex/_generated/api";
 import type { Id } from "../../../../../../convex/_generated/dataModel";
@@ -51,11 +52,21 @@ export function PantallaFichaCliente({ clienteId }: { clienteId: Id<"clientes"> 
   const { token, negocio, rol } = useSesion();
   const [ahora] = useState(() => Date.now());
   const cliente = useQuery(api.clientes.detalle, { token, clienteId });
+  const eliminarNota = useMutation(api.notas.eliminar);
 
   if (cliente === undefined) return <FichaCargando />;
   if (cliente === null) return <FichaNoEncontrada />;
 
   const base = `/clientes/${clienteId}`;
+  const esAdmin = rol === "admin";
+  const onEliminarNota = async (notaId: Id<"notas">) => {
+    if (!window.confirm("¿Eliminar esta nota? No se puede deshacer.")) return;
+    try {
+      await eliminarNota({ token, notaId });
+    } catch (error) {
+      console.error("No se pudo eliminar la nota", error);
+    }
+  };
 
   return (
     <div className="flex min-h-full flex-col">
@@ -209,16 +220,28 @@ export function PantallaFichaCliente({ clienteId }: { clienteId: Id<"clientes"> 
                       {!ultimo && <div className="mt-1 w-0.5 flex-1 bg-neutral-100" />}
                     </div>
                     <div className={cn("min-w-0 flex-1", !ultimo && "pb-4")}>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[11.5px] text-muted">{cuando}</span>
-                        {interno ? (
-                          <span className="rounded-md bg-teal-900 px-1.5 py-0.5 text-[10px] font-semibold text-[#F3ECDC]">
-                            Interno
-                          </span>
-                        ) : (
-                          <span className="text-[11px] font-medium text-gold-700">
-                            {LABELS.tipoInteraccion[n.tipo]}
-                          </span>
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[11.5px] text-muted">{cuando}</span>
+                          {interno ? (
+                            <span className="rounded-md bg-teal-900 px-1.5 py-0.5 text-[10px] font-semibold text-[#F3ECDC]">
+                              Interno
+                            </span>
+                          ) : (
+                            <span className="text-[11px] font-medium text-gold-700">
+                              {LABELS.tipoInteraccion[n.tipo]}
+                            </span>
+                          )}
+                        </div>
+                        {esAdmin && (
+                          <button
+                            type="button"
+                            aria-label="Eliminar nota"
+                            onClick={() => onEliminarNota(n._id)}
+                            className="-mr-1 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md text-neutral-400 active:scale-90 active:text-danger"
+                          >
+                            <Trash2 size={13} strokeWidth={1.9} />
+                          </button>
                         )}
                       </div>
                       <p className="mt-1 whitespace-pre-wrap break-words text-[14px] leading-relaxed text-ink">

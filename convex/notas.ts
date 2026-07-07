@@ -63,3 +63,20 @@ export const crear = mutation({
     return notaId;
   },
 });
+
+/**
+ * Elimina una nota del historial (JUA-18). **Solo admin** (Marta); borrado
+ * permanente (las notas no van a papelera). Valida pertenencia al negocio.
+ */
+export const eliminar = mutation({
+  args: { token: v.string(), notaId: v.id("notas") },
+  handler: async (ctx, { token, notaId }) => {
+    const sesion = await resolverSesion(ctx, token);
+    if (!sesion || sesion.usuario.rol !== "admin") throw new Error("No autorizado");
+
+    const nota = await ctx.db.get(notaId);
+    if (!nota || nota.negocioId !== sesion.negocioId) throw new Error("No encontrado");
+
+    await ctx.db.delete(notaId);
+  },
+});
