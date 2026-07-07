@@ -7,6 +7,10 @@ import type { Id } from "./_generated/dataModel";
 
 const MS_DIA = 24 * 60 * 60 * 1000;
 
+// El negocio de demostración se identifica SIEMPRE por este email de admin,
+// nunca por "el primer negocio" (evita enganchar datos demo a un negocio real).
+const EMAIL_ADMIN_DEMO = "marta@demo.mx";
+
 const CLIENTES = [
   { nombre: "Ana García", prioridad: "alta", estado: "activo", dias: 23 },
   { nombre: "Carlos Ruiz", prioridad: "alta", estado: "prospecto", dias: 19 },
@@ -33,17 +37,21 @@ export const poblarDemo = mutation({
   handler: async (ctx) => {
     const ahora = Date.now();
 
-    const negocioExistente = await ctx.db.query("negocios").first();
+    // Buscar EXPLÍCITAMENTE el negocio demo por su emailAdmin (nunca `.first()`).
+    const negocioExistente = await ctx.db
+      .query("negocios")
+      .filter((q) => q.eq(q.field("emailAdmin"), EMAIL_ADMIN_DEMO))
+      .first();
     const negocioId =
       negocioExistente?._id ??
       (await ctx.db.insert("negocios", {
         nombre: "Inmobiliaria Demo",
-        emailAdmin: "marta@demo.mx",
+        emailAdmin: EMAIL_ADMIN_DEMO,
         zonaHoraria: "America/Mexico_City",
         estado: "activo",
       }));
 
-    if (negocioExistente?.emailAdmin === "marta@demo.mx") {
+    if (negocioExistente) {
       await ctx.db.patch(negocioId, {
         nombre: "Inmobiliaria Demo",
         zonaHoraria: "America/Mexico_City",
