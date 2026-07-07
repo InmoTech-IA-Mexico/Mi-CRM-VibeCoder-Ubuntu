@@ -94,6 +94,17 @@ export const detalle = query({
       .filter((s) => s.estado === "pendiente")
       .sort((a, b) => a.fecha - b.fecha);
 
+    // Historial de notas (JUA-18): orden cronológico inverso, con el autor.
+    const notasRaw = await ctx.db
+      .query("notas")
+      .withIndex("por_cliente", (q) => q.eq("clienteId", id))
+      .collect();
+    const usuarios = await ctx.db
+      .query("usuarios")
+      .withIndex("por_negocio", (q) => q.eq("negocioId", sesion.negocioId))
+      .collect();
+    const nombrePorId = new Map(usuarios.map((u) => [u._id, u.nombre]));
+
     return {
       _id: c._id,
       nombre: c.nombre,
@@ -123,6 +134,16 @@ export const detalle = query({
         hora: s.hora ?? null,
         prioridad: s.prioridad,
       })),
+      notas: notasRaw
+        .sort((a, b) => b.fecha - a.fecha)
+        .map((n) => ({
+          _id: n._id,
+          tipo: n.tipo,
+          descripcion: n.descripcion,
+          resultado: n.resultado ?? null,
+          fecha: n.fecha,
+          autorNombre: nombrePorId.get(n.autorId) ?? "—",
+        })),
     };
   },
 });

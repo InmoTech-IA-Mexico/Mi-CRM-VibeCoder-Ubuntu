@@ -13,12 +13,16 @@ import {
   Clock,
   Inbox,
   MessagesSquare,
+  Mail,
+  MessageSquare,
+  MapPin,
+  Lock,
 } from "lucide-react";
 import { api } from "../../../../../../convex/_generated/api";
 import type { Id } from "../../../../../../convex/_generated/dataModel";
 import { useSesion } from "@/components/session/use-sesion";
-import { LABELS, type EtapaPipeline } from "@/lib/enums";
-import { fechaCortaES } from "@/lib/fechas";
+import { LABELS, type EtapaPipeline, type TipoInteraccion } from "@/lib/enums";
+import { fechaCortaES, diasDesde } from "@/lib/fechas";
 import { bordePrioridadClase } from "@/components/ui/indicador-prioridad";
 import { cn } from "@/lib/utils";
 import { CabeceraFicha } from "./cabecera-ficha";
@@ -32,6 +36,15 @@ const COLOR_ETAPA: Record<EtapaPipeline, string> = {
   ganada: "bg-success",
   perdida: "bg-danger",
   cancelada: "bg-neutral-400",
+};
+
+const ICONO_TIPO: Record<TipoInteraccion, typeof Phone> = {
+  llamada: Phone,
+  reunion: Calendar,
+  correo: Mail,
+  mensaje: MessageSquare,
+  visita: MapPin,
+  interno: Lock,
 };
 
 export function PantallaFichaCliente({ clienteId }: { clienteId: Id<"clientes"> }) {
@@ -162,17 +175,67 @@ export function PantallaFichaCliente({ clienteId }: { clienteId: Id<"clientes"> 
           )}
         </Seccion>
 
-        {/* Historial — se construye en Fase 3 (notas/interacciones) */}
+        {/* Historial de interacciones (JUA-18) */}
         <Seccion titulo="Historial">
-          <div className="flex flex-col items-center rounded-[18px] border border-neutral-100 bg-surface px-6 py-7 text-center shadow-sm">
-            <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl border border-neutral-100 bg-neutral-50">
-              <MessagesSquare size={24} strokeWidth={1.5} className="text-neutral-400" />
+          {cliente.notas.length === 0 ? (
+            <div className="flex flex-col items-center rounded-[18px] border border-neutral-100 bg-surface px-6 py-7 text-center shadow-sm">
+              <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl border border-neutral-100 bg-neutral-50">
+                <MessagesSquare size={24} strokeWidth={1.5} className="text-neutral-400" />
+              </div>
+              <p className="text-[14.5px] font-semibold text-body">Sin interacciones registradas</p>
+              <p className="mt-1 max-w-[240px] text-[12.5px] leading-snug text-muted">
+                Añade una nota después de hablar con {cliente.nombre.split(" ")[0]}.
+              </p>
             </div>
-            <p className="text-[14.5px] font-semibold text-body">Historial de interacciones</p>
-            <p className="mt-1 max-w-[240px] text-[12.5px] leading-snug text-muted">
-              Las notas e interacciones se añadirán aquí (Fase 3).
-            </p>
-          </div>
+          ) : (
+            <div className="rounded-[18px] border border-neutral-100 bg-surface p-4 shadow-sm">
+              {cliente.notas.map((n, i) => {
+                const Icono = ICONO_TIPO[n.tipo];
+                const d = diasDesde(n.fecha, ahora);
+                const cuando = d <= 0 ? "Hoy" : d === 1 ? "Ayer" : `Hace ${d} días`;
+                const interno = n.tipo === "interno";
+                const ultimo = i === cliente.notas.length - 1;
+                return (
+                  <div key={n._id} className="flex gap-3">
+                    <div className="flex flex-col items-center">
+                      <div
+                        className={cn(
+                          "flex h-[34px] w-[34px] flex-shrink-0 items-center justify-center rounded-[10px]",
+                          interno ? "bg-teal-900" : "bg-neutral-50",
+                        )}
+                      >
+                        <Icono size={16} strokeWidth={1.7} className={interno ? "text-[#F3ECDC]" : "text-teal-800"} />
+                      </div>
+                      {!ultimo && <div className="mt-1 w-0.5 flex-1 bg-neutral-100" />}
+                    </div>
+                    <div className={cn("min-w-0 flex-1", !ultimo && "pb-4")}>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11.5px] text-muted">{cuando}</span>
+                        {interno ? (
+                          <span className="rounded-md bg-teal-900 px-1.5 py-0.5 text-[10px] font-semibold text-[#F3ECDC]">
+                            Interno
+                          </span>
+                        ) : (
+                          <span className="text-[11px] font-medium text-gold-700">
+                            {LABELS.tipoInteraccion[n.tipo]}
+                          </span>
+                        )}
+                      </div>
+                      <p className="mt-1 whitespace-pre-wrap break-words text-[14px] leading-relaxed text-ink">
+                        {n.descripcion}
+                      </p>
+                      {n.resultado && (
+                        <span className="mt-1.5 inline-block rounded-md bg-neutral-50 px-2 py-0.5 text-[11.5px] font-medium text-body">
+                          {n.resultado}
+                        </span>
+                      )}
+                      <p className="mt-1.5 text-[12px] text-muted">{n.autorNombre}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </Seccion>
       </div>
     </div>

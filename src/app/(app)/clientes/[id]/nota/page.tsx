@@ -1,10 +1,7 @@
-import { ScreenPlaceholder } from "@/components/screen-placeholder";
+import type { Id } from "../../../../../../convex/_generated/dataModel";
+import { PantallaNuevaNota } from "./_components/pantalla-nueva-nota";
 
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  return (
-    <ScreenPlaceholder title="Nueva nota" design="Nota Recordatorio Form.dc.html" issue="JUA-17">
-      Cliente #{id} — pantalla por construir.
-    </ScreenPlaceholder>
-  );
+  return <PantallaNuevaNota clienteId={id as Id<"clientes">} />;
 }

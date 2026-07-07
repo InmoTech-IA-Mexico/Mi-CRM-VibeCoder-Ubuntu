@@ -54,12 +54,14 @@ export function TarjetaPerfil({ cliente, ahora }: { cliente: FichaCliente; ahora
       <p
         className={cn(
           "mt-3 text-[12.5px] font-semibold",
-          dias == null ? "text-muted" : colorUrgenciaDias(dias),
+          dias == null ? "text-muted" : dias === 0 ? "text-success" : colorUrgenciaDias(dias),
         )}
       >
         {dias == null
           ? "Sin contacto registrado aún"
-          : `Hace ${dias} ${dias === 1 ? "día" : "días"} sin contacto`}
+          : dias === 0
+            ? "Contactado hoy"
+            : `Hace ${dias} ${dias === 1 ? "día" : "días"} sin contacto`}
       </p>
 
       {/* Contacto */}

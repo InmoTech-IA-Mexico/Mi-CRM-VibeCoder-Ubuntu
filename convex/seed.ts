@@ -50,6 +50,16 @@ const OPORTUNIDADES = [
   { cliente: "Roberto Silva", nombre: "Local comercial", etapa: "nueva" },
 ] as const;
 
+// Notas demo para el historial (JUA-18). Para Ana, el "interno" (offset 20) es más
+// reciente que su última llamada (offset 23) y NO cuenta como contacto → ilustra
+// la regla JUA-19 (sigue "Hace 23 días sin contacto"). `autor`: c=Carlos, m=Marta.
+const NOTAS = [
+  { cliente: "Ana García", tipo: "interno", descripcion: "Cliente clave para el cierre de trimestre. Prefiere contacto por la tarde.", autor: "m", offsetDias: 20 },
+  { cliente: "Ana García", tipo: "llamada", descripcion: "Ana confirmó que está evaluando la propuesta. Hablar la próxima semana.", resultado: "Interesado", autor: "c", offsetDias: 23 },
+  { cliente: "Ana García", tipo: "correo", descripcion: "Propuesta enviada por email con el detalle de precios.", resultado: "Pendiente", autor: "c", offsetDias: 25 },
+  { cliente: "Ana García", tipo: "reunion", descripcion: "Primera reunión. Muy receptiva al servicio. Solicita propuesta escrita.", autor: "c", offsetDias: 30 },
+] as const;
+
 export const poblarDemo = internalMutation({
   args: {},
   handler: async (ctx) => {
@@ -196,6 +206,32 @@ export const poblarDemo = internalMutation({
       else await ctx.db.insert("oportunidades", datosOpo);
     }
 
+    // Notas demo (idempotente): se insertan solo para clientes que aún no tienen
+    // ninguna nota (evita duplicar en re-ejecuciones de poblarDemo).
+    const clientesConNotas = new Set<string>();
+    for (const nombre of new Set(NOTAS.map((n) => n.cliente))) {
+      const clienteId = idClientePorNombre[nombre];
+      if (!clienteId) continue;
+      const existentes = await ctx.db
+        .query("notas")
+        .withIndex("por_cliente", (q) => q.eq("clienteId", clienteId))
+        .collect();
+      if (existentes.length > 0) clientesConNotas.add(nombre);
+    }
+    for (const n of NOTAS) {
+      const clienteId = idClientePorNombre[n.cliente];
+      if (!clienteId || clientesConNotas.has(n.cliente)) continue;
+      await ctx.db.insert("notas", {
+        negocioId,
+        clienteId,
+        tipo: n.tipo,
+        descripcion: n.descripcion,
+        resultado: "resultado" in n ? n.resultado : undefined,
+        autorId: n.autor === "m" ? martaId : carlosId,
+        fecha: ahora - n.offsetDias * MS_DIA,
+      });
+    }
+
     return {
       negocioId,
       martaId,
@@ -203,6 +239,7 @@ export const poblarDemo = internalMutation({
       clientes: CLIENTES.length,
       seguimientos: SEGUIMIENTOS.length,
       oportunidades: OPORTUNIDADES.length,
+      notas: NOTAS.length,
       nota: negocioExistente ? "demo actualizado" : "demo creado",
     };
   },
