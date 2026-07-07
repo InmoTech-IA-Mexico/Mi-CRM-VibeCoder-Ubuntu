@@ -1,10 +1,7 @@
-import { ScreenPlaceholder } from "@/components/screen-placeholder";
+import type { Id } from "../../../../../convex/_generated/dataModel";
+import { PantallaFichaCliente } from "./_components/pantalla-ficha-cliente";
 
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  return (
-    <ScreenPlaceholder title="Ficha de cliente" design="Ficha Cliente.dc.html" issue="JUA-13">
-      Cliente #{id} — pantalla por construir.
-    </ScreenPlaceholder>
-  );
+  return <PantallaFichaCliente clienteId={id as Id<"clientes">} />;
 }

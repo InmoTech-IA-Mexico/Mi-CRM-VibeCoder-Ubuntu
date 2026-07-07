@@ -68,6 +68,18 @@ export function fechaLargaES(epoch: number, tz: string): string {
   return `${diaSemanaCap}, ${dia} ${mes}`;
 }
 
+/** Fecha corta en español, p. ej. "28 jun". */
+export function fechaCortaES(epoch: number, tz: string): string {
+  const partes = new Intl.DateTimeFormat("es-MX", {
+    timeZone: tz,
+    day: "numeric",
+    month: "short",
+  }).formatToParts(new Date(epoch));
+  const dia = partes.find((p) => p.type === "day")?.value ?? "";
+  const mes = (partes.find((p) => p.type === "month")?.value ?? "").replace(".", "");
+  return `${dia} ${mes}`;
+}
+
 /** Días enteros transcurridos desde `epoch` hasta `ahora`. */
 export function diasDesde(epoch: number, ahora: number = Date.now()): number {
   return Math.floor((ahora - epoch) / MS_DIA);

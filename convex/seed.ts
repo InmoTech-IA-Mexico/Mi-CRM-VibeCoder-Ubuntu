@@ -21,16 +21,16 @@ const PASSWORD_DEMO = { marta: "Marta1234", carlos: "Carlos1234" } as const;
 const EMAIL_ADMIN_DEMO = "marta@demo.mx";
 
 const CLIENTES = [
-  { nombre: "Ana García", prioridad: "alta", estado: "activo", dias: 23 },
-  { nombre: "Carlos Ruiz", prioridad: "alta", estado: "prospecto", dias: 19 },
-  { nombre: "María López", prioridad: "media", estado: "activo", dias: 17 },
-  { nombre: "Juan Torres", prioridad: "baja", estado: "activo", dias: 16 },
-  { nombre: "TechStart S.A.", prioridad: "alta", estado: "activo", dias: 3 },
-  { nombre: "Roberto Silva", prioridad: "media", estado: "prospecto", dias: 1 },
+  { nombre: "Ana García", prioridad: "alta", estado: "activo", dias: 23, tipo: "persona", empresa: "García & Asociados", telefono: "55 1002 3040", email: "ana@garcia.mx", canal: "whatsapp" },
+  { nombre: "Carlos Ruiz", prioridad: "alta", estado: "prospecto", dias: 19, tipo: "persona", empresa: "Ruiz Consultoría", telefono: "55 2210 4455", email: "carlos.ruiz@gmail.com", canal: "referido" },
+  { nombre: "María López", prioridad: "media", estado: "activo", dias: 17, tipo: "persona", empresa: "Inmuebles del Valle", telefono: "55 3321 8890", email: "maria.lopez@valle.mx", canal: "web" },
+  { nombre: "Juan Torres", prioridad: "baja", estado: "activo", dias: 16, tipo: "persona", empresa: undefined, telefono: "55 4456 1122", email: "juan.torres@outlook.com", canal: "telefono" },
+  { nombre: "TechStart S.A.", prioridad: "alta", estado: "activo", dias: 3, tipo: "empresa", empresa: "TechStart S.A.", telefono: "55 5567 7788", email: "contacto@techstart.mx", canal: "email" },
+  { nombre: "Roberto Silva", prioridad: "media", estado: "prospecto", dias: 1, tipo: "persona", empresa: undefined, telefono: "55 6678 9900", email: "roberto.silva@gmail.com", canal: "redes" },
   // Casos de borde para verificar JUA-25 (panel de inactividad):
-  { nombre: "Lucía Fernández", prioridad: "media", estado: "inactivo", dias: 40 }, // Inactivo → SÍ aparece
-  { nombre: "Diego Ramos", prioridad: "alta", estado: "nuevo", dias: 40 }, // Nuevo → NO aparece
-  { nombre: "Sofía Beltrán", prioridad: "alta", estado: "activo", dias: 25 }, // tiene recordatorio a +2d → NO aparece
+  { nombre: "Lucía Fernández", prioridad: "media", estado: "inactivo", dias: 40, tipo: "persona", empresa: "Fernández Interiores", telefono: "55 7789 3344", email: "lucia@fernandez.mx", canal: "whatsapp" }, // Inactivo → SÍ aparece
+  { nombre: "Diego Ramos", prioridad: "alta", estado: "nuevo", dias: 40, tipo: "persona", empresa: undefined, telefono: "55 8890 2211", email: undefined, canal: undefined }, // Nuevo (sin contacto) → NO aparece
+  { nombre: "Sofía Beltrán", prioridad: "alta", estado: "activo", dias: 25, tipo: "persona", empresa: "Beltrán & Co", telefono: "55 9901 5566", email: "sofia.beltran@beltranco.mx", canal: "referido" }, // tiene recordatorio a +2d → NO aparece
 ] as const;
 
 const SEGUIMIENTOS = [
@@ -134,6 +134,11 @@ export const poblarDemo = internalMutation({
         nombre: c.nombre,
         estado: c.estado,
         prioridad: c.prioridad,
+        tipo: c.tipo,
+        empresa: c.empresa,
+        telefono: c.telefono,
+        email: c.email,
+        canal: c.canal,
         responsableId: carlosId,
         ultimaInteraccion: ahora - c.dias * MS_DIA,
         eliminadoEn: undefined,

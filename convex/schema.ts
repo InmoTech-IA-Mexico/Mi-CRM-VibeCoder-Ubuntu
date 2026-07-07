@@ -89,6 +89,7 @@ export default defineSchema({
     observaciones: v.optional(v.string()),
     responsableId: v.optional(v.id("usuarios")),
     ultimaInteraccion: v.optional(v.number()),
+    actualizadoEn: v.optional(v.number()), // fecha_ultima_actualizacion (JUA-13)
     eliminadoEn: v.optional(v.number()), // papelera (soft delete, 30 días)
   })
     .index("por_negocio", ["negocioId"])
