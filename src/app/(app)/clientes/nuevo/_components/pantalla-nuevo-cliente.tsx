@@ -17,6 +17,7 @@ export function PantallaNuevoCliente() {
   const [email, setEmail] = useState("");
   const [intentado, setIntentado] = useState(false);
   const [guardando, setGuardando] = useState(false);
+  const [errorGuardar, setErrorGuardar] = useState<string | null>(null);
   const crear = useMutation(api.clientes.crear);
 
   const nombreOk = nombre.trim().length > 0;
@@ -36,11 +37,13 @@ export function PantallaNuevoCliente() {
       return;
     }
     setGuardando(true);
+    setErrorGuardar(null);
     try {
       const id = await crear({ token, nombre, telefono, email });
       router.replace(`/clientes/${id}`);
     } catch (error) {
       console.error("No se pudo crear el cliente", error);
+      setErrorGuardar("No se pudo crear el cliente. Revisa la conexión e inténtalo de nuevo.");
       setGuardando(false);
     }
   };
@@ -187,6 +190,14 @@ export function PantallaNuevoCliente() {
             </div>
             <ChevronRight size={18} strokeWidth={1.8} className="flex-shrink-0 text-[#B99A5A]" />
           </Link>
+        )}
+
+        {/* Error de guardado (visible, no solo en consola) */}
+        {errorGuardar && (
+          <div className="flex items-center gap-2.5 rounded-2xl border border-danger/30 bg-[#F9ECE7] p-3.5">
+            <AlertCircle size={18} strokeWidth={1.9} className="flex-shrink-0 text-danger" />
+            <p className="text-[13px] font-medium text-[#8A3F2C]">{errorGuardar}</p>
+          </div>
         )}
 
         <p className="px-1 text-[12px] leading-snug text-muted">
