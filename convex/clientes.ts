@@ -1,6 +1,11 @@
-import { query, mutation } from "./_generated/server";
+import { query, mutation, internalMutation } from "./_generated/server";
+import type { MutationCtx } from "./_generated/server";
+import type { Id } from "./_generated/dataModel";
 import { v } from "convex/values";
 import { resolverSesion } from "./auth";
+
+const MS_DIA = 24 * 60 * 60 * 1000;
+const DIAS_PAPELERA = 30; // días en papelera antes del borrado definitivo (JUA-16)
 
 // Lista de clientes del negocio (JUA-14). Devuelve todos (excepto papelera) con
 // los campos para el buscador en tiempo real (nombre/teléfono/email/empresa) y la
@@ -294,5 +299,117 @@ export const actualizar = mutation({
       prioridad,
       actualizadoEn: Date.now(),
     });
+  },
+});
+
+// ===================== Papelera (JUA-16, solo admin) =====================
+
+/** Borra definitivamente un cliente y todo lo que cuelga de él (no reversible). */
+async function borrarClienteYRelacionados(ctx: MutationCtx, clienteId: Id<"clientes">) {
+  for (const tabla of ["notas", "oportunidades", "seguimientos", "ventas"] as const) {
+    const docs = await ctx.db
+      .query(tabla)
+      .withIndex("por_cliente", (q) => q.eq("clienteId", clienteId))
+      .collect();
+    for (const d of docs) await ctx.db.delete(d._id);
+  }
+  await ctx.db.delete(clienteId);
+}
+
+/** Clientes en papelera del negocio (JUA-16). Solo admin; si no, lista vacía. */
+export const papelera = query({
+  args: { token: v.string() },
+  handler: async (ctx, { token }) => {
+    const sesion = await resolverSesion(ctx, token);
+    if (!sesion || sesion.usuario.rol !== "admin") return [];
+
+    const ahora = Date.now();
+    const clientes = await ctx.db
+      .query("clientes")
+      .withIndex("por_negocio", (q) => q.eq("negocioId", sesion.negocioId))
+      .collect();
+
+    return clientes
+      .filter((c) => c.eliminadoEn != null)
+      .sort((a, b) => b.eliminadoEn! - a.eliminadoEn!)
+      .map((c) => {
+        const diasEliminado = Math.floor((ahora - c.eliminadoEn!) / MS_DIA);
+        return {
+          _id: c._id,
+          nombre: c.nombre,
+          empresa: c.empresa ?? null,
+          eliminadoEn: c.eliminadoEn!,
+          diasEliminado,
+          diasRestantes: Math.max(0, DIAS_PAPELERA - diasEliminado),
+        };
+      });
+  },
+});
+
+/** Restaura un cliente de la papelera (JUA-16). Sus datos relacionados nunca se
+ *  borraron, así que vuelve intacto. Solo admin; valida pertenencia. */
+export const restaurar = mutation({
+  args: { token: v.string(), clienteId: v.id("clientes") },
+  handler: async (ctx, { token, clienteId }) => {
+    const sesion = await resolverSesion(ctx, token);
+    if (!sesion || sesion.usuario.rol !== "admin") throw new Error("No autorizado");
+
+    const c = await ctx.db.get(clienteId);
+    if (!c || c.negocioId !== sesion.negocioId || c.eliminadoEn == null) {
+      throw new Error("No encontrado");
+    }
+    await ctx.db.patch(clienteId, { eliminadoEn: undefined, actualizadoEn: Date.now() });
+  },
+});
+
+/** Borra definitivamente un cliente de la papelera (JUA-16). Solo admin. */
+export const eliminarDefinitivo = mutation({
+  args: { token: v.string(), clienteId: v.id("clientes") },
+  handler: async (ctx, { token, clienteId }) => {
+    const sesion = await resolverSesion(ctx, token);
+    if (!sesion || sesion.usuario.rol !== "admin") throw new Error("No autorizado");
+
+    const c = await ctx.db.get(clienteId);
+    if (!c || c.negocioId !== sesion.negocioId || c.eliminadoEn == null) {
+      throw new Error("No encontrado");
+    }
+    await borrarClienteYRelacionados(ctx, clienteId);
+  },
+});
+
+/** Vacía la papelera del negocio (borra definitivamente todo). Solo admin. */
+export const vaciarPapelera = mutation({
+  args: { token: v.string() },
+  handler: async (ctx, { token }) => {
+    const sesion = await resolverSesion(ctx, token);
+    if (!sesion || sesion.usuario.rol !== "admin") throw new Error("No autorizado");
+
+    const clientes = await ctx.db
+      .query("clientes")
+      .withIndex("por_negocio", (q) => q.eq("negocioId", sesion.negocioId))
+      .collect();
+    for (const c of clientes.filter((c) => c.eliminadoEn != null)) {
+      await borrarClienteYRelacionados(ctx, c._id);
+    }
+  },
+});
+
+/**
+ * Purga automática (JUA-16): borra definitivamente los clientes con más de 30
+ * días en papelera. La ejecuta el cron diario (ver convex/crons.ts). Interna.
+ */
+export const purgarPapelera = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const limite = Date.now() - DIAS_PAPELERA * MS_DIA;
+    const clientes = await ctx.db.query("clientes").collect();
+    let purgados = 0;
+    for (const c of clientes) {
+      if (c.eliminadoEn != null && c.eliminadoEn <= limite) {
+        await borrarClienteYRelacionados(ctx, c._id);
+        purgados++;
+      }
+    }
+    return { purgados };
   },
 });

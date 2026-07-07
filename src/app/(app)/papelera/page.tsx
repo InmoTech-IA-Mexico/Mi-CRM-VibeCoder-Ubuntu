@@ -1,5 +1,5 @@
-import { ScreenPlaceholder } from "@/components/screen-placeholder";
+import { PantallaPapelera } from "./_components/pantalla-papelera";
 
 export default function Page() {
-  return <ScreenPlaceholder title="Papelera" design="Papelera Clientes.dc.html" issue="JUA-16" />;
+  return <PantallaPapelera />;
 }
