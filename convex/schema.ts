@@ -119,6 +119,8 @@ export default defineSchema({
     comentarios: v.optional(v.string()),
     motivoCierre: v.optional(v.string()), // notas de cierre al Ganar
     motivoPerdida: v.optional(v.string()),
+    actualizadoEn: v.optional(v.number()), // trazabilidad del último cambio (JUA-21)
+    actualizadoPor: v.optional(v.id("usuarios")),
   }).index("por_cliente", ["clienteId"]),
 
   seguimientos: defineTable({

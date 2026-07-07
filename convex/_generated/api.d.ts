@@ -13,6 +13,7 @@ import type * as clientes from "../clientes.js";
 import type * as crons from "../crons.js";
 import type * as inicio from "../inicio.js";
 import type * as notas from "../notas.js";
+import type * as oportunidades from "../oportunidades.js";
 import type * as seed from "../seed.js";
 
 import type {
@@ -27,6 +28,7 @@ declare const fullApi: ApiFromModules<{
   crons: typeof crons;
   inicio: typeof inicio;
   notas: typeof notas;
+  oportunidades: typeof oportunidades;
   seed: typeof seed;
 }>;
 

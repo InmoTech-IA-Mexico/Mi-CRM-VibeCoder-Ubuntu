@@ -28,6 +28,7 @@ import { bordePrioridadClase } from "@/components/ui/indicador-prioridad";
 import { cn } from "@/lib/utils";
 import { CabeceraFicha } from "./cabecera-ficha";
 import { TarjetaPerfil } from "./tarjeta-perfil";
+import { HojaOportunidad, type ItemOportunidad } from "./hoja-oportunidad";
 
 const COLOR_ETAPA: Record<EtapaPipeline, string> = {
   nueva: "bg-[#80847B]",
@@ -53,12 +54,18 @@ export function PantallaFichaCliente({ clienteId }: { clienteId: Id<"clientes"> 
   const [ahora] = useState(() => Date.now());
   const cliente = useQuery(api.clientes.detalle, { token, clienteId });
   const eliminarNota = useMutation(api.notas.eliminar);
+  const [oportunidadSel, setOportunidadSel] = useState<ItemOportunidad | null>(null);
 
   if (cliente === undefined) return <FichaCargando />;
   if (cliente === null) return <FichaNoEncontrada />;
 
   const base = `/clientes/${clienteId}`;
   const esAdmin = rol === "admin";
+  // Oportunidad activa más reciente (la primera no cerrada; `detalle` viene en
+  // orden descendente) → se destaca en la lista.
+  const activaId = cliente.oportunidades.find(
+    (o) => !["ganada", "perdida", "cancelada"].includes(o.etapa),
+  )?._id;
   const onEliminarNota = async (notaId: Id<"notas">) => {
     if (!window.confirm("¿Eliminar esta nota? No se puede deshacer.")) return;
     try {
@@ -159,29 +166,47 @@ export function PantallaFichaCliente({ clienteId }: { clienteId: Id<"clientes"> 
             <EstadoVacio icono={Inbox} texto="Sin oportunidades abiertas" />
           ) : (
             <div className="flex flex-col gap-2.5">
-              {cliente.oportunidades.map((o) => (
-                <div key={o._id} className="rounded-2xl border border-neutral-100 bg-surface p-3.5 shadow-sm">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="min-w-0 truncate text-[14.5px] font-semibold text-ink">{o.nombre}</span>
-                    <span className="flex flex-shrink-0 items-center gap-1.5 rounded-lg bg-neutral-50 px-2.5 py-1">
-                      <span className={cn("h-1.5 w-1.5 rounded-full", COLOR_ETAPA[o.etapa])} />
-                      <span className="text-[11px] font-semibold text-body">{LABELS.etapa[o.etapa]}</span>
-                    </span>
-                  </div>
-                  {(o.monto != null || o.fechaCierre != null) && (
-                    <div className="mt-2 flex items-center justify-between">
-                      <span className="text-[15px] font-semibold tabular-nums text-teal-800">
-                        {o.monto != null ? `$${new Intl.NumberFormat("es-MX").format(o.monto)}` : ""}
+              {cliente.oportunidades.map((o) => {
+                const activa = o._id === activaId;
+                return (
+                  <button
+                    key={o._id}
+                    type="button"
+                    onClick={() => setOportunidadSel(o)}
+                    className={cn(
+                      "block w-full rounded-2xl border border-l-[3px] border-neutral-100 bg-surface p-3.5 text-left shadow-sm transition active:scale-[0.99]",
+                      activa ? "border-l-gold-500" : "border-l-neutral-100",
+                    )}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="flex min-w-0 items-center gap-2">
+                        <span className="min-w-0 truncate text-[14.5px] font-semibold text-ink">{o.nombre}</span>
+                        {activa && (
+                          <span className="flex-shrink-0 rounded bg-gold-tint px-1.5 py-0.5 text-[9.5px] font-semibold uppercase tracking-wide text-gold-700">
+                            Activa
+                          </span>
+                        )}
                       </span>
-                      {o.fechaCierre != null && (
-                        <span className="text-[12px] text-muted">
-                          Cierre {fechaCortaES(o.fechaCierre, negocio.zonaHoraria)}
-                        </span>
-                      )}
+                      <span className="flex flex-shrink-0 items-center gap-1.5 rounded-lg bg-neutral-50 px-2.5 py-1">
+                        <span className={cn("h-1.5 w-1.5 rounded-full", COLOR_ETAPA[o.etapa])} />
+                        <span className="text-[11px] font-semibold text-body">{LABELS.etapa[o.etapa]}</span>
+                      </span>
                     </div>
-                  )}
-                </div>
-              ))}
+                    {(o.monto != null || o.fechaCierre != null) && (
+                      <div className="mt-2 flex items-center justify-between">
+                        <span className="text-[15px] font-semibold tabular-nums text-teal-800">
+                          {o.monto != null ? `$${new Intl.NumberFormat("es-MX").format(o.monto)}` : ""}
+                        </span>
+                        {o.fechaCierre != null && (
+                          <span className="text-[12px] text-muted">
+                            Cierre {fechaCortaES(o.fechaCierre, negocio.zonaHoraria)}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           )}
         </Seccion>
@@ -261,6 +286,15 @@ export function PantallaFichaCliente({ clienteId }: { clienteId: Id<"clientes"> 
           )}
         </Seccion>
       </div>
+
+      {oportunidadSel && (
+        <HojaOportunidad
+          oportunidad={oportunidadSel}
+          token={token}
+          esAdmin={esAdmin}
+          onClose={() => setOportunidadSel(null)}
+        />
+      )}
     </div>
   );
 }
