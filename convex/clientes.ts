@@ -105,11 +105,14 @@ export const detalle = query({
       .collect();
     const nombrePorId = new Map(usuarios.map((u) => [u._id, u.nombre]));
 
-    // Ventas del cliente (JUA-110): aparecen en el historial.
-    const ventasRaw = await ctx.db
-      .query("ventas")
-      .withIndex("por_cliente", (q) => q.eq("clienteId", id))
-      .collect();
+    // Ventas del cliente (JUA-110): aparecen en el historial. El cliente ya está
+    // validado por sesión; se filtra también por negocio como defensa extra.
+    const ventasRaw = (
+      await ctx.db
+        .query("ventas")
+        .withIndex("por_cliente", (q) => q.eq("clienteId", id))
+        .collect()
+    ).filter((vt) => vt.negocioId === sesion.negocioId);
     const nombreOpoPorId = new Map(opos.map((o) => [o._id, o.nombre]));
 
     return {
