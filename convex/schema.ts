@@ -22,7 +22,7 @@ const etapa = v.union(
   v.literal("perdida"),
   v.literal("cancelada"),
 );
-const canal = v.union(
+export const canal = v.union(
   v.literal("whatsapp"),
   v.literal("email"),
   v.literal("web"),

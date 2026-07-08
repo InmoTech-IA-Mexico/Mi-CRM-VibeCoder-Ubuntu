@@ -1,6 +1,7 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { resolverSesion } from "./auth";
+import { canal } from "./schema";
 
 // Ventas / ingresos registrados (Mejora #2, JUA-110). Se leen desde
 // `clientes.detalle` y aparecen en el historial del cliente. Registrar una venta
@@ -18,6 +19,7 @@ export const crear = mutation({
     oportunidadId: v.optional(v.id("oportunidades")),
     importe: v.number(),
     fecha: v.number(),
+    canal: v.optional(canal),
   },
   handler: async (ctx, args) => {
     const sesion = await resolverSesion(ctx, args.token);
@@ -42,6 +44,7 @@ export const crear = mutation({
       oportunidadId: args.oportunidadId,
       importe: args.importe,
       fecha: args.fecha,
+      canal: args.canal,
       registradoPorId: sesion.usuario._id,
     });
   },
@@ -51,7 +54,8 @@ export const crear = mutation({
  * Panel de ventas del negocio (JUA-112/113). El cliente pasa el rango del periodo
  * y del periodo anterior (calculados en la zona del negocio). Devuelve KPIs
  * (total, nº, ticket medio, variación %), desgloses por canal/responsable y las
- * ventas recientes. El canal se toma del cliente (origen). Deriva negocio de la
+ * ventas recientes. El canal es el propio de la venta (JUA-111) o, si no se
+ * capturó, el origen del cliente. Solo admin (JUA-114). Deriva negocio de la
  * sesión (JUA-10).
  */
 export const resumen = query({
@@ -93,10 +97,10 @@ export const resumen = query({
       .reduce((s, v) => s + v.importe, 0);
     const variacion = totalPrev > 0 ? Math.round(((total - totalPrev) / totalPrev) * 100) : null;
 
-    // Por canal (origen del cliente).
+    // Por canal: el propio de la venta (JUA-111) y, si no, el origen del cliente.
     const porCanalMap = new Map<string, number>();
     for (const v of enPeriodo) {
-      const canal = cli.get(v.clienteId)?.canal ?? "sin_canal";
+      const canal = v.canal ?? cli.get(v.clienteId)?.canal ?? "sin_canal";
       porCanalMap.set(canal, (porCanalMap.get(canal) ?? 0) + v.importe);
     }
     const porCanal = [...porCanalMap.entries()]
@@ -122,7 +126,7 @@ export const resumen = query({
         _id: v._id,
         clienteNombre: cli.get(v.clienteId)?.nombre ?? "Cliente",
         importe: v.importe,
-        canal: cli.get(v.clienteId)?.canal ?? null,
+        canal: v.canal ?? cli.get(v.clienteId)?.canal ?? null,
         responsableNombre: nombreUsuario.get(v.registradoPorId) ?? "—",
         fecha: v.fecha,
       }));

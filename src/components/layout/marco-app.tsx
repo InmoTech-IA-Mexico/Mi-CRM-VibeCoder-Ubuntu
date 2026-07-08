@@ -10,7 +10,9 @@ import { BotonFlotante } from "./boton-flotante";
 // pantallas de detalle/formulario (ficha, nuevo, editar…) no llevan ni barra ni
 // FAB: tienen su propio "volver" y ocupan toda la altura (fiel al diseño).
 const RUTAS_NAV = ["/inicio", "/clientes", "/ventas"];
-const RUTAS_FAB = ["/inicio", "/clientes"];
+// El FAB da de alta cliente (Inicio/Clientes) o venta (Ventas, JUA-111). La acción
+// concreta la elige BotonFlotante según la ruta.
+const RUTAS_FAB = ["/inicio", "/clientes", "/ventas"];
 
 export function MarcoApp({ children }: { children: ReactNode }) {
   const pathname = usePathname();
