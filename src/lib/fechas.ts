@@ -7,6 +7,15 @@
 
 const MS_DIA = 24 * 60 * 60 * 1000;
 
+/** Zonas horarias de México para el arranque del negocio (JUA-8). */
+export const ZONAS_MX = [
+  { tz: "America/Mexico_City", label: "Centro (CDMX, Guadalajara, Monterrey)" },
+  { tz: "America/Cancun", label: "Sureste (Cancún, Quintana Roo)" },
+  { tz: "America/Mazatlan", label: "Pacífico (Mazatlán, La Paz)" },
+  { tz: "America/Hermosillo", label: "Noroeste (Sonora)" },
+  { tz: "America/Tijuana", label: "Frontera (Tijuana, Baja California)" },
+] as const;
+
 /** Diferencia en ms entre la hora local de `tz` y UTC para un instante dado. */
 function desfaseZonaMs(tz: string, fecha: Date): number {
   const dtf = new Intl.DateTimeFormat("en-US", {

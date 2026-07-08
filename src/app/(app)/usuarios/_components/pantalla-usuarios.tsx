@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "convex/react";
-import { ChevronLeft, UserPlus, Mail, AlertCircle, Clock } from "lucide-react";
+import { ChevronLeft, UserPlus, Mail, AlertCircle, Clock, Link2, Check } from "lucide-react";
 import { api } from "../../../../../convex/_generated/api";
 import { useSesion } from "@/components/session/use-sesion";
 import { HojaInferior } from "@/components/ui/hoja-inferior";
@@ -34,6 +34,7 @@ export function PantallaUsuarios() {
 
   const [invitarAbierto, setInvitarAbierto] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
+  const [copiadoId, setCopiadoId] = useState<string | null>(null);
 
   const data = useQuery(api.usuarios.listar, esAdmin ? { token } : "skip");
   const reenviar = useMutation(api.usuarios.reenviar);
@@ -48,6 +49,18 @@ export function PantallaUsuarios() {
 
   const usuarios = data?.usuarios ?? [];
   const invitaciones = data?.invitaciones ?? [];
+
+  const copiarEnlace = async (id: string, token: string) => {
+    setAviso(null);
+    const enlace = `${window.location.origin}/activar?token=${token}`;
+    try {
+      await navigator.clipboard.writeText(enlace);
+      setCopiadoId(id);
+      setTimeout(() => setCopiadoId((c) => (c === id ? null : c)), 1600);
+    } catch {
+      setAviso("No se pudo copiar. Enlace: " + enlace);
+    }
+  };
 
   const accion = async (fn: () => Promise<unknown>, fallo: string) => {
     setAviso(null);
@@ -157,9 +170,22 @@ export function PantallaUsuarios() {
                       )}
                     </div>
                   </div>
-                  <BotonAccion onClick={() => accion(() => reenviar({ token, invitacionId: i._id }), "No se pudo reenviar la invitación.")}>
-                    Reenviar
-                  </BotonAccion>
+                  <div className="flex flex-shrink-0 flex-col gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => copiarEnlace(i._id, i.token)}
+                      className={cn(
+                        "flex items-center justify-center gap-1 rounded-pill border px-3 py-1.5 text-[12.5px] font-semibold transition active:scale-95",
+                        copiadoId === i._id ? "border-teal-800/30 text-teal-800" : "border-border-input text-body active:bg-row-hover",
+                      )}
+                    >
+                      {copiadoId === i._id ? <Check size={13} strokeWidth={2.4} /> : <Link2 size={13} strokeWidth={2} />}
+                      {copiadoId === i._id ? "Copiado" : "Copiar enlace"}
+                    </button>
+                    <BotonAccion onClick={() => accion(() => reenviar({ token, invitacionId: i._id }), "No se pudo reenviar la invitación.")}>
+                      Reenviar
+                    </BotonAccion>
+                  </div>
                 </div>
               ))}
             </div>
@@ -167,8 +193,9 @@ export function PantallaUsuarios() {
         )}
 
         <p className="px-1 text-[12px] leading-snug text-muted">
-          Al invitar se crea una invitación válida <span className="font-semibold text-body">7 días</span>. El
-          envío del email y la activación de la cuenta llegan con la siguiente entrega.
+          Al invitar se crea una invitación válida <span className="font-semibold text-body">7 días</span>. Usa
+          <span className="font-semibold text-body"> Copiar enlace</span> para compartir la activación; el envío
+          automático por email llega con la siguiente entrega.
         </p>
       </div>
 
@@ -255,6 +282,7 @@ function HojaInvitar({
       const msg = e instanceof Error ? e.message.replace(/^\[.*?\]\s*/, "") : "";
       console.error("No se pudo invitar", e);
       setError(msg && !/Uncaught|Server Error/.test(msg) ? msg : "No se pudo enviar la invitación.");
+    } finally {
       setGuardando(false);
     }
   };

@@ -64,6 +64,7 @@ export const listar = query({
             email: i.email,
             nombre: i.nombre ?? null,
             rol: i.rol,
+            token: i.token, // para construir el enlace de activación (copiar enlace)
             creadoEn: i._creationTime,
             expiraEn: i.expiraEn,
             estado: expirada ? ("expirada" as const) : ("pendiente" as const),
