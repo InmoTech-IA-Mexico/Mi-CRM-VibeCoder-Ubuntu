@@ -16,6 +16,7 @@ import type * as notas from "../notas.js";
 import type * as oportunidades from "../oportunidades.js";
 import type * as seed from "../seed.js";
 import type * as seguimientos from "../seguimientos.js";
+import type * as usuarios from "../usuarios.js";
 import type * as ventas from "../ventas.js";
 
 import type {
@@ -33,6 +34,7 @@ declare const fullApi: ApiFromModules<{
   oportunidades: typeof oportunidades;
   seed: typeof seed;
   seguimientos: typeof seguimientos;
+  usuarios: typeof usuarios;
   ventas: typeof ventas;
 }>;
 

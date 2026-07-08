@@ -1,5 +1,5 @@
-import { ScreenPlaceholder } from "@/components/screen-placeholder";
+import { PantallaUsuarios } from "./_components/pantalla-usuarios";
 
 export default function Page() {
-  return <ScreenPlaceholder title="Gestión de usuarios" design="Gestion Usuarios.dc.html" issue="JUA-29" />;
+  return <PantallaUsuarios />;
 }

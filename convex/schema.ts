@@ -39,7 +39,7 @@ const tipoInteraccion = v.union(
   v.literal("interno"),
 );
 const frecuencia = v.union(v.literal("una_vez"), v.literal("semanal"), v.literal("mensual"));
-const rol = v.union(v.literal("admin"), v.literal("operativo"));
+export const rol = v.union(v.literal("admin"), v.literal("operativo"));
 
 export default defineSchema({
   // Contenedor multi-tenant: todo pertenece a un negocio.
@@ -68,11 +68,14 @@ export default defineSchema({
   invitaciones: defineTable({
     negocioId: v.id("negocios"),
     email: v.string(),
+    nombre: v.optional(v.string()), // nombre sugerido del invitado (JUA-29)
     rol,
     estado: v.union(v.literal("pendiente"), v.literal("aceptada"), v.literal("expirada")),
     token: v.string(),
     expiraEn: v.number(),
-  }).index("por_token", ["token"]),
+  })
+    .index("por_token", ["token"])
+    .index("por_negocio", ["negocioId"]),
 
   clientes: defineTable({
     negocioId: v.id("negocios"),
