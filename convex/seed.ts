@@ -60,6 +60,16 @@ const NOTAS = [
   { cliente: "Ana García", tipo: "reunion", descripcion: "Primera reunión. Muy receptiva al servicio. Solicita propuesta escrita.", autor: "c", offsetDias: 30 },
 ] as const;
 
+// Ventas demo para el panel de Ventas (JUA-112/113). El canal del desglose sale
+// del cliente. `autor`: c=Carlos, m=Marta. offsetDias grande (40) → mes anterior.
+const VENTAS_DEMO = [
+  { cliente: "Ana García", importe: 45000, autor: "c", offsetDias: 10, oportunidad: "Departamento Polanco" },
+  { cliente: "TechStart S.A.", importe: 80000, autor: "m", offsetDias: 5, oportunidad: "Oficinas corporativas" },
+  { cliente: "María López", importe: 22000, autor: "c", offsetDias: 15, oportunidad: "Casa Del Valle" },
+  { cliente: "Roberto Silva", importe: 12000, autor: "m", offsetDias: 3, oportunidad: "Local comercial" },
+  { cliente: "Ana García", importe: 30000, autor: "m", offsetDias: 40, oportunidad: null }, // mes anterior (para % variación)
+] as const;
+
 export const poblarDemo = internalMutation({
   args: {},
   handler: async (ctx) => {
@@ -232,27 +242,31 @@ export const poblarDemo = internalMutation({
       });
     }
 
-    // Venta demo (idempotente): si Ana aún no tiene ventas, registra una vinculada
-    // a su oportunidad (aparece en el historial de la ficha — JUA-110).
-    const anaId = idClientePorNombre["Ana García"];
-    if (anaId) {
-      const ventasAna = await ctx.db
-        .query("ventas")
-        .withIndex("por_cliente", (q) => q.eq("clienteId", anaId))
-        .collect();
-      if (ventasAna.length === 0) {
-        const oposAna = await ctx.db
-          .query("oportunidades")
-          .withIndex("por_cliente", (q) => q.eq("clienteId", anaId))
-          .collect();
-        const opo = oposAna.find((o) => o.nombre === "Departamento Polanco");
+    // Ventas demo (idempotente): solo si el negocio aún no tiene ventas. Aparecen
+    // en el historial de cada cliente (JUA-110) y en el panel de Ventas (JUA-112/113).
+    const ventasNegocio = await ctx.db
+      .query("ventas")
+      .withIndex("por_negocio", (q) => q.eq("negocioId", negocioId))
+      .collect();
+    if (ventasNegocio.length === 0) {
+      for (const vt of VENTAS_DEMO) {
+        const clienteId = idClientePorNombre[vt.cliente];
+        if (!clienteId) continue;
+        let oportunidadId: Id<"oportunidades"> | undefined;
+        if (vt.oportunidad) {
+          const opos = await ctx.db
+            .query("oportunidades")
+            .withIndex("por_cliente", (q) => q.eq("clienteId", clienteId))
+            .collect();
+          oportunidadId = opos.find((o) => o.nombre === vt.oportunidad)?._id;
+        }
         await ctx.db.insert("ventas", {
           negocioId,
-          clienteId: anaId,
-          oportunidadId: opo?._id,
-          importe: 45000,
-          fecha: ahora - 10 * MS_DIA,
-          registradoPorId: carlosId,
+          clienteId,
+          oportunidadId,
+          importe: vt.importe,
+          fecha: ahora - vt.offsetDias * MS_DIA,
+          registradoPorId: vt.autor === "m" ? martaId : carlosId,
         });
       }
     }
@@ -265,6 +279,7 @@ export const poblarDemo = internalMutation({
       seguimientos: SEGUIMIENTOS.length,
       oportunidades: OPORTUNIDADES.length,
       notas: NOTAS.length,
+      ventas: VENTAS_DEMO.length,
       nota: negocioExistente ? "demo actualizado" : "demo creado",
     };
   },

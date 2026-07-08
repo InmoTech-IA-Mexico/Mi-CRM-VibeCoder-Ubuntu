@@ -5,24 +5,23 @@ import type { ReactNode } from "react";
 import { BottomNav } from "./bottom-nav";
 import { BotonFlotante } from "./boton-flotante";
 
-// Las pestañas principales (Inicio/Clientes) llevan barra inferior + FAB. Las
-// pantallas de detalle/formulario (ficha, nuevo, editar…) NO: tienen su propio
-// botón "volver" y ocupan toda la altura, fiel al diseño de referencia.
-const RUTAS_TAB = ["/inicio", "/clientes"];
+// Pantallas de nivel superior con barra inferior (se puede navegar entre ellas).
+// El FAB "nuevo cliente" solo aparece donde tiene sentido (Inicio/Clientes). Las
+// pantallas de detalle/formulario (ficha, nuevo, editar…) no llevan ni barra ni
+// FAB: tienen su propio "volver" y ocupan toda la altura (fiel al diseño).
+const RUTAS_NAV = ["/inicio", "/clientes", "/ventas"];
+const RUTAS_FAB = ["/inicio", "/clientes"];
 
 export function MarcoApp({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const esTab = RUTAS_TAB.includes(pathname);
+  const conNav = RUTAS_NAV.includes(pathname);
+  const conFab = RUTAS_FAB.includes(pathname);
 
   return (
     <>
-      <main className={esTab ? "flex-1 pb-24" : "flex-1"}>{children}</main>
-      {esTab && (
-        <>
-          <BotonFlotante />
-          <BottomNav />
-        </>
-      )}
+      <main className={conNav ? "flex-1 pb-24" : "flex-1"}>{children}</main>
+      {conFab && <BotonFlotante />}
+      {conNav && <BottomNav />}
     </>
   );
 }

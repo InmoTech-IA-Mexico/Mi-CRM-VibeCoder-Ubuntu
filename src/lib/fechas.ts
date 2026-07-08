@@ -82,6 +82,61 @@ export function epochDesdeFechaHora(fechaISO: string, hora: string, tz: string):
   return comoUTC - desfase;
 }
 
+export type PeriodoVentas = "mes" | "trimestre" | "año";
+
+/**
+ * Rango [desde, hasta) del periodo actual y del anterior, en la zona `tz`
+ * (JUA-112: KPIs de ventas mes/trimestre/año, en zona del negocio). Se calcula en
+ * el cliente y se pasa a la query para que quede determinista.
+ */
+export function rangoPeriodoEnZona(
+  periodo: PeriodoVentas,
+  tz: string,
+  ahora: number = Date.now(),
+): { desde: number; hasta: number; desdePrev: number; hastaPrev: number } {
+  // Fecha local (en tz) de "ahora" → año y mes (1-based).
+  const iso = new Intl.DateTimeFormat("en-CA", {
+    timeZone: tz,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date(ahora));
+  const [y, m] = iso.split("-").map(Number);
+  const m0 = m - 1; // mes 0-based
+
+  // Inicio del mes (yy, mm 0-based, con desbordes normalizados) en la zona tz.
+  const inicioMes = (yy: number, mm: number): number => {
+    const d = new Date(Date.UTC(yy, mm, 1));
+    const fechaISO = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-01`;
+    return epochDesdeFechaHora(fechaISO, "00:00", tz);
+  };
+
+  if (periodo === "año") {
+    return {
+      desde: inicioMes(y, 0),
+      hasta: inicioMes(y + 1, 0),
+      desdePrev: inicioMes(y - 1, 0),
+      hastaPrev: inicioMes(y, 0),
+    };
+  }
+  if (periodo === "trimestre") {
+    const q = Math.floor(m0 / 3) * 3;
+    return {
+      desde: inicioMes(y, q),
+      hasta: inicioMes(y, q + 3),
+      desdePrev: inicioMes(y, q - 3),
+      hastaPrev: inicioMes(y, q),
+    };
+  }
+  // mes
+  return {
+    desde: inicioMes(y, m0),
+    hasta: inicioMes(y, m0 + 1),
+    desdePrev: inicioMes(y, m0 - 1),
+    hastaPrev: inicioMes(y, m0),
+  };
+}
+
 /** Fecha corta en español, p. ej. "28 jun". */
 export function fechaCortaES(epoch: number, tz: string): string {
   const partes = new Intl.DateTimeFormat("es-MX", {

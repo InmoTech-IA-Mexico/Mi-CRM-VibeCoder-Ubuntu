@@ -1,5 +1,5 @@
-import { ScreenPlaceholder } from "@/components/screen-placeholder";
+import { PantallaVentas } from "./_components/pantalla-ventas";
 
 export default function Page() {
-  return <ScreenPlaceholder title="Ventas" design="Ventas.dc.html" issue="JUA-112 / JUA-113" />;
+  return <PantallaVentas />;
 }
