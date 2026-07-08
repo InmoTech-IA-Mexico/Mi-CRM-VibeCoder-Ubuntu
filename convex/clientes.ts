@@ -105,6 +105,13 @@ export const detalle = query({
       .collect();
     const nombrePorId = new Map(usuarios.map((u) => [u._id, u.nombre]));
 
+    // Ventas del cliente (JUA-110): aparecen en el historial.
+    const ventasRaw = await ctx.db
+      .query("ventas")
+      .withIndex("por_cliente", (q) => q.eq("clienteId", id))
+      .collect();
+    const nombreOpoPorId = new Map(opos.map((o) => [o._id, o.nombre]));
+
     return {
       _id: c._id,
       nombre: c.nombre,
@@ -143,6 +150,15 @@ export const detalle = query({
           resultado: n.resultado ?? null,
           fecha: n.fecha,
           autorNombre: nombrePorId.get(n.autorId) ?? "—",
+        })),
+      ventas: ventasRaw
+        .sort((a, b) => b.fecha - a.fecha)
+        .map((vt) => ({
+          _id: vt._id,
+          importe: vt.importe,
+          fecha: vt.fecha,
+          oportunidadNombre: vt.oportunidadId ? (nombreOpoPorId.get(vt.oportunidadId) ?? null) : null,
+          registradoPorNombre: nombrePorId.get(vt.registradoPorId) ?? "—",
         })),
     };
   },

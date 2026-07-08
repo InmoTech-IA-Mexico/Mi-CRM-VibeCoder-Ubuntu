@@ -18,6 +18,7 @@ import {
   MapPin,
   Lock,
   Trash2,
+  Trophy,
 } from "lucide-react";
 import { api } from "../../../../../../convex/_generated/api";
 import type { Id } from "../../../../../../convex/_generated/dataModel";
@@ -29,6 +30,7 @@ import { cn } from "@/lib/utils";
 import { CabeceraFicha } from "./cabecera-ficha";
 import { TarjetaPerfil } from "./tarjeta-perfil";
 import { HojaOportunidad, type ItemOportunidad } from "./hoja-oportunidad";
+import { HojaRegistrarVenta } from "./hoja-registrar-venta";
 
 const COLOR_ETAPA: Record<EtapaPipeline, string> = {
   nueva: "bg-[#80847B]",
@@ -55,6 +57,7 @@ export function PantallaFichaCliente({ clienteId }: { clienteId: Id<"clientes"> 
   const cliente = useQuery(api.clientes.detalle, { token, clienteId });
   const eliminarNota = useMutation(api.notas.eliminar);
   const [oportunidadSel, setOportunidadSel] = useState<ItemOportunidad | null>(null);
+  const [ventaAbierta, setVentaAbierta] = useState(false);
 
   if (cliente === undefined) return <FichaCargando />;
   if (cliente === null) return <FichaNoEncontrada />;
@@ -66,6 +69,11 @@ export function PantallaFichaCliente({ clienteId }: { clienteId: Id<"clientes"> 
   const activaId = cliente.oportunidades.find(
     (o) => !["ganada", "perdida", "cancelada"].includes(o.etapa),
   )?._id;
+  // Historial = notas + ventas, en orden cronológico inverso (JUA-18 + JUA-110).
+  const historial = [
+    ...cliente.notas.map((n) => ({ kind: "nota" as const, fecha: n.fecha, nota: n })),
+    ...cliente.ventas.map((vt) => ({ kind: "venta" as const, fecha: vt.fecha, venta: vt })),
+  ].sort((a, b) => b.fecha - a.fecha);
   const onEliminarNota = async (notaId: Id<"notas">) => {
     if (!window.confirm("¿Eliminar esta nota? No se puede deshacer.")) return;
     try {
@@ -110,13 +118,14 @@ export function PantallaFichaCliente({ clienteId }: { clienteId: Id<"clientes"> 
             <CalendarClock size={18} strokeWidth={1.7} />
             Programar seguimiento
           </Link>
-          <Link
-            href={`${base}/oportunidad`}
+          <button
+            type="button"
+            onClick={() => setVentaAbierta(true)}
             className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-gold-500 text-[13.5px] font-bold text-ink shadow-[0_2px_8px_rgba(201,162,94,0.32)] active:scale-[0.99]"
           >
-            <Plus size={18} strokeWidth={2} />
-            Nueva oportunidad
-          </Link>
+            <Trophy size={18} strokeWidth={1.9} />
+            Registrar venta
+          </button>
         </div>
 
         {/* Seguimientos pendientes */}
@@ -211,9 +220,9 @@ export function PantallaFichaCliente({ clienteId }: { clienteId: Id<"clientes"> 
           )}
         </Seccion>
 
-        {/* Historial de interacciones (JUA-18) */}
+        {/* Historial: notas + ventas (JUA-18 + JUA-110) */}
         <Seccion titulo="Historial">
-          {cliente.notas.length === 0 ? (
+          {historial.length === 0 ? (
             <div className="flex flex-col items-center rounded-[18px] border border-neutral-100 bg-surface px-6 py-7 text-center shadow-sm">
               <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl border border-neutral-100 bg-neutral-50">
                 <MessagesSquare size={24} strokeWidth={1.5} className="text-neutral-400" />
@@ -225,12 +234,39 @@ export function PantallaFichaCliente({ clienteId }: { clienteId: Id<"clientes"> 
             </div>
           ) : (
             <div className="rounded-[18px] border border-neutral-100 bg-surface p-4 shadow-sm">
-              {cliente.notas.map((n, i) => {
-                const Icono = ICONO_TIPO[n.tipo];
-                const d = diasDesde(n.fecha, ahora);
+              {historial.map((item, i) => {
+                const d = diasDesde(item.fecha, ahora);
                 const cuando = d <= 0 ? "Hoy" : d === 1 ? "Ayer" : `Hace ${d} días`;
+                const ultimo = i === historial.length - 1;
+                if (item.kind === "venta") {
+                  const vt = item.venta;
+                  return (
+                    <div key={vt._id} className="flex gap-3">
+                      <div className="flex flex-col items-center">
+                        <div className="flex h-[34px] w-[34px] flex-shrink-0 items-center justify-center rounded-[10px] bg-[#E2EFEB]">
+                          <Trophy size={16} strokeWidth={1.7} className="text-success" />
+                        </div>
+                        {!ultimo && <div className="mt-1 w-0.5 flex-1 bg-neutral-100" />}
+                      </div>
+                      <div className={cn("min-w-0 flex-1", !ultimo && "pb-4")}>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[11.5px] text-muted">{cuando}</span>
+                          <span className="rounded-md bg-[#E2EFEB] px-1.5 py-0.5 text-[10px] font-semibold text-[#1B5446]">Venta</span>
+                        </div>
+                        <p className="mt-1 text-[14px] leading-relaxed text-ink">
+                          Venta registrada{vt.oportunidadNombre ? ` — ${vt.oportunidadNombre}` : ""}{" "}
+                          <span className="font-bold tabular-nums text-teal-800">
+                            ${new Intl.NumberFormat("es-MX").format(vt.importe)}
+                          </span>
+                        </p>
+                        <p className="mt-1.5 text-[12px] text-muted">{vt.registradoPorNombre}</p>
+                      </div>
+                    </div>
+                  );
+                }
+                const n = item.nota;
+                const Icono = ICONO_TIPO[n.tipo];
                 const interno = n.tipo === "interno";
-                const ultimo = i === cliente.notas.length - 1;
                 return (
                   <div key={n._id} className="flex gap-3">
                     <div className="flex flex-col items-center">
@@ -293,6 +329,16 @@ export function PantallaFichaCliente({ clienteId }: { clienteId: Id<"clientes"> 
           token={token}
           esAdmin={esAdmin}
           onClose={() => setOportunidadSel(null)}
+        />
+      )}
+
+      {ventaAbierta && (
+        <HojaRegistrarVenta
+          clienteId={clienteId}
+          nombre={cliente.nombre}
+          oportunidades={cliente.oportunidades}
+          token={token}
+          onClose={() => setVentaAbierta(false)}
         />
       )}
     </div>

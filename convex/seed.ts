@@ -232,6 +232,31 @@ export const poblarDemo = internalMutation({
       });
     }
 
+    // Venta demo (idempotente): si Ana aún no tiene ventas, registra una vinculada
+    // a su oportunidad (aparece en el historial de la ficha — JUA-110).
+    const anaId = idClientePorNombre["Ana García"];
+    if (anaId) {
+      const ventasAna = await ctx.db
+        .query("ventas")
+        .withIndex("por_cliente", (q) => q.eq("clienteId", anaId))
+        .collect();
+      if (ventasAna.length === 0) {
+        const oposAna = await ctx.db
+          .query("oportunidades")
+          .withIndex("por_cliente", (q) => q.eq("clienteId", anaId))
+          .collect();
+        const opo = oposAna.find((o) => o.nombre === "Departamento Polanco");
+        await ctx.db.insert("ventas", {
+          negocioId,
+          clienteId: anaId,
+          oportunidadId: opo?._id,
+          importe: 45000,
+          fecha: ahora - 10 * MS_DIA,
+          registradoPorId: carlosId,
+        });
+      }
+    }
+
     return {
       negocioId,
       martaId,
