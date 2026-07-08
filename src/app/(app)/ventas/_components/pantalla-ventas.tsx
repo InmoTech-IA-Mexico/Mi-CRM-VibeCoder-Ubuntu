@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useQuery } from "convex/react";
 import { TrendingUp, TrendingDown, MessageCircle, Mail, Globe, Phone, Users, Radio, HelpCircle, Trophy } from "lucide-react";
 import { api } from "../../../../../convex/_generated/api";
@@ -35,7 +36,9 @@ function labelCanal(canal: string): string {
 }
 
 export function PantallaVentas() {
-  const { token, negocio } = useSesion();
+  const { token, negocio, rol } = useSesion();
+  const router = useRouter();
+  const esAdmin = rol === "admin";
   const [periodo, setPeriodo] = useState<PeriodoVentas>("mes");
   const [ahora] = useState(() => Date.now());
   const rango = useMemo(
@@ -43,7 +46,15 @@ export function PantallaVentas() {
     [periodo, negocio.zonaHoraria, ahora],
   );
   const cfg = PERIODOS.find((p) => p.key === periodo)!;
-  const data = useQuery(api.ventas.resumen, { token, ...rango });
+  // El panel de métricas es solo para admin (JUA-114). El operativo no accede;
+  // se redirige a Inicio (además `ventas.resumen` no le devuelve datos).
+  const data = useQuery(api.ventas.resumen, esAdmin ? { token, ...rango } : "skip");
+
+  useEffect(() => {
+    if (!esAdmin) router.replace("/inicio");
+  }, [esAdmin, router]);
+
+  if (!esAdmin) return null;
 
   return (
     <div className="px-4 pt-2">

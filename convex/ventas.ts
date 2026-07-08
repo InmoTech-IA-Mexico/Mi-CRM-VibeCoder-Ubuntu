@@ -65,6 +65,9 @@ export const resumen = query({
   handler: async (ctx, { token, desde, hasta, desdePrev, hastaPrev }) => {
     const sesion = await resolverSesion(ctx, token);
     if (!sesion) return null;
+    // El panel de métricas del equipo es solo para admin (JUA-114). El operativo
+    // registra ventas desde la ficha, pero no ve totales/ranking del equipo.
+    if (sesion.usuario.rol !== "admin") return null;
 
     const ventas = await ctx.db
       .query("ventas")
