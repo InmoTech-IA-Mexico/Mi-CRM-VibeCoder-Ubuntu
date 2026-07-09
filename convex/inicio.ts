@@ -166,3 +166,81 @@ export const marcarSeguimientoRealizado = mutation({
     await ctx.db.patch(seguimientoId, { estado: "realizado" });
   },
 });
+
+/**
+ * Estado global de clientes (JUA-35). Dashboard agregado del negocio, para ambos
+ * roles. Totales por estado (con %), oportunidades abiertas por etapa,
+ * seguimientos pendientes/vencidos y clientes "sin atender" (mismo criterio que
+ * `panelInactividad`). Negocio derivado de la sesión (JUA-10); reactivo.
+ */
+export const estadoGlobal = query({
+  args: { token: v.string() },
+  handler: async (ctx, { token }) => {
+    const sesion = await resolverSesion(ctx, token);
+    if (!sesion) return null;
+    const negocioId = sesion.negocioId;
+    const ahora = Date.now();
+
+    const clientes = (
+      await ctx.db.query("clientes").withIndex("por_negocio", (q) => q.eq("negocioId", negocioId)).collect()
+    ).filter((c) => c.eliminadoEn == null);
+    const total = clientes.length;
+    const ESTADOS = ["nuevo", "prospecto", "activo", "inactivo", "descartado"] as const;
+    const porEstado = ESTADOS.map((estado) => {
+      const count = clientes.filter((c) => c.estado === estado).length;
+      return { estado, count, pct: total > 0 ? Math.round((count / total) * 100) : 0 };
+    });
+
+    // Oportunidades abiertas (no cerradas) por etapa del pipeline.
+    const opos = await ctx.db
+      .query("oportunidades")
+      .withIndex("por_negocio", (q) => q.eq("negocioId", negocioId))
+      .collect();
+    const CERRADAS = ["ganada", "perdida", "cancelada"];
+    const abiertas = opos.filter((o) => !CERRADAS.includes(o.etapa));
+    const ETAPAS_ABIERTAS = ["nueva", "en_contacto", "propuesta", "negociacion"] as const;
+    const oportunidades = {
+      total: abiertas.length,
+      porEtapa: ETAPAS_ABIERTAS.map((etapa) => ({ etapa, count: abiertas.filter((o) => o.etapa === etapa).length })),
+    };
+
+    // Seguimientos pendientes + cuántos están vencidos.
+    const seguimientos = await ctx.db
+      .query("seguimientos")
+      .withIndex("por_negocio", (q) => q.eq("negocioId", negocioId))
+      .collect();
+    const pendientes = seguimientos.filter((s) => s.estado === "pendiente");
+    const vencidos = pendientes.filter((s) => s.fecha < ahora).length;
+
+    // Clientes sin atender: ≥15 días sin contacto, sin recordatorio próximo
+    // planificado y en estado que cuenta (idéntico a panelInactividad, JUA-25).
+    const limiteProximos = ahora + PROXIMOS_DIAS_RECORDATORIO * MS_DIA;
+    const conRecordatorioProximo = new Set<Id<"clientes">>();
+    for (const s of seguimientos) {
+      if (
+        s.estado === "pendiente" &&
+        s.destino === "cliente" &&
+        s.clienteId != null &&
+        s.fecha >= ahora &&
+        s.fecha <= limiteProximos
+      ) {
+        conRecordatorioProximo.add(s.clienteId);
+      }
+    }
+    const sinAtender = clientes.filter(
+      (c) =>
+        c.estado !== "nuevo" &&
+        c.estado !== "descartado" &&
+        !conRecordatorioProximo.has(c._id) &&
+        Math.floor((ahora - (c.ultimaInteraccion ?? c._creationTime)) / MS_DIA) >= DIAS_INACTIVIDAD,
+    ).length;
+
+    return {
+      total,
+      porEstado,
+      oportunidades,
+      seguimientos: { pendientes: pendientes.length, vencidos },
+      sinAtender,
+    };
+  },
+});

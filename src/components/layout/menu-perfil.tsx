@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { BarChart3, ChevronRight, LogOut, Trash2, Users } from "lucide-react";
+import { BarChart3, ChevronRight, LayoutDashboard, LogOut, Trash2, Users } from "lucide-react";
 import { useSesion } from "@/components/session/use-sesion";
 import { HojaInferior } from "@/components/ui/hoja-inferior";
 import { LABELS } from "@/lib/enums";
@@ -47,6 +47,19 @@ export function MenuPerfil() {
         }
       >
         <div className="flex flex-col">
+          {/* Estado del negocio: visible para ambos roles (JUA-35). */}
+          <button
+            type="button"
+            onClick={() => {
+              setAbierta(false);
+              router.push("/estado");
+            }}
+            className="flex items-center gap-3 rounded-input px-2 py-3 text-left text-[15px] text-ink active:bg-row-hover"
+          >
+            <LayoutDashboard size={19} className="text-body" />
+            <span className="flex-1">Estado del negocio</span>
+            <ChevronRight size={17} className="text-muted" />
+          </button>
           {rol === "admin" &&
             OPCIONES_ADMIN.map(({ label, icon: Icon, href }) => (
               <button

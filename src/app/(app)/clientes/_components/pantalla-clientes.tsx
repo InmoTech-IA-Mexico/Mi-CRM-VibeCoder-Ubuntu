@@ -9,6 +9,7 @@ import { useSesion } from "@/components/session/use-sesion";
 import { MenuPerfil } from "@/components/layout/menu-perfil";
 import { EsqueletoLista } from "@/components/ui/esqueleto-lista";
 import { TarjetaCliente } from "./tarjeta-cliente";
+import { ESTADOS_CLIENTE, LABELS, type EstadoCliente } from "@/lib/enums";
 import { cn } from "@/lib/utils";
 
 const CHIPS = [
@@ -21,23 +22,30 @@ type Chip = (typeof CHIPS)[number]["key"];
 
 const OCULTAR_SCROLL = "[scrollbar-width:none] [&::-webkit-scrollbar]:hidden";
 
-export function PantallaClientes() {
+export function PantallaClientes({ estadoInicial }: { estadoInicial?: string }) {
   const { token } = useSesion();
   const [busqueda, setBusqueda] = useState("");
   const [chip, setChip] = useState<Chip>("todos");
+  // Filtro por estado desde el dashboard (JUA-35). Prevalece sobre los chips.
+  const estadoValido = (ESTADOS_CLIENTE as readonly string[]).includes(estadoInicial ?? "")
+    ? (estadoInicial as EstadoCliente)
+    : null;
+  const [estadoFiltro, setEstadoFiltro] = useState<EstadoCliente | null>(estadoValido);
   const [ahora] = useState(() => Date.now());
 
   const clientes = useQuery(api.clientes.listar, { token });
 
   const q = busqueda.trim().toLowerCase();
   const porChip = (clientes ?? []).filter((c) =>
-    chip === "activos"
-      ? c.estado === "activo"
-      : chip === "prospectos"
-        ? c.estado === "prospecto"
-        : chip === "alta"
-          ? c.prioridad === "alta"
-          : true,
+    estadoFiltro
+      ? c.estado === estadoFiltro
+      : chip === "activos"
+        ? c.estado === "activo"
+        : chip === "prospectos"
+          ? c.estado === "prospecto"
+          : chip === "alta"
+            ? c.prioridad === "alta"
+            : true,
   );
   const visibles = q
     ? porChip.filter((c) =>
@@ -85,24 +93,41 @@ export function PantallaClientes() {
         )}
       </div>
 
-      {/* Chips de filtro rápido */}
-      <div className={cn("-mx-4 mt-3.5 flex gap-2 overflow-x-auto px-4", OCULTAR_SCROLL)}>
-        {CHIPS.map((c) => (
-          <button
-            key={c.key}
-            type="button"
-            onClick={() => setChip(c.key)}
-            className={cn(
-              "flex-none rounded-pill border px-3.5 py-1.5 text-[13px] font-medium",
-              chip === c.key
-                ? "border-gold-500 bg-gold-tint text-gold-700"
-                : "border-border-input bg-surface text-body",
-            )}
-          >
-            {c.label}
-          </button>
-        ))}
-      </div>
+      {/* Filtro por estado (desde el dashboard) o chips de filtro rápido */}
+      {estadoFiltro ? (
+        <div className="mt-3.5 flex items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 rounded-pill border border-gold-500 bg-gold-tint px-3 py-1.5 text-[13px] font-medium text-gold-700">
+            {LABELS.estadoCliente[estadoFiltro]}
+            <button
+              type="button"
+              aria-label="Quitar filtro"
+              onClick={() => setEstadoFiltro(null)}
+              className="flex h-[18px] w-[18px] items-center justify-center rounded-full bg-gold-500/20"
+            >
+              <X size={12} strokeWidth={2.4} />
+            </button>
+          </span>
+          <span className="text-[12.5px] text-muted">Filtrando por estado</span>
+        </div>
+      ) : (
+        <div className={cn("-mx-4 mt-3.5 flex gap-2 overflow-x-auto px-4", OCULTAR_SCROLL)}>
+          {CHIPS.map((c) => (
+            <button
+              key={c.key}
+              type="button"
+              onClick={() => setChip(c.key)}
+              className={cn(
+                "flex-none rounded-pill border px-3.5 py-1.5 text-[13px] font-medium",
+                chip === c.key
+                  ? "border-gold-500 bg-gold-tint text-gold-700"
+                  : "border-border-input bg-surface text-body",
+              )}
+            >
+              {c.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Lista / estados */}
       <div className="mt-3.5">
