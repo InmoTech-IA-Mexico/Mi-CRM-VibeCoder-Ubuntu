@@ -8,12 +8,15 @@ import { Check } from "lucide-react";
 import { api } from "../../../../../convex/_generated/api";
 import { useSesion } from "@/components/session/use-sesion";
 import { IndicadorPrioridad, bordePrioridadClase } from "@/components/ui/indicador-prioridad";
+import { AccionesRecordatorio } from "@/components/recordatorios/acciones-recordatorio";
 import { cn } from "@/lib/utils";
 
 export type ItemAgenda = FunctionReturnType<typeof api.inicio.agendaDelDia>[number];
 
 export function TarjetaRecordatorio({ item }: { item: ItemAgenda }) {
-  const { token } = useSesion();
+  const { token, usuario, rol } = useSesion();
+  // Solo el responsable asignado o un admin pueden gestionarlo (JUA-24).
+  const puedeGestionar = item.responsableId === usuario._id || rol === "admin";
   const marcarRealizado = useMutation(api.inicio.marcarSeguimientoRealizado);
   const [marcando, setMarcando] = useState(false);
 
@@ -64,17 +67,27 @@ export function TarjetaRecordatorio({ item }: { item: ItemAgenda }) {
         </div>
       </Link>
 
-      {/* TODO(JUA-24): añadir reprogramar/cancelar en el flujo avanzado. */}
-      <button
-        type="button"
-        aria-label="Marcar como realizado"
-        aria-busy={marcando}
-        disabled={marcando}
-        onClick={completar}
-        className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full border border-[#2E7D6B]/30 bg-[#E2EFEB] transition-transform active:scale-95 disabled:cursor-wait disabled:opacity-60"
-      >
-        <Check size={18} strokeWidth={2.2} className="text-success" />
-      </button>
+      {/* Acciones (JUA-24): completar rápido + menú reprogramar/cancelar/eliminar. */}
+      {puedeGestionar && (
+        <div className="flex flex-shrink-0 items-center gap-2">
+          <button
+            type="button"
+            aria-label="Marcar como realizado"
+            aria-busy={marcando}
+            disabled={marcando}
+            onClick={completar}
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-[#2E7D6B]/30 bg-[#E2EFEB] transition-transform active:scale-95 disabled:cursor-wait disabled:opacity-60"
+          >
+            <Check size={18} strokeWidth={2.2} className="text-success" />
+          </button>
+          <AccionesRecordatorio
+            seguimientoId={item._id}
+            fecha={item.fecha}
+            hora={item.hora}
+            puedeGestionar={puedeGestionar}
+          />
+        </div>
+      )}
     </div>
   );
 }

@@ -26,6 +26,7 @@ import { useSesion } from "@/components/session/use-sesion";
 import { LABELS, type EtapaPipeline, type TipoInteraccion } from "@/lib/enums";
 import { fechaCortaES, diasDesde } from "@/lib/fechas";
 import { bordePrioridadClase } from "@/components/ui/indicador-prioridad";
+import { AccionesRecordatorio } from "@/components/recordatorios/acciones-recordatorio";
 import { cn } from "@/lib/utils";
 import { CabeceraFicha } from "./cabecera-ficha";
 import { TarjetaPerfil } from "./tarjeta-perfil";
@@ -52,7 +53,7 @@ const ICONO_TIPO: Record<TipoInteraccion, typeof Phone> = {
 };
 
 export function PantallaFichaCliente({ clienteId }: { clienteId: Id<"clientes"> }) {
-  const { token, negocio, rol } = useSesion();
+  const { token, negocio, rol, usuario } = useSesion();
   const [ahora] = useState(() => Date.now());
   const cliente = useQuery(api.clientes.detalle, { token, clienteId });
   const eliminarNota = useMutation(api.notas.eliminar);
@@ -152,6 +153,12 @@ export function PantallaFichaCliente({ clienteId }: { clienteId: Id<"clientes"> 
                       {s.hora ? ` · ${s.hora}` : ""}
                     </p>
                   </div>
+                  <AccionesRecordatorio
+                    seguimientoId={s._id}
+                    fecha={s.fecha}
+                    hora={s.hora}
+                    puedeGestionar={s.responsableId === usuario._id || rol === "admin"}
+                  />
                 </div>
               ))}
             </div>

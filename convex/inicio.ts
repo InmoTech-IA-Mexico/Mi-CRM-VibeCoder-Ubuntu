@@ -52,11 +52,13 @@ export const agendaDelDia = query({
         return {
           _id: s._id,
           titulo: s.titulo,
+          fecha: s.fecha,
           hora: s.hora ?? null,
           prioridad: s.prioridad,
           clienteId: s.clienteId ?? null,
           clienteNombre: cliente?.nombre ?? "Cliente",
           vencido: s.fecha < inicioDia,
+          responsableId: s.responsableId,
         };
       }),
     );
@@ -161,6 +163,10 @@ export const marcarSeguimientoRealizado = mutation({
     const seguimiento = await ctx.db.get(seguimientoId);
     if (!seguimiento || seguimiento.negocioId !== sesion.negocioId) {
       throw new Error("No encontrado");
+    }
+    // Solo el responsable asignado o un admin pueden gestionarlo (JUA-24).
+    if (seguimiento.responsableId !== sesion.usuario._id && sesion.usuario.rol !== "admin") {
+      throw new Error("No autorizado");
     }
 
     await ctx.db.patch(seguimientoId, { estado: "realizado" });

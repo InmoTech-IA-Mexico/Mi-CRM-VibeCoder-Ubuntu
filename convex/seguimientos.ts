@@ -1,4 +1,6 @@
 import { mutation } from "./_generated/server";
+import type { MutationCtx } from "./_generated/server";
+import type { Id } from "./_generated/dataModel";
 import { v } from "convex/values";
 import { resolverSesion } from "./auth";
 
@@ -59,5 +61,61 @@ export const crear = mutation({
       frecuencia: "una_vez",
       estado: "pendiente",
     });
+  },
+});
+
+// Gestión de recordatorios existentes (JUA-24). Solo el responsable asignado o un
+// admin pueden gestionarlos. Se accede desde la ficha y la agenda del día.
+
+/**
+ * Carga un seguimiento validando negocio (JUA-10) y permiso de gestión (JUA-24):
+ * el responsable asignado o un admin. Devuelve el seguimiento o lanza error.
+ */
+async function seguimientoGestionable(
+  ctx: MutationCtx,
+  token: string,
+  seguimientoId: Id<"seguimientos">,
+) {
+  const sesion = await resolverSesion(ctx, token);
+  if (!sesion) throw new Error("No autorizado");
+  const seguimiento = await ctx.db.get(seguimientoId);
+  if (!seguimiento || seguimiento.negocioId !== sesion.negocioId) {
+    throw new Error("No encontrado");
+  }
+  if (seguimiento.responsableId !== sesion.usuario._id && sesion.usuario.rol !== "admin") {
+    throw new Error("No autorizado");
+  }
+  return { sesion, seguimiento };
+}
+
+/** Reprograma un recordatorio a nueva fecha/hora; vuelve a estado "pendiente". */
+export const reprogramar = mutation({
+  args: {
+    token: v.string(),
+    seguimientoId: v.id("seguimientos"),
+    fecha: v.number(),
+    hora: v.optional(v.string()),
+  },
+  handler: async (ctx, { token, seguimientoId, fecha, hora }) => {
+    await seguimientoGestionable(ctx, token, seguimientoId);
+    await ctx.db.patch(seguimientoId, { fecha, hora: hora || undefined, estado: "pendiente" });
+  },
+});
+
+/** Cancela un recordatorio (estado "cancelado"). Desaparece de la agenda. */
+export const cancelar = mutation({
+  args: { token: v.string(), seguimientoId: v.id("seguimientos") },
+  handler: async (ctx, { token, seguimientoId }) => {
+    await seguimientoGestionable(ctx, token, seguimientoId);
+    await ctx.db.patch(seguimientoId, { estado: "cancelado" });
+  },
+});
+
+/** Elimina un recordatorio permanentemente (con confirmación en la UI). */
+export const eliminar = mutation({
+  args: { token: v.string(), seguimientoId: v.id("seguimientos") },
+  handler: async (ctx, { token, seguimientoId }) => {
+    await seguimientoGestionable(ctx, token, seguimientoId);
+    await ctx.db.delete(seguimientoId);
   },
 });
