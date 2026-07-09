@@ -1,0 +1,95 @@
+import { mutation, query } from "./_generated/server";
+import { v } from "convex/values";
+import { randomBytes, bytesToHex } from "@noble/hashes/utils.js";
+import { hashPassword } from "./auth";
+
+// Recuperación de contraseña (JUA-7). Funciones PÚBLICAS: el usuario no tiene
+// sesión (olvidó su clave). Token de un solo uso, expira en 24 h; solicitar de
+// nuevo invalida el anterior. Nunca se revela si un email existe (anti-enumeración).
+// El envío real del enlace por email queda pendiente (Resend).
+
+const RECUP_MS = 24 * 60 * 60 * 1000; // 24 h
+
+/**
+ * Solicita un enlace de recuperación. Respuesta **genérica** siempre (exista o
+ * no el email). Si el usuario existe y no está inactivo, invalida sus enlaces
+ * previos y crea uno nuevo (24 h).
+ */
+export const solicitar = mutation({
+  args: { email: v.string() },
+  handler: async (ctx, { email }) => {
+    const correo = email.trim().toLowerCase();
+
+    const usuario = await ctx.db
+      .query("usuarios")
+      .withIndex("por_email", (q) => q.eq("email", correo))
+      .first();
+
+    if (usuario && usuario.estado !== "inactivo") {
+      // Invalidar enlaces previos del usuario (el anterior se invalida).
+      const previos = await ctx.db
+        .query("recuperaciones")
+        .withIndex("por_usuario", (q) => q.eq("usuarioId", usuario._id))
+        .collect();
+      for (const p of previos) await ctx.db.delete(p._id);
+
+      await ctx.db.insert("recuperaciones", {
+        usuarioId: usuario._id,
+        token: bytesToHex(randomBytes(32)),
+        expiraEn: Date.now() + RECUP_MS,
+      });
+    }
+
+    // Respuesta genérica: no revela si el email existe.
+    return { ok: true };
+  },
+});
+
+/** Estado de un enlace de recuperación para la pantalla "Nueva contraseña". */
+export const porToken = query({
+  args: { token: v.string() },
+  handler: async (ctx, { token }) => {
+    const rec = await ctx.db
+      .query("recuperaciones")
+      .withIndex("por_token", (q) => q.eq("token", token))
+      .first();
+    if (!rec) return { estado: "invalida" as const };
+    if (rec.usadoEn != null) return { estado: "usada" as const };
+    if (rec.expiraEn <= Date.now()) return { estado: "expirada" as const };
+
+    const usuario = await ctx.db.get(rec.usuarioId);
+    if (!usuario) return { estado: "invalida" as const };
+    return { estado: "valida" as const, email: usuario.email };
+  },
+});
+
+/**
+ * Fija la nueva contraseña desde un enlace válido. Un solo uso (marca `usadoEn`).
+ * Además desbloquea la cuenta (resetea intentos/bloqueo). No crea sesión: el
+ * usuario vuelve al Login.
+ */
+export const restablecer = mutation({
+  args: { token: v.string(), password: v.string() },
+  handler: async (ctx, { token, password }) => {
+    const rec = await ctx.db
+      .query("recuperaciones")
+      .withIndex("por_token", (q) => q.eq("token", token))
+      .first();
+    if (!rec) throw new Error("Enlace no válido");
+    if (rec.usadoEn != null) throw new Error("Este enlace ya se usó");
+    if (rec.expiraEn <= Date.now()) throw new Error("El enlace ha expirado");
+    if (password.length < 8) throw new Error("La contraseña debe tener al menos 8 caracteres");
+
+    const usuario = await ctx.db.get(rec.usuarioId);
+    if (!usuario) throw new Error("Enlace no válido");
+
+    await ctx.db.patch(usuario._id, {
+      passwordHash: hashPassword(password),
+      intentosFallidos: 0,
+      bloqueadoHasta: undefined,
+    });
+    await ctx.db.patch(rec._id, { usadoEn: Date.now() });
+
+    return { ok: true };
+  },
+});

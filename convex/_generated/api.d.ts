@@ -15,6 +15,7 @@ import type * as inicio from "../inicio.js";
 import type * as invitaciones from "../invitaciones.js";
 import type * as notas from "../notas.js";
 import type * as oportunidades from "../oportunidades.js";
+import type * as recuperacion from "../recuperacion.js";
 import type * as seed from "../seed.js";
 import type * as seguimientos from "../seguimientos.js";
 import type * as usuarios from "../usuarios.js";
@@ -34,6 +35,7 @@ declare const fullApi: ApiFromModules<{
   invitaciones: typeof invitaciones;
   notas: typeof notas;
   oportunidades: typeof oportunidades;
+  recuperacion: typeof recuperacion;
   seed: typeof seed;
   seguimientos: typeof seguimientos;
   usuarios: typeof usuarios;

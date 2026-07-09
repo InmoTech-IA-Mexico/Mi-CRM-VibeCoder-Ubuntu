@@ -1,5 +1,5 @@
-import { ScreenPlaceholder } from "@/components/screen-placeholder";
+import { PantallaRecuperar } from "./_components/pantalla-recuperar";
 
 export default function Page() {
-  return <ScreenPlaceholder title="Recuperar contraseña" design="Recuperar Password.dc.html" issue="JUA-7" />;
+  return <PantallaRecuperar />;
 }

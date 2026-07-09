@@ -1,8 +1,13 @@
 import { FormularioLogin } from "./_components/formulario-login";
 
-// Pantalla de Login (JUA-6). Diseño: design/design_handoff_inmotech_crm/Login.dc.html
-// Autenticación real pendiente (JUA-6 / JUA-30): por ahora "Entrar" pasa a la
-// sesión simulada y aterriza en /inicio.
-export default function Page() {
-  return <FormularioLogin />;
+// Pantalla de Login (JUA-6). Lee los avisos de la URL en el servidor y los pasa
+// como props (SSR-safe, sin mismatch de hidratación): sesión expirada
+// (?expirada) y contraseña restablecida (?reset, JUA-7).
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: Promise<{ expirada?: string; reset?: string }>;
+}) {
+  const sp = await searchParams;
+  return <FormularioLogin expirada={sp.expirada !== undefined} restablecida={sp.reset !== undefined} />;
 }

@@ -4,14 +4,20 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useMutation } from "convex/react";
-import { AlertCircle, Clock, Eye, EyeOff, Lock, Mail } from "lucide-react";
+import { AlertCircle, CheckCircle2, Clock, Eye, EyeOff, Lock, Mail } from "lucide-react";
 import { api } from "../../../../../convex/_generated/api";
 import { guardarToken } from "@/components/session/session-provider";
 import { cn } from "@/lib/utils";
 
 // Login con autenticación real (JUA-6). Estados: normal · error genérico ·
 // cargando · bloqueado (5 intentos → 30 min). Diseño: Login.dc.html.
-export function FormularioLogin() {
+export function FormularioLogin({
+  expirada = false,
+  restablecida = false,
+}: {
+  expirada?: boolean;
+  restablecida?: boolean;
+}) {
   const router = useRouter();
   const iniciarSesion = useMutation(api.auth.iniciarSesion);
 
@@ -22,9 +28,6 @@ export function FormularioLogin() {
   const [cargando, setCargando] = useState(false);
   const [bloqueadoHasta, setBloqueadoHasta] = useState<number | null>(null);
   const [ahora, setAhora] = useState(() => Date.now());
-  const [expirada] = useState(
-    () => typeof window !== "undefined" && new URLSearchParams(window.location.search).has("expirada"),
-  );
 
   // Cuenta atrás mientras la cuenta está bloqueada.
   useEffect(() => {
@@ -104,7 +107,14 @@ export function FormularioLogin() {
       >
         <h1 className="mb-5 font-serif text-[22px] font-semibold text-ink">Iniciar sesión</h1>
 
-        {expirada && !bloqueado && !hayError && (
+        {restablecida && !bloqueado && !hayError && (
+          <div className="mb-4 flex items-center gap-2 rounded-input border border-teal-800/20 bg-[#E4F0EC] px-3 py-2.5">
+            <CheckCircle2 size={16} strokeWidth={1.9} className="text-teal-800" />
+            <span className="text-[12.5px] font-medium text-teal-800">Contraseña actualizada. Ya puedes iniciar sesión.</span>
+          </div>
+        )}
+
+        {expirada && !restablecida && !bloqueado && !hayError && (
           <div className="mb-4 flex items-center gap-2 rounded-input bg-neutral-50 px-3 py-2.5">
             <Clock size={16} strokeWidth={1.8} className="text-muted" />
             <span className="text-[12.5px] text-body">Tu sesión ha expirado, inicia sesión de nuevo.</span>

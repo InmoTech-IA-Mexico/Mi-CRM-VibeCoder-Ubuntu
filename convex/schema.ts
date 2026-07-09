@@ -172,4 +172,14 @@ export default defineSchema({
     token: v.string(),
     expiraEn: v.number(),
   }).index("por_token", ["token"]),
+
+  // Recuperación de contraseña (JUA-7). Token de un solo uso, expira en 24 h.
+  recuperaciones: defineTable({
+    usuarioId: v.id("usuarios"),
+    token: v.string(),
+    expiraEn: v.number(),
+    usadoEn: v.optional(v.number()),
+  })
+    .index("por_token", ["token"])
+    .index("por_usuario", ["usuarioId"]),
 });
