@@ -41,14 +41,28 @@ const SEGUIMIENTOS = [
   { titulo: "Cita agendada", cliente: "Sofía Beltrán", hora: "10:00", prioridad: "alta", offsetDias: 2 },
 ] as const;
 
-// Oportunidades abiertas → etapa de venta visible en la lista de clientes (JUA-14).
-const OPORTUNIDADES = [
+// Oportunidades: abiertas (pipeline, JUA-14) + cerradas del mes (Resumen del mes, JUA-34).
+const OPORTUNIDADES: {
+  cliente: string;
+  nombre: string;
+  etapa: "nueva" | "en_contacto" | "propuesta" | "negociacion" | "ganada" | "perdida" | "cancelada";
+  monto?: number;
+  modeloVenta?: "unico" | "recurrente";
+  motivo?: string;
+}[] = [
+  // Abiertas
   { cliente: "Ana García", nombre: "Departamento Polanco", etapa: "en_contacto" },
   { cliente: "María López", nombre: "Casa Del Valle", etapa: "propuesta" },
   { cliente: "TechStart S.A.", nombre: "Oficinas corporativas", etapa: "negociacion" },
   { cliente: "Carlos Ruiz", nombre: "Terreno sur", etapa: "nueva" },
   { cliente: "Roberto Silva", nombre: "Local comercial", etapa: "nueva" },
-] as const;
+  // Cerradas del mes
+  { cliente: "Ana García", nombre: "Penthouse Reforma", etapa: "ganada", monto: 2500000, modeloVenta: "unico" },
+  { cliente: "TechStart S.A.", nombre: "Renta oficinas anual", etapa: "ganada", monto: 480000, modeloVenta: "recurrente" },
+  { cliente: "Roberto Silva", nombre: "Consultorio Roma", etapa: "ganada", monto: 1200000, modeloVenta: "unico" },
+  { cliente: "María López", nombre: "Casa Coyoacán", etapa: "perdida", motivo: "Precio fuera de presupuesto" },
+  { cliente: "Carlos Ruiz", nombre: "Bodega norte", etapa: "cancelada", motivo: "Cliente pospuso la compra" },
+];
 
 // Notas demo para el historial (JUA-18). Para Ana, el "interno" (offset 20) es más
 // reciente que su última llamada (offset 23) y NO cuenta como contacto → ilustra
@@ -210,7 +224,19 @@ export const poblarDemo = internalMutation({
         .query("oportunidades")
         .withIndex("por_cliente", (q) => q.eq("clienteId", clienteId))
         .collect();
-      const datosOpo = { negocioId, clienteId, nombre: o.nombre, etapa: o.etapa, responsableId: carlosId };
+      const cerrada = ["ganada", "perdida", "cancelada"].includes(o.etapa);
+      const datosOpo = {
+        negocioId,
+        clienteId,
+        nombre: o.nombre,
+        etapa: o.etapa,
+        responsableId: carlosId,
+        ...(o.monto != null ? { monto: o.monto } : {}),
+        ...(o.modeloVenta ? { modeloVenta: o.modeloVenta } : {}),
+        ...(o.motivo ? { motivoPerdida: o.motivo } : {}),
+        // Fecha de cierre ≈ cuando se marcó cerrada (para el Resumen del mes).
+        ...(cerrada ? { actualizadoEn: Date.now() } : {}),
+      };
       const prev = existentes.find((e) => e.nombre === o.nombre);
       if (prev) await ctx.db.patch(prev._id, datosOpo);
       else await ctx.db.insert("oportunidades", datosOpo);

@@ -124,7 +124,9 @@ export default defineSchema({
     motivoPerdida: v.optional(v.string()),
     actualizadoEn: v.optional(v.number()), // trazabilidad del último cambio (JUA-21)
     actualizadoPor: v.optional(v.id("usuarios")),
-  }).index("por_cliente", ["clienteId"]),
+  })
+    .index("por_cliente", ["clienteId"])
+    .index("por_negocio", ["negocioId"]),
 
   seguimientos: defineTable({
     negocioId: v.id("negocios"),

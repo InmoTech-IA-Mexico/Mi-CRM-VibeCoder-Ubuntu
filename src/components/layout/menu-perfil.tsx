@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronRight, LogOut, Trash2, Users } from "lucide-react";
+import { BarChart3, ChevronRight, LogOut, Trash2, Users } from "lucide-react";
 import { useSesion } from "@/components/session/use-sesion";
 import { HojaInferior } from "@/components/ui/hoja-inferior";
 import { LABELS } from "@/lib/enums";
@@ -11,6 +11,7 @@ import { LABELS } from "@/lib/enums";
 // el operativo solo ve "Cerrar sesión"; el admin ve además "Gestión de usuarios"
 // y "Papelera".
 const OPCIONES_ADMIN = [
+  { label: "Resumen del mes", icon: BarChart3, href: "/resumen" },
   { label: "Gestión de usuarios", icon: Users, href: "/usuarios" },
   { label: "Papelera", icon: Trash2, href: "/papelera" },
 ];

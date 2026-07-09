@@ -1,4 +1,4 @@
-import { mutation } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
 import type { MutationCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import { v } from "convex/values";
@@ -135,5 +135,68 @@ export const eliminar = mutation({
     await oportunidadEditable(ctx, oportunidadId, sesion.negocioId);
 
     await ctx.db.delete(oportunidadId);
+  },
+});
+
+/**
+ * Resumen del mes (JUA-34). Solo admin. Agrega las oportunidades **cerradas** del
+ * negocio (ganada/perdida/cancelada) cuya fecha de cierre cae en [desde, hasta)
+ * — el rango lo calcula el cliente en la zona horaria del negocio. Devuelve:
+ * ganadas (nº + ingresos estimados por `monto`), perdidas/canceladas (nº +
+ * motivos frecuentes), tasa de conversión y desglose por modelo de venta.
+ */
+export const reporteMensual = query({
+  args: { token: v.string(), desde: v.number(), hasta: v.number() },
+  handler: async (ctx, { token, desde, hasta }) => {
+    const sesion = await resolverSesion(ctx, token);
+    if (!sesion || sesion.usuario.rol !== "admin") return null;
+
+    const opos = await ctx.db
+      .query("oportunidades")
+      .withIndex("por_negocio", (q) => q.eq("negocioId", sesion.negocioId))
+      .collect();
+
+    const CERRADAS = ["ganada", "perdida", "cancelada"];
+    // Fecha de cierre ≈ cuándo se marcó cerrada (`actualizadoEn`), con respaldos.
+    const cerradaEn = (o: (typeof opos)[number]) => o.actualizadoEn ?? o.fechaCierre ?? o._creationTime;
+    const enPeriodo = opos.filter(
+      (o) => CERRADAS.includes(o.etapa) && cerradaEn(o) >= desde && cerradaEn(o) < hasta,
+    );
+
+    const ganadas = enPeriodo.filter((o) => o.etapa === "ganada");
+    const perdidas = enPeriodo.filter((o) => o.etapa === "perdida" || o.etapa === "cancelada");
+
+    const ingresosEstimados = ganadas.reduce((s, o) => s + (o.monto ?? 0), 0);
+    const ganadasSinMonto = ganadas.filter((o) => o.monto == null).length;
+    const totalCerradas = enPeriodo.length;
+    const tasaConversion = totalCerradas > 0 ? Math.round((ganadas.length / totalCerradas) * 100) : null;
+
+    // Desglose por modelo de venta (sobre las ganadas).
+    const porModelo = (["unico", "recurrente"] as const).map((modelo) => {
+      const g = ganadas.filter((o) => o.modeloVenta === modelo);
+      return { modelo, count: g.length, monto: g.reduce((s, o) => s + (o.monto ?? 0), 0) };
+    });
+    const ganadasSinModelo = ganadas.filter((o) => !o.modeloVenta).length;
+
+    // Motivos más frecuentes de perdida/cancelación.
+    const motivoMap = new Map<string, number>();
+    for (const o of perdidas) {
+      const m = o.motivoPerdida?.trim();
+      if (m) motivoMap.set(m, (motivoMap.get(m) ?? 0) + 1);
+    }
+    const motivos = [...motivoMap.entries()]
+      .map(([motivo, count]) => ({ motivo, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+
+    return {
+      ganadas: { count: ganadas.length, monto: ingresosEstimados, sinMonto: ganadasSinMonto },
+      perdidas: { count: perdidas.length, motivos },
+      tasaConversion,
+      totalCerradas,
+      ingresosEstimados,
+      porModelo,
+      ganadasSinModelo,
+    };
   },
 });
