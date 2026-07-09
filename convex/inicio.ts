@@ -185,38 +185,44 @@ export const estadoGlobal = query({
       await ctx.db.query("clientes").withIndex("por_negocio", (q) => q.eq("negocioId", negocioId)).collect()
     ).filter((c) => c.eliminadoEn == null);
     const total = clientes.length;
+    // Solo clientes activos (no en papelera): las oportunidades y seguimientos de
+    // un cliente enviado a papelera NO deben sumar al estado global (consistencia).
+    const clientesActivosIds = new Set(clientes.map((c) => c._id));
     const ESTADOS = ["nuevo", "prospecto", "activo", "inactivo", "descartado"] as const;
     const porEstado = ESTADOS.map((estado) => {
       const count = clientes.filter((c) => c.estado === estado).length;
       return { estado, count, pct: total > 0 ? Math.round((count / total) * 100) : 0 };
     });
 
-    // Oportunidades abiertas (no cerradas) por etapa del pipeline.
+    // Oportunidades abiertas (no cerradas) por etapa, solo de clientes activos.
     const opos = await ctx.db
       .query("oportunidades")
       .withIndex("por_negocio", (q) => q.eq("negocioId", negocioId))
       .collect();
     const CERRADAS = ["ganada", "perdida", "cancelada"];
-    const abiertas = opos.filter((o) => !CERRADAS.includes(o.etapa));
+    const abiertas = opos.filter((o) => !CERRADAS.includes(o.etapa) && clientesActivosIds.has(o.clienteId));
     const ETAPAS_ABIERTAS = ["nueva", "en_contacto", "propuesta", "negociacion"] as const;
     const oportunidades = {
       total: abiertas.length,
       porEtapa: ETAPAS_ABIERTAS.map((etapa) => ({ etapa, count: abiertas.filter((o) => o.etapa === etapa).length })),
     };
 
-    // Seguimientos pendientes + cuántos están vencidos.
+    // Seguimientos de clientes activos (no empleado, no clientes en papelera).
     const seguimientos = await ctx.db
       .query("seguimientos")
       .withIndex("por_negocio", (q) => q.eq("negocioId", negocioId))
       .collect();
-    const pendientes = seguimientos.filter((s) => s.estado === "pendiente");
+    const seguimientosClienteActivos = seguimientos.filter(
+      (s) => s.destino === "cliente" && s.clienteId != null && clientesActivosIds.has(s.clienteId),
+    );
+    const pendientes = seguimientosClienteActivos.filter((s) => s.estado === "pendiente");
     const vencidos = pendientes.filter((s) => s.fecha < ahora).length;
 
     // Clientes sin atender: ≥15 días sin contacto, sin recordatorio próximo
     // planificado y en estado que cuenta (idéntico a panelInactividad, JUA-25).
     const limiteProximos = ahora + PROXIMOS_DIAS_RECORDATORIO * MS_DIA;
     const conRecordatorioProximo = new Set<Id<"clientes">>();
-    for (const s of seguimientos) {
+    for (const s of seguimientosClienteActivos) {
       if (
         s.estado === "pendiente" &&
         s.destino === "cliente" &&

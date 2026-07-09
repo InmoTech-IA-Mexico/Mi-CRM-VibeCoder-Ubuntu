@@ -7,9 +7,10 @@ import { useSesion } from "@/components/session/use-sesion";
 import { HojaInferior } from "@/components/ui/hoja-inferior";
 import { LABELS } from "@/lib/enums";
 
-// Avatar del header + menú de perfil (bottom sheet). Opciones por rol (JUA-27):
-// el operativo solo ve "Cerrar sesión"; el admin ve además "Gestión de usuarios"
-// y "Papelera".
+// Avatar del header + menú de perfil (bottom sheet). Opciones por rol:
+// - Ambos roles: "Estado del negocio" (JUA-35) y "Cerrar sesión".
+// - Solo admin: "Resumen del mes" (JUA-34), "Gestión de usuarios" (JUA-29) y
+//   "Papelera" (JUA-16).
 const OPCIONES_ADMIN = [
   { label: "Resumen del mes", icon: BarChart3, href: "/resumen" },
   { label: "Gestión de usuarios", icon: Users, href: "/usuarios" },

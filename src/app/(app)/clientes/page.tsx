@@ -9,5 +9,6 @@ export default async function Page({
   searchParams: Promise<{ estado?: string }>;
 }) {
   const { estado } = await searchParams;
-  return <PantallaClientes estadoInicial={estado} />;
+  // `key` por estado: si cambia el query param, remonta y re-sincroniza el filtro.
+  return <PantallaClientes key={estado ?? "todos"} estadoInicial={estado} />;
 }
