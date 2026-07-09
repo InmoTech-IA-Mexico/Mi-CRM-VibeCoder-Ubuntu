@@ -9,11 +9,13 @@ import { hashPassword } from "./auth";
 // El envío real del enlace por email queda pendiente (Resend).
 
 const RECUP_MS = 24 * 60 * 60 * 1000; // 24 h
+const THROTTLE_MS = 60 * 1000; // no reemitir enlace si hay uno reciente (< 60 s)
 
 /**
  * Solicita un enlace de recuperación. Respuesta **genérica** siempre (exista o
- * no el email). Si el usuario existe y no está inactivo, invalida sus enlaces
- * previos y crea uno nuevo (24 h).
+ * no el email). Solo para usuario **activo con contraseña**. Invalida sus enlaces
+ * previos y crea uno nuevo (24 h), salvo que exista uno reciente (throttle 60 s,
+ * anti-abuso / anti-spam de correo).
  */
 export const solicitar = mutation({
   args: { email: v.string() },
@@ -25,19 +27,24 @@ export const solicitar = mutation({
       .withIndex("por_email", (q) => q.eq("email", correo))
       .first();
 
-    if (usuario && usuario.estado !== "inactivo") {
-      // Invalidar enlaces previos del usuario (el anterior se invalida).
+    if (usuario && usuario.estado === "activo" && usuario.passwordHash) {
+      const ahora = Date.now();
       const previos = await ctx.db
         .query("recuperaciones")
         .withIndex("por_usuario", (q) => q.eq("usuarioId", usuario._id))
         .collect();
-      for (const p of previos) await ctx.db.delete(p._id);
 
-      await ctx.db.insert("recuperaciones", {
-        usuarioId: usuario._id,
-        token: bytesToHex(randomBytes(32)),
-        expiraEn: Date.now() + RECUP_MS,
-      });
+      // Throttle: si ya hay un enlace vigente y muy reciente, no reemitir.
+      const reciente = previos.some((p) => p.usadoEn == null && p._creationTime > ahora - THROTTLE_MS);
+      if (!reciente) {
+        // Invalidar enlaces previos (el anterior se invalida) y crear uno nuevo.
+        for (const p of previos) await ctx.db.delete(p._id);
+        await ctx.db.insert("recuperaciones", {
+          usuarioId: usuario._id,
+          token: bytesToHex(randomBytes(32)),
+          expiraEn: ahora + RECUP_MS,
+        });
+      }
     }
 
     // Respuesta genérica: no revela si el email existe.
@@ -89,6 +96,14 @@ export const restablecer = mutation({
       bloqueadoHasta: undefined,
     });
     await ctx.db.patch(rec._id, { usadoEn: Date.now() });
+
+    // Revocar todas las sesiones activas del usuario: si el reset fue por
+    // sospecha de compromiso, cualquier sesión anterior deja de valer.
+    const sesiones = await ctx.db
+      .query("sesiones")
+      .withIndex("por_usuario", (q) => q.eq("usuarioId", usuario._id))
+      .collect();
+    for (const s of sesiones) await ctx.db.delete(s._id);
 
     return { ok: true };
   },
