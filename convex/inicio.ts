@@ -46,9 +46,12 @@ export const agendaDelDia = query({
       );
     });
 
-    const items = await Promise.all(
+    const itemsConNulos = await Promise.all(
       relevantes.map(async (s) => {
         const cliente = s.clienteId ? await ctx.db.get(s.clienteId) : null;
+        // Excluir recordatorios de clientes en papelera (consistencia): si el
+        // cliente ya no existe o está eliminado, no aparece en la agenda.
+        if (!cliente || cliente.eliminadoEn != null) return null;
         return {
           _id: s._id,
           titulo: s.titulo,
@@ -56,12 +59,13 @@ export const agendaDelDia = query({
           hora: s.hora ?? null,
           prioridad: s.prioridad,
           clienteId: s.clienteId ?? null,
-          clienteNombre: cliente?.nombre ?? "Cliente",
+          clienteNombre: cliente.nombre,
           vencido: s.fecha < inicioDia,
           responsableId: s.responsableId,
         };
       }),
     );
+    const items = itemsConNulos.filter((i) => i !== null);
 
     // Vencidos primero; luego por hora ascendente (los sin hora, al final).
     // TODO(JUA-48): cuando exista el scoring, desempatar por prioridad.
