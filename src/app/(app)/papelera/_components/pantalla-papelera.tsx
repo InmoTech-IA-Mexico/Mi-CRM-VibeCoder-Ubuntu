@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
@@ -26,6 +26,12 @@ export function PantallaPapelera() {
   const [confirmacion, setConfirmacion] = useState<Confirmacion>(null);
   const [ocupado, setOcupado] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
+
+  // La Papelera es solo para admin (JUA-30). El operativo se redirige a Inicio
+  // (además el backend rechaza sus operaciones y el menú no la muestra).
+  useEffect(() => {
+    if (!esAdmin) router.replace("/inicio");
+  }, [esAdmin, router]);
 
   const abrirModal = (c: Confirmacion) => {
     setAviso(null);
@@ -60,6 +66,8 @@ export function PantallaPapelera() {
       setOcupado(false);
     }
   };
+
+  if (!esAdmin) return null;
 
   return (
     <div className="flex min-h-full flex-col">
@@ -100,9 +108,7 @@ export function PantallaPapelera() {
         </div>
       )}
 
-      {!esAdmin ? (
-        <NoAutorizado />
-      ) : items === undefined ? (
+      {items === undefined ? (
         <Esqueleto />
       ) : items.length === 0 ? (
         <Vacia />
@@ -261,15 +267,6 @@ function Vacia() {
       <p className="mt-2 text-[14px] leading-relaxed text-muted">
         Los clientes que elimines aparecerán aquí
       </p>
-    </div>
-  );
-}
-
-function NoAutorizado() {
-  return (
-    <div className="flex flex-1 flex-col items-center justify-center px-11 pb-24 text-center">
-      <p className="font-serif text-xl font-semibold text-ink">Solo para administradores</p>
-      <p className="mt-2 text-[14px] text-muted">La papelera solo está disponible para el administrador del negocio.</p>
     </div>
   );
 }
