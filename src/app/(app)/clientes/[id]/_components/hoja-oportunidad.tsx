@@ -5,6 +5,7 @@ import { useMutation } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
 import { X, Trash2, AlertCircle } from "lucide-react";
 import { api } from "../../../../../../convex/_generated/api";
+import { HojaConfirmar } from "@/components/ui/hoja-confirmar";
 import { LABELS, type EtapaPipeline } from "@/lib/enums";
 import { cn } from "@/lib/utils";
 
@@ -39,6 +40,7 @@ export function HojaOportunidad({
   const [motivo, setMotivo] = useState("");
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirmarEliminar, setConfirmarEliminar] = useState(false);
   const cambiarEtapa = useMutation(api.oportunidades.cambiarEtapa);
   const eliminar = useMutation(api.oportunidades.eliminar);
 
@@ -65,16 +67,17 @@ export function HojaOportunidad({
     }
   };
 
-  const onEliminar = async () => {
+  const hacerEliminar = async () => {
     if (guardando) return;
-    if (!window.confirm(`¿Eliminar la oportunidad "${oportunidad.nombre}"? No se puede deshacer.`)) return;
     setGuardando(true);
+    setError(null);
     try {
       await eliminar({ token, oportunidadId: oportunidad._id });
       onClose();
     } catch (e) {
       console.error("No se pudo eliminar la oportunidad", e);
       setError("No se pudo eliminar la oportunidad.");
+      setConfirmarEliminar(false);
       setGuardando(false);
     }
   };
@@ -156,7 +159,10 @@ export function HojaOportunidad({
         {esAdmin && (
           <button
             type="button"
-            onClick={onEliminar}
+            onClick={() => {
+              setError(null);
+              setConfirmarEliminar(true);
+            }}
             disabled={guardando}
             className="mt-2.5 flex h-11 w-full items-center justify-center gap-2 rounded-xl text-[14px] font-semibold text-danger active:scale-[0.99] disabled:opacity-60"
           >
@@ -165,6 +171,18 @@ export function HojaOportunidad({
           </button>
         )}
       </div>
+
+      <HojaConfirmar
+        abierta={confirmarEliminar}
+        titulo="Eliminar oportunidad"
+        mensaje={`Se eliminará "${oportunidad.nombre}" permanentemente. Esta acción no se puede deshacer.`}
+        textoConfirmar="Eliminar"
+        tono="danger"
+        ocupado={guardando}
+        error={error}
+        onConfirmar={hacerEliminar}
+        onCerrar={() => setConfirmarEliminar(false)}
+      />
     </div>
   );
 }

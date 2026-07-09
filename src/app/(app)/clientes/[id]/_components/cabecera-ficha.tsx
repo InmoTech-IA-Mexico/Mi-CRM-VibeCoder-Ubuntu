@@ -7,6 +7,7 @@ import { useMutation } from "convex/react";
 import { ChevronLeft, Pencil, MoreVertical, Check, Trash2 } from "lucide-react";
 import { api } from "../../../../../../convex/_generated/api";
 import type { Id } from "../../../../../../convex/_generated/dataModel";
+import { HojaConfirmar } from "@/components/ui/hoja-confirmar";
 import { LABELS, type EstadoCliente } from "@/lib/enums";
 import { cn } from "@/lib/utils";
 
@@ -34,6 +35,8 @@ export function CabeceraFicha({
   const router = useRouter();
   const [abierto, setAbierto] = useState(false);
   const [ocupado, setOcupado] = useState(false);
+  const [confirmarPapelera, setConfirmarPapelera] = useState(false);
+  const [errorPapelera, setErrorPapelera] = useState<string | null>(null);
   const cambiarEstado = useMutation(api.clientes.cambiarEstado);
   const enviarAPapelera = useMutation(api.clientes.enviarAPapelera);
 
@@ -50,15 +53,22 @@ export function CabeceraFicha({
     }
   };
 
-  const onEliminar = async () => {
+  const pedirPapelera = () => {
+    setAbierto(false);
+    setErrorPapelera(null);
+    setConfirmarPapelera(true);
+  };
+
+  const hacerPapelera = async () => {
     if (ocupado) return;
-    if (!window.confirm(`¿Enviar a ${nombre} a la papelera?`)) return;
     setOcupado(true);
+    setErrorPapelera(null);
     try {
       await enviarAPapelera({ token, clienteId });
       router.replace("/clientes");
     } catch (error) {
       console.error("No se pudo enviar a la papelera", error);
+      setErrorPapelera("No se pudo enviar a la papelera.");
       setOcupado(false);
     }
   };
@@ -126,7 +136,7 @@ export function CabeceraFicha({
                 <button
                   type="button"
                   disabled={ocupado}
-                  onClick={onEliminar}
+                  onClick={pedirPapelera}
                   className={cn(
                     "flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-[14px] font-medium text-danger active:bg-neutral-50 disabled:opacity-60",
                   )}
@@ -139,6 +149,18 @@ export function CabeceraFicha({
           </div>
         </>
       )}
+
+      <HojaConfirmar
+        abierta={confirmarPapelera}
+        titulo="Enviar a la papelera"
+        mensaje={`${nombre} se moverá a la papelera. Podrás restaurarlo antes de 30 días.`}
+        textoConfirmar="Enviar a papelera"
+        tono="danger"
+        ocupado={ocupado}
+        error={errorPapelera}
+        onConfirmar={hacerPapelera}
+        onCerrar={() => setConfirmarPapelera(false)}
+      />
     </header>
   );
 }

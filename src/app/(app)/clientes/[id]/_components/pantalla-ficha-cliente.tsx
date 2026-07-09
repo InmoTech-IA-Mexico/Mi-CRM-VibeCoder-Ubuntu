@@ -27,6 +27,7 @@ import { LABELS, type EtapaPipeline, type TipoInteraccion } from "@/lib/enums";
 import { fechaCortaES, diasDesde } from "@/lib/fechas";
 import { bordePrioridadClase } from "@/components/ui/indicador-prioridad";
 import { AccionesRecordatorio } from "@/components/recordatorios/acciones-recordatorio";
+import { HojaConfirmar } from "@/components/ui/hoja-confirmar";
 import { cn } from "@/lib/utils";
 import { CabeceraFicha } from "./cabecera-ficha";
 import { TarjetaPerfil } from "./tarjeta-perfil";
@@ -59,6 +60,9 @@ export function PantallaFichaCliente({ clienteId }: { clienteId: Id<"clientes"> 
   const eliminarNota = useMutation(api.notas.eliminar);
   const [oportunidadSel, setOportunidadSel] = useState<ItemOportunidad | null>(null);
   const [ventaAbierta, setVentaAbierta] = useState(false);
+  const [notaAEliminar, setNotaAEliminar] = useState<Id<"notas"> | null>(null);
+  const [borrandoNota, setBorrandoNota] = useState(false);
+  const [errorNota, setErrorNota] = useState<string | null>(null);
 
   if (cliente === undefined) return <FichaCargando />;
   if (cliente === null) return <FichaNoEncontrada />;
@@ -75,12 +79,18 @@ export function PantallaFichaCliente({ clienteId }: { clienteId: Id<"clientes"> 
     ...cliente.notas.map((n) => ({ kind: "nota" as const, fecha: n.fecha, nota: n })),
     ...cliente.ventas.map((vt) => ({ kind: "venta" as const, fecha: vt.fecha, venta: vt })),
   ].sort((a, b) => b.fecha - a.fecha);
-  const onEliminarNota = async (notaId: Id<"notas">) => {
-    if (!window.confirm("¿Eliminar esta nota? No se puede deshacer.")) return;
+  const hacerEliminarNota = async () => {
+    if (borrandoNota || !notaAEliminar) return;
+    setBorrandoNota(true);
+    setErrorNota(null);
     try {
-      await eliminarNota({ token, notaId });
+      await eliminarNota({ token, notaId: notaAEliminar });
+      setNotaAEliminar(null);
     } catch (error) {
       console.error("No se pudo eliminar la nota", error);
+      setErrorNota("No se pudo eliminar la nota.");
+    } finally {
+      setBorrandoNota(false);
     }
   };
 
@@ -305,7 +315,10 @@ export function PantallaFichaCliente({ clienteId }: { clienteId: Id<"clientes"> 
                           <button
                             type="button"
                             aria-label="Eliminar nota"
-                            onClick={() => onEliminarNota(n._id)}
+                            onClick={() => {
+                              setErrorNota(null);
+                              setNotaAEliminar(n._id);
+                            }}
                             className="-mr-1 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md text-neutral-400 active:scale-90 active:text-danger"
                           >
                             <Trash2 size={13} strokeWidth={1.9} />
@@ -348,6 +361,18 @@ export function PantallaFichaCliente({ clienteId }: { clienteId: Id<"clientes"> 
           onClose={() => setVentaAbierta(false)}
         />
       )}
+
+      <HojaConfirmar
+        abierta={notaAEliminar !== null}
+        titulo="Eliminar nota"
+        mensaje="Se eliminará permanentemente. Esta acción no se puede deshacer."
+        textoConfirmar="Eliminar"
+        tono="danger"
+        ocupado={borrandoNota}
+        error={errorNota}
+        onConfirmar={hacerEliminarNota}
+        onCerrar={() => setNotaAEliminar(null)}
+      />
     </div>
   );
 }
