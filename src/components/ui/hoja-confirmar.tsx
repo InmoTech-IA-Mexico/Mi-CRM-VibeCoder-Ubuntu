@@ -33,8 +33,12 @@ export function HojaConfirmar({
       <button
         type="button"
         aria-label="Cerrar"
-        onClick={onCerrar}
-        className="absolute inset-0 cursor-default bg-[rgba(11,37,42,0.45)]"
+        disabled={ocupado}
+        onClick={() => {
+          // No dejar cerrar tocando el overlay mientras la acción está en curso.
+          if (!ocupado) onCerrar();
+        }}
+        className="absolute inset-0 cursor-default bg-[rgba(11,37,42,0.45)] disabled:cursor-wait"
       />
       <div className="relative w-full rounded-t-[24px] border-t border-neutral-100 bg-surface p-5 pb-8 shadow-2xl">
         <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-neutral-200" />

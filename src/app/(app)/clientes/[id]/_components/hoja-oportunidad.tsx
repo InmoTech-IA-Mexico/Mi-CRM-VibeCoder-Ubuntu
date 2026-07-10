@@ -76,8 +76,8 @@ export function HojaOportunidad({
       onClose();
     } catch (e) {
       console.error("No se pudo eliminar la oportunidad", e);
+      // Mantener abierta la hoja de confirmación con el error visible dentro.
       setError("No se pudo eliminar la oportunidad.");
-      setConfirmarEliminar(false);
       setGuardando(false);
     }
   };
@@ -181,7 +181,10 @@ export function HojaOportunidad({
         ocupado={guardando}
         error={error}
         onConfirmar={hacerEliminar}
-        onCerrar={() => setConfirmarEliminar(false)}
+        onCerrar={() => {
+          setConfirmarEliminar(false);
+          setError(null);
+        }}
       />
     </div>
   );
