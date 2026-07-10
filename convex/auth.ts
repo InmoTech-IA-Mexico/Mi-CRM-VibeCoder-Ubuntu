@@ -167,3 +167,40 @@ export const cerrarSesion = mutation({
     if (sesion) await ctx.db.delete(sesion._id);
   },
 });
+
+/**
+ * Cambia la contraseña del usuario autenticado desde dentro de la app (JUA-120).
+ * Exige la contraseña actual, la nueva debe tener ≥8 caracteres y ser distinta.
+ * Por seguridad, revoca las **demás** sesiones del usuario (la actual se conserva)
+ * y limpia cualquier bloqueo por intentos fallidos.
+ */
+export const cambiarPassword = mutation({
+  args: { token: v.string(), actual: v.string(), nueva: v.string() },
+  handler: async (ctx, { token, actual, nueva }) => {
+    const sesion = await resolverSesion(ctx, token);
+    if (!sesion) throw new Error("No autorizado");
+    const usuario = sesion.usuario;
+    if (!usuario.passwordHash || !verifyPassword(actual, usuario.passwordHash)) {
+      throw new Error("La contraseña actual no es correcta");
+    }
+    if (nueva.length < 8) throw new Error("La nueva contraseña debe tener al menos 8 caracteres");
+    if (verifyPassword(nueva, usuario.passwordHash)) {
+      throw new Error("La nueva contraseña debe ser distinta de la actual");
+    }
+
+    await ctx.db.patch(usuario._id, {
+      passwordHash: hashPassword(nueva),
+      intentosFallidos: 0,
+      bloqueadoHasta: undefined,
+    });
+
+    // Revoca las otras sesiones (deja viva la actual desde la que se cambió).
+    const sesiones = await ctx.db
+      .query("sesiones")
+      .withIndex("por_usuario", (q) => q.eq("usuarioId", usuario._id))
+      .collect();
+    for (const s of sesiones) {
+      if (s.token !== token) await ctx.db.delete(s._id);
+    }
+  },
+});

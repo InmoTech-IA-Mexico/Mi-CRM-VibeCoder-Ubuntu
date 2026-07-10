@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { BarChart3, ChevronRight, LayoutDashboard, LogOut, Trash2, Users } from "lucide-react";
+import { BarChart3, ChevronRight, LayoutDashboard, LogOut, Trash2, User, Users } from "lucide-react";
 import { useSesion } from "@/components/session/use-sesion";
 import { HojaInferior } from "@/components/ui/hoja-inferior";
 import { LABELS } from "@/lib/enums";
@@ -48,6 +48,19 @@ export function MenuPerfil() {
         }
       >
         <div className="flex flex-col">
+          {/* Perfil y ajustes (JUA-120): editar datos, cambiar contraseña, cerrar sesión. */}
+          <button
+            type="button"
+            onClick={() => {
+              setAbierta(false);
+              router.push("/perfil");
+            }}
+            className="flex items-center gap-3 rounded-input px-2 py-3 text-left text-[15px] text-ink active:bg-row-hover"
+          >
+            <User size={19} className="text-body" />
+            <span className="flex-1">Perfil y ajustes</span>
+            <ChevronRight size={17} className="text-muted" />
+          </button>
           {/* Estado del negocio: visible para ambos roles (JUA-35). */}
           <button
             type="button"

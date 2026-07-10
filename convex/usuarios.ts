@@ -77,6 +77,36 @@ export const listar = query({
 });
 
 /**
+ * Actualiza los datos personales del propio usuario (JUA-120): nombre y email.
+ * Cualquier rol edita **su** cuenta. El email es único a nivel global (un email =
+ * un usuario en toda la app); se normaliza a minúsculas.
+ */
+export const actualizarPerfil = mutation({
+  args: { token: v.string(), nombre: v.string(), email: v.string() },
+  handler: async (ctx, { token, nombre, email }) => {
+    const sesion = await resolverSesion(ctx, token);
+    if (!sesion) throw new Error("No autorizado");
+
+    const nombreLimpio = nombre.trim();
+    if (!nombreLimpio) throw new Error("El nombre es obligatorio");
+
+    const correo = email.trim().toLowerCase();
+    if (!EMAIL_RE.test(correo)) throw new Error("Email no válido");
+
+    // Unicidad global: ningún OTRO usuario puede tener ese email.
+    const existente = await ctx.db
+      .query("usuarios")
+      .withIndex("por_email", (q) => q.eq("email", correo))
+      .first();
+    if (existente && existente._id !== sesion.usuario._id) {
+      throw new Error("Ya existe una cuenta con ese email");
+    }
+
+    await ctx.db.patch(sesion.usuario._id, { nombre: nombreLimpio, email: correo });
+  },
+});
+
+/**
  * Equipo activo del negocio (JUA-119), para los selectores de "asignar
  * seguimiento a" y "seguimiento a un empleado". Disponible para AMBOS roles
  * (a diferencia de `listar`, que es solo admin). Devuelve los usuarios activos
