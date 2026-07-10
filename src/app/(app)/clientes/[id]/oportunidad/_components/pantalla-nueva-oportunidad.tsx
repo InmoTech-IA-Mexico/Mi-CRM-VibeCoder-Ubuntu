@@ -9,6 +9,7 @@ import { api } from "../../../../../../../convex/_generated/api";
 import type { Id } from "../../../../../../../convex/_generated/dataModel";
 import { useSesion } from "@/components/session/use-sesion";
 import { LABELS } from "@/lib/enums";
+import { epochDesdeFechaHora } from "@/lib/fechas";
 import { cn } from "@/lib/utils";
 
 // Etapas abiertas para el alta (las cerradas —ganada/perdida/cancelada— se
@@ -54,6 +55,7 @@ export function PantallaNuevaOportunidad({ clienteId }: { clienteId: Id<"cliente
 
 function Formulario({ clienteId, nombre, token }: { clienteId: Id<"clientes">; nombre: string; token: string }) {
   const router = useRouter();
+  const { negocio } = useSesion();
   const [nombreOpo, setNombreOpo] = useState("");
   const [etapa, setEtapa] = useState<EtapaInicial>("nueva");
   const [producto, setProducto] = useState<string | null>(null);
@@ -76,7 +78,9 @@ function Formulario({ clienteId, nombre, token }: { clienteId: Id<"clientes">; n
     setGuardando(true);
     setError(null);
     const montoNum = monto.trim() ? Number(monto.replace(/[^\d.]/g, "")) : undefined;
-    const fecha = fechaCierre ? new Date(fechaCierre).getTime() : undefined;
+    // La fecha de cierre es una fecha-only; se ancla a la zona del negocio (JUA-28),
+    // no a UTC/servidor, para que al mostrarse no se desfase un día.
+    const fecha = fechaCierre ? epochDesdeFechaHora(fechaCierre, "", negocio.zonaHoraria) : undefined;
     try {
       await crear({
         token,

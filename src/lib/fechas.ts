@@ -1,9 +1,13 @@
 // Utilidades de fecha para el CRM. La app calcula "hoy" y "hace X días" en la
-// zona horaria del negocio (no la del dispositivo), así el cálculo es
-// consistente para todo el equipo.
+// zona horaria del NEGOCIO (no la del dispositivo ni la del servidor), así el
+// cálculo es consistente para todo el equipo y correcto por negocio (JUA-28).
+// Todas las funciones reciben `tz` = `negocio.zonaHoraria`; el rango del día y los
+// periodos se calculan en el cliente y se pasan a las queries (deterministas).
 //
-// TODO(JUA-28): centralizar el manejo de zona horaria (esta es una versión
-// simple; alrededor de cambios de horario de verano puede desviarse una hora).
+// Nota (JUA-28): alrededor de los cambios de horario de verano el desfase se
+// aproxima al instante calculado y puede desviarse una hora en el borde exacto
+// del cambio. Es una simplificación aceptada para el MVP (zonas de México sin DST
+// activo en la práctica), no un uso de la zona del servidor.
 
 const MS_DIA = 24 * 60 * 60 * 1000;
 
