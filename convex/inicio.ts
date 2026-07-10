@@ -1,16 +1,11 @@
 import { query, mutation } from "./_generated/server";
-import type { Id } from "./_generated/dataModel";
 import { v } from "convex/values";
 import { resolverSesion } from "./auth";
 import { partesLocales, epochDeLocal, diasEnMes } from "./fechas";
-
-// Regla de negocio (PRD): un cliente "requiere atención" a partir de 15 días
-// sin interacción real. Espejo de DIAS_INACTIVIDAD en src/lib/enums.ts.
-const DIAS_INACTIVIDAD = 15;
-// Un recordatorio pendiente dentro de esta ventana significa que ya hay
-// seguimiento planificado → el cliente no cuenta como inactivo (JUA-25).
-const PROXIMOS_DIAS_RECORDATORIO = 3;
-const MS_DIA = 24 * 60 * 60 * 1000;
+// Regla de inactividad compartida (JUA-25/35/26): un cliente "requiere atención" a
+// partir de 15 días sin interacción real, salvo que ya tenga un recordatorio
+// próximo planificado. Ver convex/inactividad.ts.
+import { MS_DIA, DIAS_INACTIVIDAD, recordatorioProximoIds } from "./inactividad";
 
 /**
  * Siguiente ocurrencia de un recordatorio recurrente (JUA-115), la primera
@@ -167,24 +162,12 @@ export const panelInactividad = query({
     const ahora = Date.now();
 
     // Clientes con un recordatorio pendiente en los próximos 3 días: ya tienen
-    // seguimiento planificado, así que quedan fuera del panel.
-    const limiteProximos = ahora + PROXIMOS_DIAS_RECORDATORIO * MS_DIA;
+    // seguimiento planificado, así que quedan fuera del panel (regla compartida).
     const seguimientos = await ctx.db
       .query("seguimientos")
       .withIndex("por_negocio", (q) => q.eq("negocioId", negocioId))
       .collect();
-    const conRecordatorioProximo = new Set<Id<"clientes">>();
-    for (const s of seguimientos) {
-      if (
-        s.estado === "pendiente" &&
-        s.destino === "cliente" &&
-        s.clienteId != null &&
-        s.fecha >= ahora &&
-        s.fecha <= limiteProximos
-      ) {
-        conRecordatorioProximo.add(s.clienteId);
-      }
-    }
+    const conRecordatorioProximo = recordatorioProximoIds(seguimientos, ahora);
 
     const clientes = await ctx.db
       .query("clientes")
@@ -319,20 +302,8 @@ export const estadoGlobal = query({
     const vencidos = pendientes.filter((s) => s.fecha < ahora).length;
 
     // Clientes sin atender: ≥15 días sin contacto, sin recordatorio próximo
-    // planificado y en estado que cuenta (idéntico a panelInactividad, JUA-25).
-    const limiteProximos = ahora + PROXIMOS_DIAS_RECORDATORIO * MS_DIA;
-    const conRecordatorioProximo = new Set<Id<"clientes">>();
-    for (const s of seguimientosClienteActivos) {
-      if (
-        s.estado === "pendiente" &&
-        s.destino === "cliente" &&
-        s.clienteId != null &&
-        s.fecha >= ahora &&
-        s.fecha <= limiteProximos
-      ) {
-        conRecordatorioProximo.add(s.clienteId);
-      }
-    }
+    // planificado y en estado que cuenta (regla compartida, idéntica al panel).
+    const conRecordatorioProximo = recordatorioProximoIds(seguimientosClienteActivos, ahora);
     const sinAtender = clientes.filter(
       (c) =>
         c.estado !== "nuevo" &&

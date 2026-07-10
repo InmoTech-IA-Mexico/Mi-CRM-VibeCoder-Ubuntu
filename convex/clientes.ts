@@ -1,15 +1,11 @@
 import { query, mutation, internalMutation } from "./_generated/server";
 import type { MutationCtx } from "./_generated/server";
-import type { Id } from "./_generated/dataModel";
+import type { Doc, Id } from "./_generated/dataModel";
 import { v } from "convex/values";
 import { resolverSesion } from "./auth";
+import { MS_DIA, recordatorioProximoIds, debeMarcarseInactivo } from "./inactividad";
 
-const MS_DIA = 24 * 60 * 60 * 1000;
 const DIAS_PAPELERA = 30; // días en papelera antes del borrado definitivo (JUA-16)
-// Regla de negocio (PRD): 15 días sin interacción real → "requiere atención" y, si
-// el cliente está en Prospecto/Activo, transiciona a Inactivo (JUA-26). Espejo de
-// DIAS_INACTIVIDAD en src/lib/enums.ts / convex/inicio.ts.
-const DIAS_INACTIVIDAD = 15;
 
 // Lista de clientes del negocio (JUA-14). Devuelve todos (excepto papelera) con
 // los campos para el buscador en tiempo real (nombre/teléfono/email/empresa) y la
@@ -442,35 +438,22 @@ export const vaciarPapelera = mutation({
 
 // ---- Inactividad automática (JUA-26) --------------------------------------
 
-type ClienteDoc = {
-  _id: Id<"clientes">;
-  _creationTime: number;
-  estado: string;
-  eliminadoEn?: number;
-  ultimaInteraccion?: number;
-};
-
 /**
- * Regla de transición automática a Inactivo (JUA-26): solo clientes en
- * Prospecto o Activo (no papelera) sin interacción real en 15+ días. El umbral se
- * mide como DURACIÓN transcurrida (≥15×24 h), invariante a la zona horaria —
- * nunca se usa el calendario local del servidor. Es idéntico al cálculo del panel
- * (JUA-25) y del estado global (JUA-35), de modo que el estado persistido coincide
- * con lo que muestran esas pantallas. La referencia es la última interacción real,
- * o el alta del cliente si aún no tuvo ninguna.
+ * Aplica la transición a Inactivo a un conjunto de clientes usando la MISMA regla
+ * que el panel (JUA-25) y el estado global (JUA-35): 15+ días sin interacción y
+ * SIN recordatorio próximo planificado (los `seguimientos` del ámbito permiten
+ * calcular esa exclusión, `debeMarcarseInactivo`). Devuelve cuántos cambiaron.
  */
-function debeMarcarseInactivo(c: ClienteDoc, ahora: number): boolean {
-  if (c.eliminadoEn != null) return false;
-  if (c.estado !== "prospecto" && c.estado !== "activo") return false;
-  const referencia = c.ultimaInteraccion ?? c._creationTime;
-  return Math.floor((ahora - referencia) / MS_DIA) >= DIAS_INACTIVIDAD;
-}
-
-/** Aplica la transición a un conjunto de clientes; devuelve cuántos cambiaron. */
-async function transicionarClientes(ctx: MutationCtx, clientes: ClienteDoc[], ahora: number) {
+async function transicionarClientes(
+  ctx: MutationCtx,
+  clientes: Doc<"clientes">[],
+  seguimientos: Doc<"seguimientos">[],
+  ahora: number,
+) {
+  const conRecordatorioProximo = recordatorioProximoIds(seguimientos, ahora);
   let cambiados = 0;
   for (const c of clientes) {
-    if (debeMarcarseInactivo(c, ahora)) {
+    if (debeMarcarseInactivo(c, ahora, conRecordatorioProximo)) {
       await ctx.db.patch(c._id, { estado: "inactivo", actualizadoEn: ahora });
       cambiados++;
     }
@@ -489,7 +472,8 @@ export const transicionarInactivos = internalMutation({
   handler: async (ctx) => {
     const ahora = Date.now();
     const clientes = await ctx.db.query("clientes").collect();
-    const cambiados = await transicionarClientes(ctx, clientes, ahora);
+    const seguimientos = await ctx.db.query("seguimientos").collect();
+    const cambiados = await transicionarClientes(ctx, clientes, seguimientos, ahora);
     return { cambiados };
   },
 });
@@ -505,11 +489,16 @@ export const sincronizarInactividad = mutation({
   handler: async (ctx, { token }) => {
     const sesion = await resolverSesion(ctx, token);
     if (!sesion) return { cambiados: 0 };
+    const ahora = Date.now();
     const clientes = await ctx.db
       .query("clientes")
       .withIndex("por_negocio", (q) => q.eq("negocioId", sesion.negocioId))
       .collect();
-    const cambiados = await transicionarClientes(ctx, clientes, Date.now());
+    const seguimientos = await ctx.db
+      .query("seguimientos")
+      .withIndex("por_negocio", (q) => q.eq("negocioId", sesion.negocioId))
+      .collect();
+    const cambiados = await transicionarClientes(ctx, clientes, seguimientos, ahora);
     return { cambiados };
   },
 });
