@@ -35,7 +35,12 @@ export function BarraFortaleza({ password, className }: { password: string; clas
   if (nivel === 0) return null;
   const n = NIVELES[nivel];
   return (
-    <div className={cn("mt-2 flex items-center gap-2", className)} aria-live="polite">
+    <div
+      className={cn("mt-2 flex items-center gap-2", className)}
+      role="status"
+      aria-live="polite"
+      aria-label={`Fortaleza de la contraseña: ${n.label}`}
+    >
       <div className="flex h-1.5 flex-1 gap-1">
         {[1, 2, 3, 4].map((i) => (
           <span
