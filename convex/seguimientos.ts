@@ -177,7 +177,8 @@ export const panelSupervision = query({
         subtitulo = "Tarea personal";
       } else {
         const cliente = s.clienteId ? await ctx.db.get(s.clienteId) : null;
-        if (!cliente || cliente.eliminadoEn != null) continue;
+        // Defensa JUA-10: además de excluir papelera, revalida el negocio del cliente.
+        if (!cliente || cliente.negocioId !== negocioId || cliente.eliminadoEn != null) continue;
         subtitulo = cliente.nombre;
         clienteId = s.clienteId ?? null;
       }
