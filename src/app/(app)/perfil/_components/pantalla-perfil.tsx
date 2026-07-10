@@ -155,6 +155,7 @@ function DatosPersonales({ token, nombreActual, emailActual }: { token: string; 
       <BotonGuardar
         onClick={guardar}
         disabled={!cambiado || !valido || guardando}
+        ocupado={guardando}
         texto={guardando ? "Guardando…" : "Guardar cambios"}
       />
     </Tarjeta>
@@ -230,6 +231,7 @@ function CambiarPassword({ token }: { token: string }) {
       <BotonGuardar
         onClick={guardar}
         disabled={guardando}
+        ocupado={guardando}
         texto={guardando ? "Guardando…" : "Cambiar contraseña"}
       />
     </Tarjeta>
@@ -279,13 +281,13 @@ function Aviso({ error, ok, okTexto }: { error: string | null; ok: boolean; okTe
   return null;
 }
 
-function BotonGuardar({ onClick, disabled, texto }: { onClick: () => void; disabled: boolean; texto: string }) {
+function BotonGuardar({ onClick, disabled, ocupado, texto }: { onClick: () => void; disabled: boolean; ocupado: boolean; texto: string }) {
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled}
-      aria-busy={disabled}
+      aria-busy={ocupado}
       className="mt-1 flex h-12 w-full items-center justify-center rounded-xl bg-gold-500 text-[15px] font-bold text-ink shadow-[0_2px_8px_rgba(201,162,94,0.32)] transition active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
     >
       {texto}
