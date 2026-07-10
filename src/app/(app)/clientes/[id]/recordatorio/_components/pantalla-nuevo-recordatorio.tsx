@@ -88,6 +88,8 @@ function Formulario({ clienteId, cliente, token }: { clienteId: Id<"clientes">; 
         prioridad,
         frecuencia,
         fechaFin: recurrente ? finDeDia : undefined,
+        // Día-del-mes local (del calendario del negocio), no derivado del epoch.
+        diaRecurrencia: frecuencia === "mensual" ? Number(fecha.split("-")[2]) : undefined,
       });
       router.replace(volver);
     } catch (e) {

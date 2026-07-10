@@ -84,6 +84,8 @@ export function AccionesRecordatorio({
           seguimientoId,
           fecha: epochDesdeFechaHora(fechaRepro, horaRepro, negocio.zonaHoraria),
           hora: horaRepro || undefined,
+          // Día-del-mes local (por si el recordatorio es mensual).
+          diaRecurrencia: Number(fechaRepro.split("-")[2]),
         });
       } else if (hoja === "cancelar") {
         await cancelar({ token, seguimientoId });

@@ -2,6 +2,7 @@ import { query, mutation } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import { v } from "convex/values";
 import { resolverSesion } from "./auth";
+import { partesLocales, epochDeLocal, diasEnMes } from "./fechas";
 
 // Regla de negocio (PRD): un cliente "requiere atención" a partir de 15 días
 // sin interacción real. Espejo de DIAS_INACTIVIDAD en src/lib/enums.ts.
@@ -20,25 +21,42 @@ function siguienteOcurrencia(
   fecha: number,
   frecuencia: "semanal" | "mensual",
   ahora: number,
+  tz: string,
   diaAncla?: number,
+  horaLocal?: string,
 ): number {
-  // Ancla del día-del-mes (mensual): el día original de la serie, para que
-  // "cada 31" no se degrade a "28" tras pasar por un mes corto. Si no se
-  // persistió (legado), se usa el día de la fecha actual.
-  const ancla = diaAncla ?? new Date(fecha).getUTCDate();
-  const avanzar = (t: number) => {
-    if (frecuencia === "semanal") return t + 7 * MS_DIA;
-    // Mensual: avanza un mes de calendario y ajusta al último día válido del mes
-    // destino según el ANCLA (31 ene → 28/29 feb → 31 mar → 30 abr). Conserva la hora.
-    const destino = new Date(t);
-    destino.setUTCDate(1); // evita el desbordamiento al cambiar de mes
-    destino.setUTCMonth(destino.getUTCMonth() + 1);
-    const ultimoDia = new Date(Date.UTC(destino.getUTCFullYear(), destino.getUTCMonth() + 1, 0)).getUTCDate();
-    destino.setUTCDate(Math.min(ancla, ultimoDia));
-    return destino.getTime();
+  if (frecuencia === "semanal") {
+    // +7 días conserva el mismo día de la semana (aprox. en cambios de horario).
+    let next = fecha + 7 * MS_DIA;
+    while (next <= ahora) next += 7 * MS_DIA;
+    return next;
+  }
+  // Mensual: se calcula en el CALENDARIO DEL NEGOCIO. El ancla es el día-del-mes
+  // ORIGINAL (local), ajustado al último día válido del mes destino, conservando
+  // la hora local (31 ene → 28/29 feb → 31 mar → 30 abr). Evita el sesgo de UTC
+  // en recordatorios nocturnos.
+  const base = partesLocales(fecha, tz);
+  const ancla = diaAncla ?? base.dia;
+  let hh = base.hora;
+  let mm = base.minuto;
+  if (horaLocal) {
+    const [h, m] = horaLocal.split(":").map(Number);
+    if (Number.isFinite(h)) hh = h;
+    if (Number.isFinite(m)) mm = m;
+  }
+  let anio = base.anio;
+  let mes = base.mes;
+  const avanzar = () => {
+    mes += 1;
+    if (mes > 12) {
+      mes = 1;
+      anio += 1;
+    }
+    const dia = Math.min(ancla, diasEnMes(anio, mes));
+    return epochDeLocal(anio, mes, dia, hh, mm, tz);
   };
-  let next = avanzar(fecha);
-  while (next <= ahora) next = avanzar(next);
+  let next = avanzar();
+  while (next <= ahora) next = avanzar();
   return next;
 }
 
@@ -208,7 +226,16 @@ export const marcarSeguimientoRealizado = mutation({
     // Recurrente (JUA-115): en vez de cerrarlo, avanza a la próxima ocurrencia
     // (sigue pendiente). Si la próxima supera la fecha de fin, la serie termina.
     if (seguimiento.frecuencia === "semanal" || seguimiento.frecuencia === "mensual") {
-      const next = siguienteOcurrencia(seguimiento.fecha, seguimiento.frecuencia, Date.now(), seguimiento.diaRecurrencia);
+      const negocio = await ctx.db.get(seguimiento.negocioId);
+      const tz = negocio?.zonaHoraria ?? "America/Mexico_City";
+      const next = siguienteOcurrencia(
+        seguimiento.fecha,
+        seguimiento.frecuencia,
+        Date.now(),
+        tz,
+        seguimiento.diaRecurrencia,
+        seguimiento.hora ?? undefined,
+      );
       if (seguimiento.fechaFin != null && next > seguimiento.fechaFin) {
         await ctx.db.patch(seguimientoId, { estado: "realizado" });
       } else {

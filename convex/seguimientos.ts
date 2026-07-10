@@ -29,6 +29,7 @@ export const crear = mutation({
     prioridad: PRIORIDAD,
     frecuencia: v.optional(FRECUENCIA),
     fechaFin: v.optional(v.number()),
+    diaRecurrencia: v.optional(v.number()), // día-del-mes local (lo envía el cliente)
   },
   handler: async (ctx, args) => {
     const sesion = await resolverSesion(ctx, args.token);
@@ -70,8 +71,9 @@ export const crear = mutation({
       prioridad: args.prioridad,
       frecuencia,
       fechaFin: recurrente ? args.fechaFin : undefined,
-      // Ancla del día-del-mes para el mensual (para no degradar "cada 31" a "28").
-      diaRecurrencia: frecuencia === "mensual" ? new Date(args.fecha).getUTCDate() : undefined,
+      // Ancla del día-del-mes (local, enviado por el cliente) para no degradar
+      // "cada 31" a "28" tras un mes corto.
+      diaRecurrencia: frecuencia === "mensual" ? args.diaRecurrencia : undefined,
       estado: "pendiente",
     });
   },
@@ -108,12 +110,17 @@ export const reprogramar = mutation({
     seguimientoId: v.id("seguimientos"),
     fecha: v.number(),
     hora: v.optional(v.string()),
+    diaRecurrencia: v.optional(v.number()), // día-del-mes local (lo envía el cliente)
   },
-  handler: async (ctx, { token, seguimientoId, fecha, hora }) => {
+  handler: async (ctx, { token, seguimientoId, fecha, hora, diaRecurrencia }) => {
     const { seguimiento } = await seguimientoGestionable(ctx, token, seguimientoId);
-    // Si es mensual, la nueva fecha redefine el ancla del día-del-mes.
-    const diaRecurrencia = seguimiento.frecuencia === "mensual" ? new Date(fecha).getUTCDate() : undefined;
-    await ctx.db.patch(seguimientoId, { fecha, hora: hora || undefined, estado: "pendiente", diaRecurrencia });
+    // Si es mensual, la nueva fecha (local) redefine el ancla del día-del-mes.
+    await ctx.db.patch(seguimientoId, {
+      fecha,
+      hora: hora || undefined,
+      estado: "pendiente",
+      diaRecurrencia: seguimiento.frecuencia === "mensual" ? diaRecurrencia : undefined,
+    });
   },
 });
 
