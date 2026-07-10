@@ -12,6 +12,9 @@ const PRIORIDAD = v.union(v.literal("alta"), v.literal("media"), v.literal("baja
 const FRECUENCIA = v.union(v.literal("una_vez"), v.literal("semanal"), v.literal("mensual"));
 const DESTINO = v.union(v.literal("cliente"), v.literal("empleado"));
 
+/** Ancla mensual: día-del-mes válido de calendario (1–31). */
+const esDiaDelMesValido = (d: number) => Number.isInteger(d) && d >= 1 && d <= 31;
+
 /**
  * Programa un recordatorio de seguimiento con un cliente (JUA-22). Estado inicial
  * "pendiente", frecuencia "una vez", responsable = quien lo crea. Valida
@@ -89,6 +92,10 @@ export const crear = mutation({
     if (recurrente && args.fechaFin != null && args.fechaFin < args.fecha) {
       throw new Error("La fecha de fin no puede ser anterior a la de inicio");
     }
+    // El ancla mensual (día-del-mes) debe ser un día válido de calendario (1–31).
+    if (frecuencia === "mensual" && args.diaRecurrencia != null && !esDiaDelMesValido(args.diaRecurrencia)) {
+      throw new Error("Día de recurrencia no válido");
+    }
 
     // La oportunidad solo aplica a seguimientos de cliente (mismo cliente/negocio).
     if (args.oportunidadId) {
@@ -155,6 +162,9 @@ export const reprogramar = mutation({
   },
   handler: async (ctx, { token, seguimientoId, fecha, hora, diaRecurrencia }) => {
     const { seguimiento } = await seguimientoGestionable(ctx, token, seguimientoId);
+    if (seguimiento.frecuencia === "mensual" && diaRecurrencia != null && !esDiaDelMesValido(diaRecurrencia)) {
+      throw new Error("Día de recurrencia no válido");
+    }
     // Si es mensual, la nueva fecha (local) redefine el ancla del día-del-mes.
     await ctx.db.patch(seguimientoId, {
       fecha,

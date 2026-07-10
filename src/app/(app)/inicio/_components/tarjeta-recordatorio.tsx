@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { useMutation } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
@@ -13,6 +14,19 @@ import { AccionesRecordatorio } from "@/components/recordatorios/acciones-record
 import { cn } from "@/lib/utils";
 
 export type ItemAgenda = FunctionReturnType<typeof api.inicio.agendaDelDia>[number];
+
+// Envoltura del contenido de la tarjeta: enlace a la ficha si hay cliente; si es
+// una tarea de empleado (sin cliente), un contenedor no navegable (accesibilidad).
+function Contenido({ clienteId, children }: { clienteId: string | null; children: ReactNode }) {
+  if (clienteId) {
+    return (
+      <Link href={`/clientes/${clienteId}`} className="min-w-0 flex-1">
+        {children}
+      </Link>
+    );
+  }
+  return <div className="min-w-0 flex-1">{children}</div>;
+}
 
 export function TarjetaRecordatorio({ item }: { item: ItemAgenda }) {
   const { token, usuario, rol } = useSesion();
@@ -40,10 +54,8 @@ export function TarjetaRecordatorio({ item }: { item: ItemAgenda }) {
         bordePrioridadClase(item.prioridad),
       )}
     >
-      <Link
-        href={item.clienteId ? `/clientes/${item.clienteId}` : "#"}
-        className="min-w-0 flex-1"
-      >
+      {/* Cliente: enlaza a su ficha. Tarea de empleado (sin cliente): no navega. */}
+      <Contenido clienteId={item.clienteId}>
         <div className="flex items-center gap-2">
           {item.hora && (
             <span className="text-[12.5px] font-semibold tabular-nums text-muted">
@@ -72,7 +84,7 @@ export function TarjetaRecordatorio({ item }: { item: ItemAgenda }) {
           </span>
           <IndicadorPrioridad prioridad={item.prioridad} />
         </div>
-      </Link>
+      </Contenido>
 
       {/* Acciones (JUA-24): completar rápido + menú reprogramar/cancelar/eliminar. */}
       {puedeGestionar && (
