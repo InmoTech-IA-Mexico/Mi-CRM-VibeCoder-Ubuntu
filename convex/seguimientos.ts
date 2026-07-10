@@ -9,6 +9,7 @@ import { resolverSesion } from "./auth";
 // llega ya calculada como epoch en la zona horaria del negocio (no UTC servidor).
 
 const PRIORIDAD = v.union(v.literal("alta"), v.literal("media"), v.literal("baja"));
+const FRECUENCIA = v.union(v.literal("una_vez"), v.literal("semanal"), v.literal("mensual"));
 
 /**
  * Programa un recordatorio de seguimiento con un cliente (JUA-22). Estado inicial
@@ -26,6 +27,8 @@ export const crear = mutation({
     descripcion: v.optional(v.string()),
     oportunidadId: v.optional(v.id("oportunidades")),
     prioridad: PRIORIDAD,
+    frecuencia: v.optional(FRECUENCIA),
+    fechaFin: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const sesion = await resolverSesion(ctx, args.token);
@@ -38,6 +41,13 @@ export const crear = mutation({
 
     const titulo = args.titulo.trim();
     if (!titulo) throw new Error("El título es obligatorio");
+
+    // Recurrencia (JUA-115): la fecha de fin (opcional) no puede ser anterior al inicio.
+    const frecuencia = args.frecuencia ?? "una_vez";
+    const recurrente = frecuencia !== "una_vez";
+    if (recurrente && args.fechaFin != null && args.fechaFin < args.fecha) {
+      throw new Error("La fecha de fin no puede ser anterior a la de inicio");
+    }
 
     // Si se vincula una oportunidad, debe ser del mismo cliente/negocio.
     if (args.oportunidadId) {
@@ -58,7 +68,8 @@ export const crear = mutation({
       hora: args.hora || undefined,
       responsableId: sesion.usuario._id,
       prioridad: args.prioridad,
-      frecuencia: "una_vez",
+      frecuencia,
+      fechaFin: recurrente ? args.fechaFin : undefined,
       estado: "pendiente",
     });
   },

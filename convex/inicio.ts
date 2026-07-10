@@ -12,6 +12,23 @@ const PROXIMOS_DIAS_RECORDATORIO = 3;
 const MS_DIA = 24 * 60 * 60 * 1000;
 
 /**
+ * Siguiente ocurrencia de un recordatorio recurrente (JUA-115), la primera
+ * estrictamente posterior a `ahora` (salta las vencidas no atendidas). Semanal
+ * = +7 días; mensual = +1 mes de calendario (mismo día del mes).
+ */
+function siguienteOcurrencia(fecha: number, frecuencia: "semanal" | "mensual", ahora: number): number {
+  const avanzar = (t: number) => {
+    if (frecuencia === "semanal") return t + 7 * MS_DIA;
+    const d = new Date(t);
+    d.setMonth(d.getMonth() + 1);
+    return d.getTime();
+  };
+  let next = avanzar(fecha);
+  while (next <= ahora) next = avanzar(next);
+  return next;
+}
+
+/**
  * Agenda del día (JUA-23): recordatorios a los que hay que atender hoy.
  *
  * Devuelve los seguimientos del negocio dirigidos a un cliente, pendientes,
@@ -62,6 +79,7 @@ export const agendaDelDia = query({
           clienteNombre: cliente.nombre,
           vencido: s.fecha < inicioDia,
           responsableId: s.responsableId,
+          frecuencia: s.frecuencia,
         };
       }),
     );
@@ -171,6 +189,18 @@ export const marcarSeguimientoRealizado = mutation({
     // Solo el responsable asignado o un admin pueden gestionarlo (JUA-24).
     if (seguimiento.responsableId !== sesion.usuario._id && sesion.usuario.rol !== "admin") {
       throw new Error("No autorizado");
+    }
+
+    // Recurrente (JUA-115): en vez de cerrarlo, avanza a la próxima ocurrencia
+    // (sigue pendiente). Si la próxima supera la fecha de fin, la serie termina.
+    if (seguimiento.frecuencia === "semanal" || seguimiento.frecuencia === "mensual") {
+      const next = siguienteOcurrencia(seguimiento.fecha, seguimiento.frecuencia, Date.now());
+      if (seguimiento.fechaFin != null && next > seguimiento.fechaFin) {
+        await ctx.db.patch(seguimientoId, { estado: "realizado" });
+      } else {
+        await ctx.db.patch(seguimientoId, { fecha: next });
+      }
+      return;
     }
 
     await ctx.db.patch(seguimientoId, { estado: "realizado" });

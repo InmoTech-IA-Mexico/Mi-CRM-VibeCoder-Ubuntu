@@ -4,9 +4,10 @@ import { useState } from "react";
 import Link from "next/link";
 import { useMutation } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
-import { Check } from "lucide-react";
+import { Check, Repeat } from "lucide-react";
 import { api } from "../../../../../convex/_generated/api";
 import { useSesion } from "@/components/session/use-sesion";
+import { LABELS } from "@/lib/enums";
 import { IndicadorPrioridad, bordePrioridadClase } from "@/components/ui/indicador-prioridad";
 import { AccionesRecordatorio } from "@/components/recordatorios/acciones-recordatorio";
 import { cn } from "@/lib/utils";
@@ -53,6 +54,12 @@ export function TarjetaRecordatorio({ item }: { item: ItemAgenda }) {
             <span className="flex items-center gap-1 rounded-lg bg-[#F6E7E0] px-2 py-0.5">
               <span className="h-[5px] w-[5px] rounded-full bg-danger" />
               <span className="text-[10.5px] font-semibold text-[#8A3F2C]">Vencido</span>
+            </span>
+          )}
+          {item.frecuencia !== "una_vez" && (
+            <span className="flex items-center gap-1 rounded-lg bg-gold-tint px-2 py-0.5">
+              <Repeat size={10} strokeWidth={2.2} className="text-gold-700" />
+              <span className="text-[10.5px] font-semibold text-gold-700">{LABELS.frecuencia[item.frecuencia]}</span>
             </span>
           )}
         </div>

@@ -144,6 +144,7 @@ export const detalle = query({
         hora: s.hora ?? null,
         prioridad: s.prioridad,
         responsableId: s.responsableId,
+        frecuencia: s.frecuencia,
       })),
       notas: notasRaw
         .sort((a, b) => b.fecha - a.fecha)

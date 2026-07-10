@@ -5,11 +5,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
-import { X, Bell, Calendar, Clock, AlertCircle } from "lucide-react";
+import { X, Bell, Calendar, Clock, AlertCircle, Repeat } from "lucide-react";
 import { api } from "../../../../../../../convex/_generated/api";
 import type { Id } from "../../../../../../../convex/_generated/dataModel";
 import { useSesion } from "@/components/session/use-sesion";
-import { LABELS, type Prioridad } from "@/lib/enums";
+import { FRECUENCIAS, LABELS, type Frecuencia, type Prioridad } from "@/lib/enums";
 import { epochDesdeFechaHora } from "@/lib/fechas";
 import { cn } from "@/lib/utils";
 
@@ -56,6 +56,8 @@ function Formulario({ clienteId, cliente, token }: { clienteId: Id<"clientes">; 
   const [descripcion, setDescripcion] = useState("");
   const [oportunidadId, setOportunidadId] = useState<Id<"oportunidades"> | null>(null);
   const [prioridad, setPrioridad] = useState<Prioridad>("media");
+  const [frecuencia, setFrecuencia] = useState<Frecuencia>("una_vez");
+  const [fechaFin, setFechaFin] = useState("");
   const [intentado, setIntentado] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -71,6 +73,7 @@ function Formulario({ clienteId, cliente, token }: { clienteId: Id<"clientes">; 
     setGuardando(true);
     setError(null);
     try {
+      const recurrente = frecuencia !== "una_vez";
       await crear({
         token,
         clienteId,
@@ -80,6 +83,8 @@ function Formulario({ clienteId, cliente, token }: { clienteId: Id<"clientes">; 
         descripcion: descripcion.trim() || undefined,
         oportunidadId: oportunidadId ?? undefined,
         prioridad,
+        frecuencia,
+        fechaFin: recurrente && fechaFin ? epochDesdeFechaHora(fechaFin, "", negocio.zonaHoraria) : undefined,
       });
       router.replace(volver);
     } catch (e) {
@@ -182,6 +187,50 @@ function Formulario({ clienteId, cliente, token }: { clienteId: Id<"clientes">; 
               />
             </div>
           </div>
+        </div>
+
+        {/* Frecuencia (JUA-115) */}
+        <div className="rounded-[18px] border border-neutral-100 bg-surface p-4 shadow-sm">
+          <p className="mb-2 flex items-center gap-1.5 text-[13px] font-medium text-ink">
+            <Repeat size={14} strokeWidth={1.7} className="text-neutral-400" /> Frecuencia
+          </p>
+          <div className="flex gap-2">
+            {FRECUENCIAS.map((f) => {
+              const activo = frecuencia === f;
+              return (
+                <button
+                  key={f}
+                  type="button"
+                  onClick={() => setFrecuencia(f)}
+                  className={cn(
+                    "flex-1 rounded-xl border py-2.5 text-[13.5px] font-medium transition active:scale-[0.98]",
+                    activo ? "border-gold-500 bg-gold-tint text-gold-700" : "border-border-input bg-surface text-body",
+                  )}
+                >
+                  {LABELS.frecuencia[f]}
+                </button>
+              );
+            })}
+          </div>
+          {frecuencia !== "una_vez" && (
+            <div className="mt-3">
+              <p className="mb-2 text-[13px] font-medium text-ink">
+                Termina el <span className="font-normal text-muted">(opcional)</span>
+              </p>
+              <input
+                type="date"
+                value={fechaFin}
+                min={fecha || undefined}
+                onChange={(e) => setFechaFin(e.target.value)}
+                aria-label="Fecha de fin de la recurrencia"
+                className="h-12 w-full rounded-xl border border-border-input bg-surface px-3 text-[14px] text-ink outline-none transition focus:border-gold-500 focus:ring-[3px] focus:ring-gold-500/[0.18]"
+              />
+              <p className="mt-1.5 text-[11.5px] leading-snug text-muted">
+                Se repetirá {frecuencia === "semanal" ? "cada semana" : "cada mes"} desde la fecha programada
+                {fechaFin ? "" : "; sin fecha de fin, hasta que lo canceles"}.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Prioridad */}

@@ -161,6 +161,7 @@ export function PantallaFichaCliente({ clienteId }: { clienteId: Id<"clientes"> 
                     <p className="mt-0.5 text-[12px] font-semibold text-gold-700">
                       {fechaCortaES(s.fecha, negocio.zonaHoraria)}
                       {s.hora ? ` · ${s.hora}` : ""}
+                      {s.frecuencia !== "una_vez" ? ` · ${LABELS.frecuencia[s.frecuencia]}` : ""}
                     </p>
                   </div>
                   <AccionesRecordatorio
