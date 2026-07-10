@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { BottomNav } from "./bottom-nav";
 import { BotonFlotante } from "./boton-flotante";
+import { BannerSinConexion } from "./banner-sin-conexion";
 
 // Pantallas de nivel superior con barra inferior (se puede navegar entre ellas).
 // El FAB "nuevo cliente" solo aparece donde tiene sentido (Inicio/Clientes). Las
@@ -21,6 +22,7 @@ export function MarcoApp({ children }: { children: ReactNode }) {
 
   return (
     <>
+      <BannerSinConexion />
       <main className={conNav ? "flex-1 pb-24" : "flex-1"}>{children}</main>
       {conFab && <BotonFlotante />}
       {conNav && <BottomNav />}
