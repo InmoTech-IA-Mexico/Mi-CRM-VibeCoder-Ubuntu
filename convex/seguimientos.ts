@@ -10,6 +10,7 @@ import { resolverSesion } from "./auth";
 
 const PRIORIDAD = v.union(v.literal("alta"), v.literal("media"), v.literal("baja"));
 const FRECUENCIA = v.union(v.literal("una_vez"), v.literal("semanal"), v.literal("mensual"));
+const DESTINO = v.union(v.literal("cliente"), v.literal("empleado"));
 
 /**
  * Programa un recordatorio de seguimiento con un cliente (JUA-22). Estado inicial
@@ -20,7 +21,13 @@ const FRECUENCIA = v.union(v.literal("una_vez"), v.literal("semanal"), v.literal
 export const crear = mutation({
   args: {
     token: v.string(),
-    clienteId: v.id("clientes"),
+    // Destino: cliente (por defecto) o empleado (JUA-119).
+    destino: v.optional(DESTINO),
+    clienteId: v.optional(v.id("clientes")),
+    empleadoId: v.optional(v.id("usuarios")),
+    // Responsable asignado (JUA-119): asignar a OTRO usuario es solo admin.
+    responsableId: v.optional(v.id("usuarios")),
+    notificar: v.optional(v.boolean()),
     titulo: v.string(),
     fecha: v.number(),
     hora: v.optional(v.string()),
@@ -34,14 +41,47 @@ export const crear = mutation({
   handler: async (ctx, args) => {
     const sesion = await resolverSesion(ctx, args.token);
     if (!sesion) throw new Error("No autorizado");
-
-    const cliente = await ctx.db.get(args.clienteId);
-    if (!cliente || cliente.negocioId !== sesion.negocioId || cliente.eliminadoEn != null) {
-      throw new Error("No encontrado");
-    }
+    const negocioId = sesion.negocioId;
+    const esAdmin = sesion.usuario.rol === "admin";
 
     const titulo = args.titulo.trim();
     if (!titulo) throw new Error("El título es obligatorio");
+
+    const destino = args.destino ?? "cliente";
+    let clienteId: typeof args.clienteId;
+    let empleadoId: typeof args.empleadoId;
+    let notificar: boolean | undefined;
+    let responsableId;
+
+    if (destino === "cliente") {
+      if (!args.clienteId) throw new Error("Falta el cliente del seguimiento");
+      const cliente = await ctx.db.get(args.clienteId);
+      if (!cliente || cliente.negocioId !== negocioId || cliente.eliminadoEn != null) {
+        throw new Error("No encontrado");
+      }
+      clienteId = args.clienteId;
+      // Responsable: por defecto quien lo crea; el admin puede asignar a otro.
+      responsableId = args.responsableId ?? sesion.usuario._id;
+    } else {
+      // Seguimiento a un empleado: lo atiende el propio empleado (es el responsable).
+      if (!args.empleadoId) throw new Error("Falta el empleado del seguimiento");
+      const emp = await ctx.db.get(args.empleadoId);
+      if (!emp || emp.negocioId !== negocioId || emp.estado !== "activo") {
+        throw new Error("Empleado no válido");
+      }
+      empleadoId = args.empleadoId;
+      responsableId = args.empleadoId;
+      notificar = args.notificar;
+    }
+
+    // Asignar a otro miembro del equipo (responsable ≠ creador) es solo admin (JUA-119).
+    if (responsableId !== sesion.usuario._id && !esAdmin) {
+      throw new Error("Solo un administrador puede asignar el seguimiento a otro miembro del equipo");
+    }
+    const responsable = await ctx.db.get(responsableId);
+    if (!responsable || responsable.negocioId !== negocioId || responsable.estado !== "activo") {
+      throw new Error("Responsable no válido");
+    }
 
     // Recurrencia (JUA-115): la fecha de fin (opcional) no puede ser anterior al inicio.
     const frecuencia = args.frecuencia ?? "una_vez";
@@ -50,29 +90,30 @@ export const crear = mutation({
       throw new Error("La fecha de fin no puede ser anterior a la de inicio");
     }
 
-    // Si se vincula una oportunidad, debe ser del mismo cliente/negocio.
+    // La oportunidad solo aplica a seguimientos de cliente (mismo cliente/negocio).
     if (args.oportunidadId) {
+      if (destino !== "cliente") throw new Error("La oportunidad solo aplica a seguimientos de cliente");
       const opo = await ctx.db.get(args.oportunidadId);
-      if (!opo || opo.negocioId !== sesion.negocioId || opo.clienteId !== args.clienteId) {
+      if (!opo || opo.negocioId !== negocioId || opo.clienteId !== clienteId) {
         throw new Error("Oportunidad no válida");
       }
     }
 
     return await ctx.db.insert("seguimientos", {
-      negocioId: sesion.negocioId,
-      destino: "cliente",
-      clienteId: args.clienteId,
-      oportunidadId: args.oportunidadId,
+      negocioId,
+      destino,
+      clienteId,
+      empleadoId,
+      oportunidadId: destino === "cliente" ? args.oportunidadId : undefined,
       titulo,
       descripcion: args.descripcion?.trim() || undefined,
       fecha: args.fecha,
       hora: args.hora || undefined,
-      responsableId: sesion.usuario._id,
+      responsableId,
+      notificar: destino === "empleado" ? notificar : undefined,
       prioridad: args.prioridad,
       frecuencia,
       fechaFin: recurrente ? args.fechaFin : undefined,
-      // Ancla del día-del-mes (local, enviado por el cliente) para no degradar
-      // "cada 31" a "28" tras un mes corto.
       diaRecurrencia: frecuencia === "mensual" ? args.diaRecurrencia : undefined,
       estado: "pendiente",
     });

@@ -87,16 +87,32 @@ export const agendaDelDia = query({
     const relevantes = seguimientos.filter((s) => {
       const esDeHoy = s.fecha >= inicioDia && s.fecha < finDia;
       const estaVencido = s.fecha < inicioDia;
-      return (
-        s.estado === "pendiente" &&
-        s.destino === "cliente" &&
-        s.clienteId != null &&
-        (esDeHoy || estaVencido)
-      );
+      if (s.estado !== "pendiente" || !(esDeHoy || estaVencido)) return false;
+      // Seguimientos de cliente: los ve cualquiera del negocio (JUA-23).
+      if (s.destino === "cliente") return s.clienteId != null;
+      // Seguimientos a un empleado (JUA-119): aparecen en la agenda del propio
+      // empleado (el responsable asignado). El panel de supervisión del admin va aparte.
+      return s.destino === "empleado" && s.responsableId === sesion.usuario._id;
     });
 
     const itemsConNulos = await Promise.all(
       relevantes.map(async (s) => {
+        // Seguimiento a empleado (JUA-119): tarea personal, sin cliente vinculado.
+        if (s.destino === "empleado") {
+          return {
+            _id: s._id,
+            titulo: s.titulo,
+            fecha: s.fecha,
+            hora: s.hora ?? null,
+            prioridad: s.prioridad,
+            destino: "empleado" as const,
+            clienteId: null,
+            subtitulo: "Tarea personal",
+            vencido: s.fecha < inicioDia,
+            responsableId: s.responsableId,
+            frecuencia: s.frecuencia,
+          };
+        }
         const cliente = s.clienteId ? await ctx.db.get(s.clienteId) : null;
         // Excluir recordatorios de clientes en papelera (consistencia): si el
         // cliente ya no existe o está eliminado, no aparece en la agenda.
@@ -107,8 +123,9 @@ export const agendaDelDia = query({
           fecha: s.fecha,
           hora: s.hora ?? null,
           prioridad: s.prioridad,
+          destino: "cliente" as const,
           clienteId: s.clienteId ?? null,
-          clienteNombre: cliente.nombre,
+          subtitulo: cliente.nombre,
           vencido: s.fecha < inicioDia,
           responsableId: s.responsableId,
           frecuencia: s.frecuencia,

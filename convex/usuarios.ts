@@ -77,6 +77,62 @@ export const listar = query({
 });
 
 /**
+ * Equipo activo del negocio (JUA-119), para los selectores de "asignar
+ * seguimiento a" y "seguimiento a un empleado". Disponible para AMBOS roles
+ * (a diferencia de `listar`, que es solo admin). Devuelve los usuarios activos
+ * con su nº de clientes a cargo; marca `esYo` en el usuario de la sesión. El
+ * aislamiento por negocio (JUA-10) se deriva de la sesión.
+ */
+export const equipo = query({
+  args: { token: v.string() },
+  handler: async (ctx, { token }) => {
+    const sesion = await resolverSesion(ctx, token);
+    if (!sesion) return null;
+
+    const usuarios = (
+      await ctx.db
+        .query("usuarios")
+        .withIndex("por_negocio", (q) => q.eq("negocioId", sesion.negocioId))
+        .collect()
+    ).filter((u) => u.estado === "activo");
+
+    const clientes = (
+      await ctx.db
+        .query("clientes")
+        .withIndex("por_negocio", (q) => q.eq("negocioId", sesion.negocioId))
+        .collect()
+    ).filter((c) => c.eliminadoEn == null);
+    const clientesPorResponsable = new Map<string, number>();
+    for (const c of clientes) {
+      if (c.responsableId) {
+        clientesPorResponsable.set(c.responsableId, (clientesPorResponsable.get(c.responsableId) ?? 0) + 1);
+      }
+    }
+
+    // Orden: yo primero, luego admins, luego por nombre.
+    usuarios.sort((a, b) => {
+      const yoA = a._id === sesion.usuario._id;
+      const yoB = b._id === sesion.usuario._id;
+      if (yoA !== yoB) return yoA ? -1 : 1;
+      if (a.rol !== b.rol) return a.rol === "admin" ? -1 : 1;
+      return a.nombre.localeCompare(b.nombre, "es");
+    });
+
+    return {
+      soyAdmin: sesion.usuario.rol === "admin",
+      miId: sesion.usuario._id,
+      usuarios: usuarios.map((u) => ({
+        _id: u._id,
+        nombre: u.nombre,
+        rol: u.rol,
+        clientes: clientesPorResponsable.get(u._id) ?? 0,
+        esYo: u._id === sesion.usuario._id,
+      })),
+    };
+  },
+});
+
+/**
  * Invita a un usuario (JUA-29). Crea una invitación pendiente con token y 7 días
  * de vigencia. Rechaza si ya existe un usuario con ese email o una invitación
  * pendiente vigente. Solo admin.

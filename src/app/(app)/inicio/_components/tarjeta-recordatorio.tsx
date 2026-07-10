@@ -68,7 +68,7 @@ export function TarjetaRecordatorio({ item }: { item: ItemAgenda }) {
         </p>
         <div className="mt-1 flex items-center gap-2">
           <span className="min-w-0 break-words text-[12.5px] text-muted">
-            {item.clienteNombre}
+            {item.subtitulo}
           </span>
           <IndicadorPrioridad prioridad={item.prioridad} />
         </div>

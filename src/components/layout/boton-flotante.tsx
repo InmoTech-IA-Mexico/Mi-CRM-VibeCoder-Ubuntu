@@ -2,17 +2,20 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Plus, TrendingUp } from "lucide-react";
+import { Plus, TrendingUp, CalendarPlus } from "lucide-react";
 
 // FAB flotando sobre la barra inferior (alineado al contenedor centrado de 430px).
 // La acción depende de la pantalla: en Ventas da de alta una venta con selector de
-// cliente (JUA-111); en el resto, un cliente nuevo.
+// cliente (JUA-111); en Inicio programa un seguimiento (JUA-119); en el resto, un
+// cliente nuevo.
 const ACCION_VENTAS = { href: "/ventas/nueva", label: "Nueva venta", icon: TrendingUp };
+const ACCION_SEGUIMIENTO = { href: "/seguimientos/nuevo", label: "Programar seguimiento", icon: CalendarPlus };
 const ACCION_CLIENTE = { href: "/clientes/nuevo", label: "Nuevo cliente", icon: Plus };
 
 export function BotonFlotante() {
   const pathname = usePathname();
-  const { href, label, icon: Icon } = pathname === "/ventas" ? ACCION_VENTAS : ACCION_CLIENTE;
+  const { href, label, icon: Icon } =
+    pathname === "/ventas" ? ACCION_VENTAS : pathname === "/inicio" ? ACCION_SEGUIMIENTO : ACCION_CLIENTE;
 
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 mx-auto max-w-[430px]">
