@@ -1,29 +1,19 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "convex/react";
 import { Lock, Eye, EyeOff, AlertCircle, Mail, Clock, Globe, Building2, CheckCircle2 } from "lucide-react";
 import { api } from "../../../../../convex/_generated/api";
 import { guardarToken } from "@/components/session/session-provider";
+import { BarraFortaleza } from "@/components/ui/barra-fortaleza";
 import { ZONAS_MX } from "@/lib/fechas";
 import { cn } from "@/lib/utils";
 
 // Activación de cuenta desde invitación (JUA-8 admin / JUA-9 operativo). El
 // admin además configura su negocio (nombre + zona horaria). Al activar, entra
 // directo al CRM (sin pasar por Login). Diseño: Activacion Cuenta.dc.html.
-
-/** Fuerza de contraseña simple (0=Débil, 1=Media, 2=Fuerte). */
-function fuerza(p: string): { nivel: 0 | 1 | 2; label: string } {
-  if (p.length < 8) return { nivel: 0, label: "Débil" };
-  let variedad = 0;
-  if (/[a-z]/.test(p) && /[A-Z]/.test(p)) variedad++;
-  if (/\d/.test(p)) variedad++;
-  if (/[^a-zA-Z0-9]/.test(p)) variedad++;
-  if (p.length >= 12 && variedad >= 2) return { nivel: 2, label: "Fuerte" };
-  return { nivel: 1, label: "Media" };
-}
 
 export function PantallaActivar({ token }: { token: string }) {
   const router = useRouter();
@@ -39,7 +29,6 @@ export function PantallaActivar({ token }: { token: string }) {
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const nivel = useMemo(() => fuerza(password), [password]);
 
   if (!token) return <Mensaje tono="error" titulo="Enlace no válido" texto="Falta el código de invitación en el enlace." />;
   if (info === undefined) return <p className="text-center text-[14px] text-muted">Cargando…</p>;
@@ -137,35 +126,7 @@ export function PantallaActivar({ token }: { token: string }) {
               {ver ? <EyeOff size={18} strokeWidth={1.7} /> : <Eye size={18} strokeWidth={1.7} />}
             </button>
           </div>
-          {password.length > 0 && (
-            <div className="mt-2 flex items-center gap-2">
-              <div className="flex h-1.5 flex-1 gap-1">
-                {[0, 1, 2].map((i) => (
-                  <span
-                    key={i}
-                    className={cn(
-                      "h-full flex-1 rounded-full",
-                      i <= nivel.nivel
-                        ? nivel.nivel === 0
-                          ? "bg-danger"
-                          : nivel.nivel === 1
-                            ? "bg-gold-500"
-                            : "bg-teal-800"
-                        : "bg-neutral-200",
-                    )}
-                  />
-                ))}
-              </div>
-              <span
-                className={cn(
-                  "text-[11.5px] font-semibold",
-                  nivel.nivel === 0 ? "text-danger" : nivel.nivel === 1 ? "text-gold-700" : "text-teal-800",
-                )}
-              >
-                {nivel.label}
-              </span>
-            </div>
-          )}
+          <BarraFortaleza password={password} />
         </div>
 
         {/* Confirmar */}

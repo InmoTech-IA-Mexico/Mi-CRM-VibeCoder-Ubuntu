@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { api } from "../../../../../convex/_generated/api";
 import { useSesion } from "@/components/session/use-sesion";
+import { BarraFortaleza } from "@/components/ui/barra-fortaleza";
 import { LABELS } from "@/lib/enums";
 import { cn } from "@/lib/utils";
 
@@ -216,6 +217,7 @@ function CambiarPassword({ token }: { token: string }) {
           className="w-full bg-transparent text-[15px] text-ink outline-none placeholder:text-muted"
         />
       </Campo>
+      <BarraFortaleza password={nueva} className="!mt-0" />
       <Campo etiqueta="Confirmar nueva contraseña" icono={<Lock size={18} strokeWidth={1.6} className="text-neutral-400" />}>
         <input
           value={confirmar}

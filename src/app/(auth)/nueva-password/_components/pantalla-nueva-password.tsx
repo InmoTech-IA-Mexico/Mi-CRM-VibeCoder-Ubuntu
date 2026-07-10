@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useMutation, useQuery } from "convex/react";
 import { Lock, Eye, EyeOff, AlertCircle, Mail } from "lucide-react";
 import { api } from "../../../../../convex/_generated/api";
+import { BarraFortaleza } from "@/components/ui/barra-fortaleza";
 import { cn } from "@/lib/utils";
 
 // Nueva contraseña desde el enlace de recuperación (JUA-7). Un solo uso; al
@@ -93,6 +94,7 @@ export function PantallaNuevaPassword({ token }: { token: string }) {
               {ver ? <EyeOff size={18} strokeWidth={1.7} /> : <Eye size={18} strokeWidth={1.7} />}
             </button>
           </div>
+          <BarraFortaleza password={password} />
         </div>
 
         {/* Confirmar */}
