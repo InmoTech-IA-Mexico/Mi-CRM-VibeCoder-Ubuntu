@@ -16,18 +16,25 @@ const MS_DIA = 24 * 60 * 60 * 1000;
  * estrictamente posterior a `ahora` (salta las vencidas no atendidas). Semanal
  * = +7 días; mensual = +1 mes de calendario (mismo día del mes).
  */
-function siguienteOcurrencia(fecha: number, frecuencia: "semanal" | "mensual", ahora: number): number {
+function siguienteOcurrencia(
+  fecha: number,
+  frecuencia: "semanal" | "mensual",
+  ahora: number,
+  diaAncla?: number,
+): number {
+  // Ancla del día-del-mes (mensual): el día original de la serie, para que
+  // "cada 31" no se degrade a "28" tras pasar por un mes corto. Si no se
+  // persistió (legado), se usa el día de la fecha actual.
+  const ancla = diaAncla ?? new Date(fecha).getUTCDate();
   const avanzar = (t: number) => {
     if (frecuencia === "semanal") return t + 7 * MS_DIA;
-    // Mensual: mismo día del mes, ajustando al último día válido para no
-    // saltarse meses (31 ene → 28/29 feb; 31 may → 30 jun). Conserva la hora.
-    const d = new Date(t);
-    const dia = d.getDate();
+    // Mensual: avanza un mes de calendario y ajusta al último día válido del mes
+    // destino según el ANCLA (31 ene → 28/29 feb → 31 mar → 30 abr). Conserva la hora.
     const destino = new Date(t);
-    destino.setDate(1); // evita el desbordamiento al cambiar de mes
-    destino.setMonth(destino.getMonth() + 1);
-    const ultimoDia = new Date(destino.getFullYear(), destino.getMonth() + 1, 0).getDate();
-    destino.setDate(Math.min(dia, ultimoDia));
+    destino.setUTCDate(1); // evita el desbordamiento al cambiar de mes
+    destino.setUTCMonth(destino.getUTCMonth() + 1);
+    const ultimoDia = new Date(Date.UTC(destino.getUTCFullYear(), destino.getUTCMonth() + 1, 0)).getUTCDate();
+    destino.setUTCDate(Math.min(ancla, ultimoDia));
     return destino.getTime();
   };
   let next = avanzar(fecha);
@@ -201,7 +208,7 @@ export const marcarSeguimientoRealizado = mutation({
     // Recurrente (JUA-115): en vez de cerrarlo, avanza a la próxima ocurrencia
     // (sigue pendiente). Si la próxima supera la fecha de fin, la serie termina.
     if (seguimiento.frecuencia === "semanal" || seguimiento.frecuencia === "mensual") {
-      const next = siguienteOcurrencia(seguimiento.fecha, seguimiento.frecuencia, Date.now());
+      const next = siguienteOcurrencia(seguimiento.fecha, seguimiento.frecuencia, Date.now(), seguimiento.diaRecurrencia);
       if (seguimiento.fechaFin != null && next > seguimiento.fechaFin) {
         await ctx.db.patch(seguimientoId, { estado: "realizado" });
       } else {

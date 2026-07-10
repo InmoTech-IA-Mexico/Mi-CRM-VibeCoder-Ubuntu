@@ -142,6 +142,7 @@ export default defineSchema({
     prioridad,
     frecuencia,
     fechaFin: v.optional(v.number()),
+    diaRecurrencia: v.optional(v.number()), // ancla día-del-mes para mensual (JUA-115)
     estado: v.union(
       v.literal("pendiente"),
       v.literal("realizado"),

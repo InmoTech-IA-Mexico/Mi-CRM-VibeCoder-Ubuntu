@@ -70,6 +70,8 @@ export const crear = mutation({
       prioridad: args.prioridad,
       frecuencia,
       fechaFin: recurrente ? args.fechaFin : undefined,
+      // Ancla del día-del-mes para el mensual (para no degradar "cada 31" a "28").
+      diaRecurrencia: frecuencia === "mensual" ? new Date(args.fecha).getUTCDate() : undefined,
       estado: "pendiente",
     });
   },
@@ -108,8 +110,10 @@ export const reprogramar = mutation({
     hora: v.optional(v.string()),
   },
   handler: async (ctx, { token, seguimientoId, fecha, hora }) => {
-    await seguimientoGestionable(ctx, token, seguimientoId);
-    await ctx.db.patch(seguimientoId, { fecha, hora: hora || undefined, estado: "pendiente" });
+    const { seguimiento } = await seguimientoGestionable(ctx, token, seguimientoId);
+    // Si es mensual, la nueva fecha redefine el ancla del día-del-mes.
+    const diaRecurrencia = seguimiento.frecuencia === "mensual" ? new Date(fecha).getUTCDate() : undefined;
+    await ctx.db.patch(seguimientoId, { fecha, hora: hora || undefined, estado: "pendiente", diaRecurrencia });
   },
 });
 
