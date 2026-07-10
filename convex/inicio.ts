@@ -145,7 +145,11 @@ export const agendaDelDia = query({
       if (a.hora && b.hora && a.hora !== b.hora) return a.hora.localeCompare(b.hora);
       if (a.hora && !b.hora) return -1;
       if (!a.hora && b.hora) return 1;
-      return rangoPrioridad(a.prioridadCliente) - rangoPrioridad(b.prioridadCliente);
+      const pr = rangoPrioridad(a.prioridadCliente) - rangoPrioridad(b.prioridadCliente);
+      if (pr !== 0) return pr;
+      // Desempate final estable (orden determinista): fecha y luego id.
+      if (a.fecha !== b.fecha) return a.fecha - b.fecha;
+      return a._id < b._id ? -1 : a._id > b._id ? 1 : 0;
     });
   },
 });
@@ -206,7 +210,10 @@ export const panelInactividad = query({
       // muestra quién "requiere atención" (con el mismo umbral de 15 días).
       .sort((a, b) => {
         const pr = rangoPrioridad(a.prioridad) - rangoPrioridad(b.prioridad);
-        return pr !== 0 ? pr : b.diasSinContacto - a.diasSinContacto;
+        if (pr !== 0) return pr;
+        if (a.diasSinContacto !== b.diasSinContacto) return b.diasSinContacto - a.diasSinContacto;
+        // Desempate final estable (orden determinista): por nombre.
+        return a.nombre.localeCompare(b.nombre, "es");
       });
   },
 });
