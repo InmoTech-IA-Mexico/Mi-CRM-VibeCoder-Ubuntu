@@ -1,6 +1,6 @@
 import { mutation, query } from "./_generated/server";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
-import { v } from "convex/values";
+import { v, ConvexError } from "convex/values";
 import { scrypt } from "@noble/hashes/scrypt.js";
 import { randomBytes, bytesToHex, hexToBytes } from "@noble/hashes/utils.js";
 
@@ -180,12 +180,14 @@ export const cambiarPassword = mutation({
     const sesion = await resolverSesion(ctx, token);
     if (!sesion) throw new Error("No autorizado");
     const usuario = sesion.usuario;
+    // ConvexError (no Error) para que el mensaje llegue al cliente también en
+    // producción (Convex oculta los mensajes de Error en prod).
     if (!usuario.passwordHash || !verifyPassword(actual, usuario.passwordHash)) {
-      throw new Error("La contraseña actual no es correcta");
+      throw new ConvexError("La contraseña actual no es correcta");
     }
-    if (nueva.length < 8) throw new Error("La nueva contraseña debe tener al menos 8 caracteres");
+    if (nueva.length < 8) throw new ConvexError("La nueva contraseña debe tener al menos 8 caracteres");
     if (verifyPassword(nueva, usuario.passwordHash)) {
-      throw new Error("La nueva contraseña debe ser distinta de la actual");
+      throw new ConvexError("La nueva contraseña debe ser distinta de la actual");
     }
 
     await ctx.db.patch(usuario._id, {

@@ -18,13 +18,13 @@ const ACCESOS_ADMIN = [
   { label: "Papelera", icon: Trash2, href: "/papelera" },
 ];
 
-// Extrae el mensaje de negocio de un error de mutation de Convex, cuyo `message`
-// llega como "[CONVEX M(...)] … Server Error\nUncaught Error: <mensaje real>\n …".
+// Extrae el mensaje de negocio de un error de mutation. Las validaciones de cara al
+// usuario lanzan `ConvexError`, cuyo payload (`data`) sí llega al cliente también en
+// producción (los mensajes de `Error` se ocultan en prod). Fallback en cualquier
+// otro caso (error de red, etc.).
 const mensajeError = (e: unknown, fallback: string) => {
-  const raw = e instanceof Error ? e.message : "";
-  const m = raw.match(/Uncaught \w*Error:\s*(.+?)(?:\n|$)/);
-  const msg = (m ? m[1] : raw).trim();
-  return msg && !/^\[CONVEX|Server Error/.test(msg) ? msg : fallback;
+  const data = e && typeof e === "object" && "data" in e ? (e as { data: unknown }).data : undefined;
+  return typeof data === "string" && data.trim() ? data.trim() : fallback;
 };
 
 export function PantallaPerfil() {

@@ -1,6 +1,7 @@
 import { mutation, query } from "./_generated/server";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { v } from "convex/values";
+import { ConvexError } from "convex/values";
 import { randomBytes, bytesToHex } from "@noble/hashes/utils.js";
 import { resolverSesion } from "./auth";
 import { rol as rolValidator } from "./schema";
@@ -87,11 +88,12 @@ export const actualizarPerfil = mutation({
     const sesion = await resolverSesion(ctx, token);
     if (!sesion) throw new Error("No autorizado");
 
+    // ConvexError para que el mensaje llegue al cliente también en producción.
     const nombreLimpio = nombre.trim();
-    if (!nombreLimpio) throw new Error("El nombre es obligatorio");
+    if (!nombreLimpio) throw new ConvexError("El nombre es obligatorio");
 
     const correo = email.trim().toLowerCase();
-    if (!EMAIL_RE.test(correo)) throw new Error("Email no válido");
+    if (!EMAIL_RE.test(correo)) throw new ConvexError("Email no válido");
 
     // Unicidad global: ningún OTRO usuario puede tener ese email.
     const existente = await ctx.db
@@ -99,7 +101,7 @@ export const actualizarPerfil = mutation({
       .withIndex("por_email", (q) => q.eq("email", correo))
       .first();
     if (existente && existente._id !== sesion.usuario._id) {
-      throw new Error("Ya existe una cuenta con ese email");
+      throw new ConvexError("Ya existe una cuenta con ese email");
     }
 
     await ctx.db.patch(sesion.usuario._id, { nombre: nombreLimpio, email: correo });
