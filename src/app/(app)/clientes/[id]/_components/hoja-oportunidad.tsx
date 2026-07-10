@@ -49,6 +49,17 @@ export function HojaOportunidad({
   const cambiado = etapa !== oportunidad.etapa;
   const puedeGuardar = cambiado && (!requiereMotivo || motivo.trim().length > 0);
 
+  // Categoría del motivo por etapa: perdida/cancelada (motivoPerdida) comparten
+  // texto; ganada (motivoCierre) es otro campo; las abiertas no llevan motivo. Al
+  // cruzar de categoría se limpia el texto para no reutilizarlo entre campos
+  // distintos (p. ej. un motivo de pérdida que acabaría como nota de cierre).
+  const categoriaMotivo = (e: EtapaPipeline) =>
+    REQUIEREN_MOTIVO.includes(e) ? "perdida" : e === "ganada" ? "ganada" : "abierta";
+  const elegirEtapa = (nueva: EtapaPipeline) => {
+    if (categoriaMotivo(nueva) !== categoriaMotivo(etapa)) setMotivo("");
+    setEtapa(nueva);
+  };
+
   const guardar = async () => {
     if (guardando || !puedeGuardar) return;
     setGuardando(true);
@@ -107,7 +118,7 @@ export function HojaOportunidad({
               <button
                 key={key}
                 type="button"
-                onClick={() => setEtapa(key)}
+                onClick={() => elegirEtapa(key)}
                 className={cn(
                   "flex items-center gap-1.5 rounded-pill border px-3.5 py-2 text-[13px] font-medium transition active:scale-95",
                   activo ? "border-gold-500 bg-gold-tint text-gold-700" : "border-border-input bg-surface text-body",
