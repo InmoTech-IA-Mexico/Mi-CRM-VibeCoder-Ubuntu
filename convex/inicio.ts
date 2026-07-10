@@ -5,7 +5,7 @@ import { partesLocales, epochDeLocal, diasEnMes } from "./fechas";
 // Regla de inactividad compartida (JUA-25/35/26): un cliente "requiere atención" a
 // partir de 15 días sin interacción real, salvo que ya tenga un recordatorio
 // próximo planificado. Ver convex/inactividad.ts.
-import { MS_DIA, DIAS_INACTIVIDAD, recordatorioProximoIds } from "./inactividad";
+import { MS_DIA, DIAS_INACTIVIDAD, recordatorioProximoIds, diasSinContacto } from "./inactividad";
 
 /**
  * Siguiente ocurrencia de un recordatorio recurrente (JUA-115), la primera
@@ -183,16 +183,13 @@ export const panelInactividad = query({
           c.estado !== "descartado" &&
           !conRecordatorioProximo.has(c._id),
       )
-      .map((c) => {
-        const referencia = c.ultimaInteraccion ?? c._creationTime;
-        return {
-          _id: c._id,
-          nombre: c.nombre,
-          prioridad: c.prioridad ?? null,
-          estado: c.estado,
-          diasSinContacto: Math.floor((ahora - referencia) / MS_DIA),
-        };
-      })
+      .map((c) => ({
+        _id: c._id,
+        nombre: c.nombre,
+        prioridad: c.prioridad ?? null,
+        estado: c.estado,
+        diasSinContacto: diasSinContacto(c, ahora),
+      }))
       .filter((c) => c.diasSinContacto >= DIAS_INACTIVIDAD)
       // TODO(JUA-49): desempatar por prioridad del cliente.
       // La transición automática a "inactivo" (JUA-26) la persiste
@@ -309,7 +306,7 @@ export const estadoGlobal = query({
         c.estado !== "nuevo" &&
         c.estado !== "descartado" &&
         !conRecordatorioProximo.has(c._id) &&
-        Math.floor((ahora - (c.ultimaInteraccion ?? c._creationTime)) / MS_DIA) >= DIAS_INACTIVIDAD,
+        diasSinContacto(c, ahora) >= DIAS_INACTIVIDAD,
     ).length;
 
     return {
