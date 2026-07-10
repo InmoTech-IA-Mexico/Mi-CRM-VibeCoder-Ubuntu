@@ -212,7 +212,9 @@ export const panelInactividad = query({
       })
       .filter((c) => c.diasSinContacto >= DIAS_INACTIVIDAD)
       // TODO(JUA-49): desempatar por prioridad del cliente.
-      // TODO(JUA-26): la transición automática a estado "inactivo" es aparte.
+      // La transición automática a "inactivo" (JUA-26) la persiste
+      // clientes.transicionarInactivos / sincronizarInactividad; este panel solo
+      // muestra quién "requiere atención" (con el mismo umbral de 15 días).
       .sort((a, b) => b.diasSinContacto - a.diasSinContacto);
   },
 });

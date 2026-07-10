@@ -19,6 +19,9 @@ const TIPO_INTERACCION = v.union(
 // y no debe resetear el contador de inactividad (15 días).
 const TIPOS_CONTACTO_REAL = ["llamada", "reunion", "correo", "mensaje", "visita"];
 
+// Etapas de oportunidad ya cerradas (no cuentan como "abierta" para reactivar).
+const ETAPAS_CERRADAS = ["ganada", "perdida", "cancelada"];
+
 /**
  * Registra una nota/interacción (JUA-17). Valida pertenencia del cliente al
  * negocio de la sesión (JUA-10). Actualiza `ultimaInteraccion` solo si el tipo
@@ -56,8 +59,23 @@ export const crear = mutation({
     });
 
     // JUA-19: contacto real → actualiza la última interacción del cliente.
+    // JUA-26: si además estaba Inactivo, se reactiva automáticamente a Activo (si
+    // tiene alguna oportunidad abierta) o Prospecto (si no). Es la contraparte de la
+    // transición automática a Inactivo: un contacto real "revive" al cliente.
     if (TIPOS_CONTACTO_REAL.includes(tipo)) {
-      await ctx.db.patch(clienteId, { ultimaInteraccion: ahora });
+      const cambios: { ultimaInteraccion: number; estado?: "activo" | "prospecto"; actualizadoEn?: number } = {
+        ultimaInteraccion: ahora,
+      };
+      if (cliente.estado === "inactivo") {
+        const opos = await ctx.db
+          .query("oportunidades")
+          .withIndex("por_cliente", (q) => q.eq("clienteId", clienteId))
+          .collect();
+        const tieneAbierta = opos.some((o) => !ETAPAS_CERRADAS.includes(o.etapa));
+        cambios.estado = tieneAbierta ? "activo" : "prospecto";
+        cambios.actualizadoEn = ahora;
+      }
+      await ctx.db.patch(clienteId, cambios);
     }
 
     return notaId;

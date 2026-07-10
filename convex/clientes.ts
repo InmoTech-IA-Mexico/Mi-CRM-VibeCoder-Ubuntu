@@ -6,6 +6,10 @@ import { resolverSesion } from "./auth";
 
 const MS_DIA = 24 * 60 * 60 * 1000;
 const DIAS_PAPELERA = 30; // días en papelera antes del borrado definitivo (JUA-16)
+// Regla de negocio (PRD): 15 días sin interacción real → "requiere atención" y, si
+// el cliente está en Prospecto/Activo, transiciona a Inactivo (JUA-26). Espejo de
+// DIAS_INACTIVIDAD en src/lib/enums.ts / convex/inicio.ts.
+const DIAS_INACTIVIDAD = 15;
 
 // Lista de clientes del negocio (JUA-14). Devuelve todos (excepto papelera) con
 // los campos para el buscador en tiempo real (nombre/teléfono/email/empresa) y la
@@ -433,6 +437,80 @@ export const vaciarPapelera = mutation({
     for (const c of clientes.filter((c) => c.eliminadoEn != null)) {
       await borrarClienteYRelacionados(ctx, c._id);
     }
+  },
+});
+
+// ---- Inactividad automática (JUA-26) --------------------------------------
+
+type ClienteDoc = {
+  _id: Id<"clientes">;
+  _creationTime: number;
+  estado: string;
+  eliminadoEn?: number;
+  ultimaInteraccion?: number;
+};
+
+/**
+ * Regla de transición automática a Inactivo (JUA-26): solo clientes en
+ * Prospecto o Activo (no papelera) sin interacción real en 15+ días. El umbral se
+ * mide como DURACIÓN transcurrida (≥15×24 h), invariante a la zona horaria —
+ * nunca se usa el calendario local del servidor. Es idéntico al cálculo del panel
+ * (JUA-25) y del estado global (JUA-35), de modo que el estado persistido coincide
+ * con lo que muestran esas pantallas. La referencia es la última interacción real,
+ * o el alta del cliente si aún no tuvo ninguna.
+ */
+function debeMarcarseInactivo(c: ClienteDoc, ahora: number): boolean {
+  if (c.eliminadoEn != null) return false;
+  if (c.estado !== "prospecto" && c.estado !== "activo") return false;
+  const referencia = c.ultimaInteraccion ?? c._creationTime;
+  return Math.floor((ahora - referencia) / MS_DIA) >= DIAS_INACTIVIDAD;
+}
+
+/** Aplica la transición a un conjunto de clientes; devuelve cuántos cambiaron. */
+async function transicionarClientes(ctx: MutationCtx, clientes: ClienteDoc[], ahora: number) {
+  let cambiados = 0;
+  for (const c of clientes) {
+    if (debeMarcarseInactivo(c, ahora)) {
+      await ctx.db.patch(c._id, { estado: "inactivo", actualizadoEn: ahora });
+      cambiados++;
+    }
+  }
+  return cambiados;
+}
+
+/**
+ * Transición automática a Inactivo para TODO el sistema (JUA-26). La ejecuta el
+ * cron diario (ver convex/crons.ts) como red de seguridad para negocios en los que
+ * nadie abre Inicio. Interna. Inactivo es el único estado que el sistema asigna
+ * automáticamente; el resto requiere acción del usuario.
+ */
+export const transicionarInactivos = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const ahora = Date.now();
+    const clientes = await ctx.db.query("clientes").collect();
+    const cambiados = await transicionarClientes(ctx, clientes, ahora);
+    return { cambiados };
+  },
+});
+
+/**
+ * Sincroniza la inactividad del negocio de la sesión (JUA-26). La llama la pantalla
+ * de Inicio al cargar para que la transición sea inmediata (complementa al cron
+ * diario). Idempotente: no escribe si no hay clientes que transicionar. El negocio
+ * sale de la sesión (JUA-10).
+ */
+export const sincronizarInactividad = mutation({
+  args: { token: v.string() },
+  handler: async (ctx, { token }) => {
+    const sesion = await resolverSesion(ctx, token);
+    if (!sesion) return { cambiados: 0 };
+    const clientes = await ctx.db
+      .query("clientes")
+      .withIndex("por_negocio", (q) => q.eq("negocioId", sesion.negocioId))
+      .collect();
+    const cambiados = await transicionarClientes(ctx, clientes, Date.now());
+    return { cambiados };
   },
 });
 

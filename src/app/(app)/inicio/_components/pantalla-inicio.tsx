@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useQuery } from "convex/react";
+import { useEffect, useMemo, useState } from "react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../../../convex/_generated/api";
 import { useSesion } from "@/components/session/use-sesion";
 import { fechaLargaES, rangoDiaEnZona } from "@/lib/fechas";
@@ -23,6 +23,16 @@ export function PantallaInicio() {
 
   const agenda = useQuery(api.inicio.agendaDelDia, { token, inicioDia, finDia });
   const inactivos = useQuery(api.inicio.panelInactividad, { token });
+
+  // JUA-26: al abrir Inicio, persiste la transición a "Inactivo" de los clientes
+  // del negocio que superan los 15 días sin interacción (inmediato; el cron diario
+  // es la red de seguridad). Idempotente y sin bloquear el render.
+  const sincronizarInactividad = useMutation(api.clientes.sincronizarInactividad);
+  useEffect(() => {
+    sincronizarInactividad({ token }).catch((e) =>
+      console.error("No se pudo sincronizar la inactividad de clientes", e),
+    );
+  }, [sincronizarInactividad, token]);
 
   return (
     <div className="px-4 pt-2">
