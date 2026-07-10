@@ -191,6 +191,31 @@ export const cambiarEstado = mutation({
 });
 
 /**
+ * Cambia la prioridad estratégica del cliente (JUA-46): alta / media / baja, o
+ * `null` para dejarlo "sin prioridad". Es un campo del cliente distinto de la
+ * prioridad de un seguimiento (esa indica urgencia de una tarea). Ambos roles
+ * pueden editarla. Actualiza `actualizadoEn`. Valida pertenencia al negocio (JUA-10).
+ */
+export const cambiarPrioridad = mutation({
+  args: {
+    token: v.string(),
+    clienteId: v.id("clientes"),
+    prioridad: v.union(v.literal("alta"), v.literal("media"), v.literal("baja"), v.null()),
+  },
+  handler: async (ctx, { token, clienteId, prioridad }) => {
+    const sesion = await resolverSesion(ctx, token);
+    if (!sesion) throw new Error("No autorizado");
+
+    const c = await ctx.db.get(clienteId);
+    if (!c || c.negocioId !== sesion.negocioId || c.eliminadoEn != null) {
+      throw new Error("No encontrado");
+    }
+
+    await ctx.db.patch(clienteId, { prioridad: prioridad ?? undefined, actualizadoEn: Date.now() });
+  },
+});
+
+/**
  * Envía el cliente a la papelera (soft delete). Solo Marta (admin) puede
  * eliminar clientes (JUA-13). Valida pertenencia al negocio de la sesión.
  */

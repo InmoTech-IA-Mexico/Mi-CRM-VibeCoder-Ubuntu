@@ -2,27 +2,12 @@ import type { FunctionReturnType } from "convex/server";
 import { Phone, Mail, MessageCircle } from "lucide-react";
 import { api } from "../../../../../../convex/_generated/api";
 import { BadgeEstado } from "@/components/ui/badge-estado";
-import { LABELS, type Prioridad } from "@/lib/enums";
+import { LABELS } from "@/lib/enums";
 import { diasDesde, colorUrgenciaDias } from "@/lib/fechas";
+import { SelectorPrioridadCliente } from "./selector-prioridad";
 import { cn } from "@/lib/utils";
 
 export type FichaCliente = NonNullable<FunctionReturnType<typeof api.clientes.detalle>>;
-
-const PRIORIDAD_ESTILO: Record<Prioridad, { fondo: string; punto: string; texto: string }> = {
-  alta: { fondo: "bg-[#F6E7E0]", punto: "bg-[#B0573F]", texto: "text-[#8A3F2C]" },
-  media: { fondo: "bg-[#F4ECDB]", punto: "bg-[#C9A25E]", texto: "text-[#9A7327]" },
-  baja: { fondo: "bg-[#EAEFE8]", punto: "bg-[#80847B]", texto: "text-[#5E6E58]" },
-};
-
-function BadgePrioridad({ prioridad }: { prioridad: Prioridad }) {
-  const e = PRIORIDAD_ESTILO[prioridad];
-  return (
-    <span className={cn("flex items-center gap-1.5 rounded-lg px-2.5 py-1", e.fondo)}>
-      <span className={cn("h-1.5 w-1.5 rounded-full", e.punto)} />
-      <span className={cn("text-[12px] font-semibold", e.texto)}>{LABELS.prioridad[prioridad]}</span>
-    </span>
-  );
-}
 
 export function TarjetaPerfil({ cliente, ahora }: { cliente: FichaCliente; ahora: number }) {
   const inicial = cliente.nombre.trim().charAt(0).toUpperCase() || "?";
@@ -46,9 +31,10 @@ export function TarjetaPerfil({ cliente, ahora }: { cliente: FichaCliente; ahora
       <h2 className="mt-3.5 font-serif text-2xl font-semibold tracking-tight text-ink">{cliente.nombre}</h2>
       <p className="mt-0.5 text-[13px] text-muted">{cliente.empresa ?? "—"}</p>
 
-      <div className="mt-3.5 flex gap-2">
+      <div className="mt-3.5 flex items-center gap-2">
         <BadgeEstado estado={cliente.estado} />
-        {cliente.prioridad && <BadgePrioridad prioridad={cliente.prioridad} />}
+        {/* Prioridad estratégica editable inline (JUA-46). */}
+        <SelectorPrioridadCliente clienteId={cliente._id} prioridad={cliente.prioridad} />
       </div>
 
       <p
