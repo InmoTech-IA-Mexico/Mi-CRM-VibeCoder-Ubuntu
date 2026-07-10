@@ -7,6 +7,11 @@ import { partesLocales, epochDeLocal, diasEnMes } from "./fechas";
 // próximo planificado. Ver convex/inactividad.ts.
 import { MS_DIA, DIAS_INACTIVIDAD, recordatorioProximoIds, diasSinContacto } from "./inactividad";
 
+// Orden de prioridad del cliente para desempatar (JUA-48/49): alta → media → baja
+// → sin prioridad (al final).
+const RANGO_PRIORIDAD: Record<string, number> = { alta: 0, media: 1, baja: 2 };
+const rangoPrioridad = (p: string | null | undefined) => (p != null ? RANGO_PRIORIDAD[p] ?? 3 : 3);
+
 /**
  * Siguiente ocurrencia de un recordatorio recurrente (JUA-115), la primera
  * estrictamente posterior a `ahora` (salta las vencidas no atendidas). Semanal
@@ -103,6 +108,7 @@ export const agendaDelDia = query({
             destino: "empleado" as const,
             clienteId: null,
             subtitulo: "Tarea personal",
+            prioridadCliente: null,
             vencido: s.fecha < inicioDia,
             responsableId: s.responsableId,
             frecuencia: s.frecuencia,
@@ -121,6 +127,7 @@ export const agendaDelDia = query({
           destino: "cliente" as const,
           clienteId: s.clienteId ?? null,
           subtitulo: cliente.nombre,
+          prioridadCliente: cliente.prioridad ?? null,
           vencido: s.fecha < inicioDia,
           responsableId: s.responsableId,
           frecuencia: s.frecuencia,
@@ -129,15 +136,16 @@ export const agendaDelDia = query({
     );
     const items = itemsConNulos.filter((i) => i !== null);
 
-    // Vencidos primero; luego por hora ascendente (los sin hora, al final).
-    // TODO(JUA-48): cuando exista el scoring, desempatar por prioridad.
+    // Orden (JUA-23 + JUA-48): vencidos primero; luego por hora ascendente (los sin
+    // hora, al final); y a igualdad de hora (o ambos sin hora), desempata la
+    // prioridad del cliente (alta → media → baja → sin prioridad).
     // TODO(JUA-115): expandir recurrencias antes de aplicar el filtro del día.
     return items.sort((a, b) => {
       if (a.vencido !== b.vencido) return a.vencido ? -1 : 1;
-      if (a.hora && b.hora) return a.hora.localeCompare(b.hora);
-      if (a.hora) return -1;
-      if (b.hora) return 1;
-      return 0;
+      if (a.hora && b.hora && a.hora !== b.hora) return a.hora.localeCompare(b.hora);
+      if (a.hora && !b.hora) return -1;
+      if (!a.hora && b.hora) return 1;
+      return rangoPrioridad(a.prioridadCliente) - rangoPrioridad(b.prioridadCliente);
     });
   },
 });
@@ -191,11 +199,15 @@ export const panelInactividad = query({
         diasSinContacto: diasSinContacto(c, ahora),
       }))
       .filter((c) => c.diasSinContacto >= DIAS_INACTIVIDAD)
-      // TODO(JUA-49): desempatar por prioridad del cliente.
+      // Orden (JUA-49): primero por prioridad del cliente (alta → media → baja →
+      // sin prioridad) y, dentro del mismo nivel, más días sin contacto primero.
       // La transición automática a "inactivo" (JUA-26) la persiste
       // clientes.transicionarInactivos / sincronizarInactividad; este panel solo
       // muestra quién "requiere atención" (con el mismo umbral de 15 días).
-      .sort((a, b) => b.diasSinContacto - a.diasSinContacto);
+      .sort((a, b) => {
+        const pr = rangoPrioridad(a.prioridad) - rangoPrioridad(b.prioridad);
+        return pr !== 0 ? pr : b.diasSinContacto - a.diasSinContacto;
+      });
   },
 });
 

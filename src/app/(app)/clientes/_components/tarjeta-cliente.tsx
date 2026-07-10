@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import type { FunctionReturnType } from "convex/server";
 import { api } from "../../../../../convex/_generated/api";
 import { BadgeEstado } from "@/components/ui/badge-estado";
-import { bordePrioridadClase } from "@/components/ui/indicador-prioridad";
+import { BadgePrioridad, bordePrioridadClase } from "@/components/ui/indicador-prioridad";
 import { diasDesde } from "@/lib/fechas";
 import { LABELS, type EtapaPipeline } from "@/lib/enums";
 import { cn } from "@/lib/utils";
@@ -63,7 +63,11 @@ export function TarjetaCliente({
         <BadgeEstado estado={item.estado} />
       </div>
       <div className="mt-1.5 flex items-center justify-between gap-2">
-        <span className={cn("text-[12.5px] font-semibold", colorDias)}>Hace {dias} días</span>
+        <div className="flex min-w-0 items-center gap-2">
+          <span className={cn("flex-shrink-0 text-[12.5px] font-semibold", colorDias)}>Hace {dias} días</span>
+          {/* Badge de prioridad estratégica del cliente (JUA-47). Sin prioridad → sin badge. */}
+          {item.prioridad && <BadgePrioridad prioridad={item.prioridad} />}
+        </div>
         {item.etapa && (
           <span className="flex flex-shrink-0 items-center gap-1.5">
             <span className={cn("h-1.5 w-1.5 rounded-full", COLOR_ETAPA[item.etapa])} />

@@ -8,15 +8,20 @@ import { api } from "../../../../../convex/_generated/api";
 import { useSesion } from "@/components/session/use-sesion";
 import { MenuPerfil } from "@/components/layout/menu-perfil";
 import { EsqueletoLista } from "@/components/ui/esqueleto-lista";
+import { PRIORIDAD_ESTILO } from "@/components/ui/indicador-prioridad";
 import { TarjetaCliente } from "./tarjeta-cliente";
 import { ESTADOS_CLIENTE, LABELS, type EstadoCliente } from "@/lib/enums";
 import { cn } from "@/lib/utils";
 
+// Chips de filtro rápido: por estado (sin punto) y por prioridad del cliente
+// (con punto de color, JUA-47). Selección única; se combina con el buscador.
 const CHIPS = [
-  { key: "todos", label: "Todos" },
-  { key: "activos", label: "Activos" },
-  { key: "prospectos", label: "Prospectos" },
-  { key: "alta", label: "Alta prioridad" },
+  { key: "todos", label: "Todos", dot: null },
+  { key: "activos", label: "Activos", dot: null },
+  { key: "prospectos", label: "Prospectos", dot: null },
+  { key: "alta", label: "Alta", dot: PRIORIDAD_ESTILO.alta.punto },
+  { key: "media", label: "Media", dot: PRIORIDAD_ESTILO.media.punto },
+  { key: "baja", label: "Baja", dot: PRIORIDAD_ESTILO.baja.punto },
 ] as const;
 type Chip = (typeof CHIPS)[number]["key"];
 
@@ -43,8 +48,8 @@ export function PantallaClientes({ estadoInicial }: { estadoInicial?: string }) 
         ? c.estado === "activo"
         : chip === "prospectos"
           ? c.estado === "prospecto"
-          : chip === "alta"
-            ? c.prioridad === "alta"
+          : chip === "alta" || chip === "media" || chip === "baja"
+            ? c.prioridad === chip
             : true,
   );
   const visibles = q
@@ -117,12 +122,13 @@ export function PantallaClientes({ estadoInicial }: { estadoInicial?: string }) 
               type="button"
               onClick={() => setChip(c.key)}
               className={cn(
-                "flex-none rounded-pill border px-3.5 py-1.5 text-[13px] font-medium",
+                "inline-flex flex-none items-center gap-1.5 rounded-pill border px-3.5 py-1.5 text-[13px] font-medium",
                 chip === c.key
                   ? "border-gold-500 bg-gold-tint text-gold-700"
                   : "border-border-input bg-surface text-body",
               )}
             >
+              {c.dot && <span className={cn("h-1.5 w-1.5 flex-shrink-0 rounded-full", c.dot)} />}
               {c.label}
             </button>
           ))}
