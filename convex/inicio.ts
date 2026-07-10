@@ -19,9 +19,16 @@ const MS_DIA = 24 * 60 * 60 * 1000;
 function siguienteOcurrencia(fecha: number, frecuencia: "semanal" | "mensual", ahora: number): number {
   const avanzar = (t: number) => {
     if (frecuencia === "semanal") return t + 7 * MS_DIA;
+    // Mensual: mismo día del mes, ajustando al último día válido para no
+    // saltarse meses (31 ene → 28/29 feb; 31 may → 30 jun). Conserva la hora.
     const d = new Date(t);
-    d.setMonth(d.getMonth() + 1);
-    return d.getTime();
+    const dia = d.getDate();
+    const destino = new Date(t);
+    destino.setDate(1); // evita el desbordamiento al cambiar de mes
+    destino.setMonth(destino.getMonth() + 1);
+    const ultimoDia = new Date(destino.getFullYear(), destino.getMonth() + 1, 0).getDate();
+    destino.setDate(Math.min(dia, ultimoDia));
+    return destino.getTime();
   };
   let next = avanzar(fecha);
   while (next <= ahora) next = avanzar(next);

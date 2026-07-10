@@ -74,6 +74,9 @@ function Formulario({ clienteId, cliente, token }: { clienteId: Id<"clientes">; 
     setError(null);
     try {
       const recurrente = frecuencia !== "una_vez";
+      // Fecha de fin inclusiva: fin del día seleccionado (para no excluir la
+      // última ocurrencia del propio día "Termina el").
+      const finDeDia = fechaFin ? epochDesdeFechaHora(fechaFin, "", negocio.zonaHoraria) + 24 * 60 * 60 * 1000 - 1 : undefined;
       await crear({
         token,
         clienteId,
@@ -84,7 +87,7 @@ function Formulario({ clienteId, cliente, token }: { clienteId: Id<"clientes">; 
         oportunidadId: oportunidadId ?? undefined,
         prioridad,
         frecuencia,
-        fechaFin: recurrente && fechaFin ? epochDesdeFechaHora(fechaFin, "", negocio.zonaHoraria) : undefined,
+        fechaFin: recurrente ? finDeDia : undefined,
       });
       router.replace(volver);
     } catch (e) {
