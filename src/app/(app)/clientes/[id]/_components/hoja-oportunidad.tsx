@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useMutation } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
-import { X, Trash2, AlertCircle } from "lucide-react";
+import { X, Trash2, AlertCircle, PartyPopper } from "lucide-react";
 import { api } from "../../../../../../convex/_generated/api";
 import { HojaConfirmar } from "@/components/ui/hoja-confirmar";
 import { LABELS, type EtapaPipeline } from "@/lib/enums";
@@ -45,6 +45,7 @@ export function HojaOportunidad({
   const eliminar = useMutation(api.oportunidades.eliminar);
 
   const requiereMotivo = REQUIEREN_MOTIVO.includes(etapa);
+  const esGanada = etapa === "ganada";
   const cambiado = etapa !== oportunidad.etapa;
   const puedeGuardar = cambiado && (!requiereMotivo || motivo.trim().length > 0);
 
@@ -56,8 +57,10 @@ export function HojaOportunidad({
       await cambiarEtapa({
         token,
         oportunidadId: oportunidad._id,
+        // El motivo aplica a perdida/cancelada (obligatorio) y a ganada (notas de
+        // cierre, opcional). En etapas abiertas no se envía.
+        motivo: requiereMotivo || esGanada ? motivo : undefined,
         etapa,
-        motivo: requiereMotivo ? motivo : undefined,
       });
       onClose();
     } catch (e) {
@@ -130,6 +133,27 @@ export function HojaOportunidad({
               aria-label="Motivo"
               rows={2}
               autoFocus
+              className="w-full resize-none rounded-xl border border-border-input bg-surface p-3 text-[14px] text-ink outline-none transition placeholder:text-muted focus:border-gold-500 focus:ring-[3px] focus:ring-gold-500/[0.18]"
+            />
+          </div>
+        )}
+
+        {/* Ganada (JUA-122): celebración + notas de cierre opcionales. */}
+        {esGanada && (
+          <div className="mt-4">
+            <div className="mb-3 flex items-center gap-2.5 rounded-xl border border-[#2E7D6B]/25 bg-[#E2EFEB] px-3.5 py-3">
+              <PartyPopper size={20} strokeWidth={1.8} className="flex-shrink-0 text-success" />
+              <p className="text-[13px] font-semibold text-[#2E6E5E]">¡Venta ganada! Registra qué fue clave para cerrarla.</p>
+            </div>
+            <p className="mb-2 text-[13px] font-medium text-ink">
+              Motivo / notas de cierre <span className="font-normal text-muted">(opcional)</span>
+            </p>
+            <textarea
+              value={motivo}
+              onChange={(e) => setMotivo(e.target.value)}
+              placeholder="¿Qué fue clave para cerrar esta venta?"
+              aria-label="Notas de cierre"
+              rows={2}
               className="w-full resize-none rounded-xl border border-border-input bg-surface p-3 text-[14px] text-ink outline-none transition placeholder:text-muted focus:border-gold-500 focus:ring-[3px] focus:ring-gold-500/[0.18]"
             />
           </div>

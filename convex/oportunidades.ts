@@ -116,12 +116,20 @@ export const cambiarEtapa = mutation({
       actualizadoPor: sesion.usuario._id,
     };
     if (REQUIEREN_MOTIVO.includes(etapa)) {
+      // Perdida/Cancelada: el motivo es obligatorio (se guarda en motivoPerdida).
       const m = motivo?.trim();
       if (!m) throw new Error("Indica el motivo para marcarla como perdida o cancelada");
-      await ctx.db.patch(oportunidadId, { ...base, motivoPerdida: m });
+      await ctx.db.patch(oportunidadId, { ...base, motivoPerdida: m, motivoCierre: undefined });
+    } else if (etapa === "ganada") {
+      // Ganada (JUA-122): notas de cierre OPCIONALES ("¿qué fue clave?").
+      await ctx.db.patch(oportunidadId, {
+        ...base,
+        motivoCierre: motivo?.trim() || undefined,
+        motivoPerdida: undefined,
+      });
     } else {
-      // Al volver a una etapa abierta, se limpia el motivo (ya no aplica).
-      await ctx.db.patch(oportunidadId, { ...base, motivoPerdida: undefined });
+      // Al volver a una etapa abierta, se limpian los motivos (ya no aplican).
+      await ctx.db.patch(oportunidadId, { ...base, motivoPerdida: undefined, motivoCierre: undefined });
     }
   },
 });
