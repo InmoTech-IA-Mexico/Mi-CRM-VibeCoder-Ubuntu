@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMutation } from "convex/react";
 import {
-  ChevronLeft, User, Mail, Lock, LogOut, ChevronRight, BarChart3, Users, Trash2, AlertCircle, Check,
+  ChevronLeft, User, Mail, Lock, LogOut, ChevronRight, BarChart3, Users, Trash2, AlertCircle, Check, ShieldCheck,
 } from "lucide-react";
 import { api } from "../../../../../convex/_generated/api";
 import { useSesion } from "@/components/session/use-sesion";
@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 
 const ACCESOS_ADMIN = [
   { label: "Resumen del mes", icon: BarChart3, href: "/resumen" },
+  { label: "Panel de supervisión", icon: ShieldCheck, href: "/supervision" },
   { label: "Gestión de usuarios", icon: Users, href: "/usuarios" },
   { label: "Papelera", icon: Trash2, href: "/papelera" },
 ];

@@ -1,4 +1,4 @@
-import { mutation } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
 import type { MutationCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import { v } from "convex/values";
@@ -124,6 +124,102 @@ export const crear = mutation({
       diaRecurrencia: frecuencia === "mensual" ? args.diaRecurrencia : undefined,
       estado: "pendiente",
     });
+  },
+});
+
+/**
+ * Panel de supervisión del administrador (JUA-118). Solo admin. Lista los
+ * seguimientos **pendientes delegados** —cuyo responsable NO es el propio admin—
+ * agrupados por responsable (empleado): tanto tareas dirigidas a un empleado como
+ * seguimientos de cliente reasignados. Permite a Marta ver qué tiene en marcha
+ * cada miembro del equipo. Negocio derivado de la sesión (JUA-10); reactivo.
+ */
+export const panelSupervision = query({
+  args: { token: v.string() },
+  handler: async (ctx, { token }) => {
+    const sesion = await resolverSesion(ctx, token);
+    if (!sesion || sesion.usuario.rol !== "admin") return null;
+    const negocioId = sesion.negocioId;
+    const yo = sesion.usuario._id;
+    const ahora = Date.now();
+
+    const seguimientos = await ctx.db
+      .query("seguimientos")
+      .withIndex("por_negocio", (q) => q.eq("negocioId", negocioId))
+      .collect();
+    const delegados = seguimientos.filter((s) => s.estado === "pendiente" && s.responsableId !== yo);
+
+    const cacheUsuario = new Map<Id<"usuarios">, Awaited<ReturnType<typeof ctx.db.get<"usuarios">>>>();
+    const getUsuario = async (id: Id<"usuarios">) => {
+      if (!cacheUsuario.has(id)) cacheUsuario.set(id, await ctx.db.get(id));
+      return cacheUsuario.get(id)!;
+    };
+
+    type Item = {
+      _id: Id<"seguimientos">;
+      titulo: string;
+      fecha: number;
+      hora: string | null;
+      prioridad: "alta" | "media" | "baja";
+      destino: "cliente" | "empleado";
+      subtitulo: string;
+      clienteId: Id<"clientes"> | null;
+      vencido: boolean;
+      notificar: boolean;
+    };
+    const grupos = new Map<Id<"usuarios">, { usuarioId: Id<"usuarios">; nombre: string; rol: string; items: Item[] }>();
+
+    for (const s of delegados) {
+      // Sujeto del seguimiento (excluye clientes en papelera).
+      let subtitulo: string;
+      let clienteId: Id<"clientes"> | null = null;
+      if (s.destino === "empleado") {
+        subtitulo = "Tarea personal";
+      } else {
+        const cliente = s.clienteId ? await ctx.db.get(s.clienteId) : null;
+        if (!cliente || cliente.eliminadoEn != null) continue;
+        subtitulo = cliente.nombre;
+        clienteId = s.clienteId ?? null;
+      }
+      const resp = await getUsuario(s.responsableId);
+      if (!resp || resp.negocioId !== negocioId) continue;
+
+      if (!grupos.has(s.responsableId)) {
+        grupos.set(s.responsableId, { usuarioId: s.responsableId, nombre: resp.nombre, rol: resp.rol, items: [] });
+      }
+      grupos.get(s.responsableId)!.items.push({
+        _id: s._id,
+        titulo: s.titulo,
+        fecha: s.fecha,
+        hora: s.hora ?? null,
+        prioridad: s.prioridad,
+        destino: s.destino,
+        subtitulo,
+        clienteId,
+        vencido: s.fecha < ahora,
+        notificar: s.notificar ?? false,
+      });
+    }
+
+    const lista = [...grupos.values()].map((g) => {
+      // Vencidos primero; luego por fecha ascendente.
+      g.items.sort((a, b) => (a.vencido !== b.vencido ? (a.vencido ? -1 : 1) : a.fecha - b.fecha));
+      return {
+        ...g,
+        total: g.items.length,
+        vencidos: g.items.filter((i) => i.vencido).length,
+      };
+    });
+    // Más carga primero; a igualdad, por nombre.
+    lista.sort((a, b) => b.total - a.total || a.nombre.localeCompare(b.nombre, "es"));
+
+    const items = lista.flatMap((g) => g.items);
+    return {
+      grupos: lista,
+      totalPendientes: items.length,
+      totalVencidos: items.filter((i) => i.vencido).length,
+      totalEmpleados: lista.length,
+    };
   },
 });
 

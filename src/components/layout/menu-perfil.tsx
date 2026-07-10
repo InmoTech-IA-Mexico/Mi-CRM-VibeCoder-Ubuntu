@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { BarChart3, ChevronRight, LayoutDashboard, LogOut, Trash2, User, Users } from "lucide-react";
+import { BarChart3, ChevronRight, LayoutDashboard, LogOut, ShieldCheck, Trash2, User, Users } from "lucide-react";
 import { useSesion } from "@/components/session/use-sesion";
 import { HojaInferior } from "@/components/ui/hoja-inferior";
 import { LABELS } from "@/lib/enums";
@@ -13,6 +13,7 @@ import { LABELS } from "@/lib/enums";
 //   "Papelera" (JUA-16).
 const OPCIONES_ADMIN = [
   { label: "Resumen del mes", icon: BarChart3, href: "/resumen" },
+  { label: "Panel de supervisión", icon: ShieldCheck, href: "/supervision" },
   { label: "Gestión de usuarios", icon: Users, href: "/usuarios" },
   { label: "Papelera", icon: Trash2, href: "/papelera" },
 ];
