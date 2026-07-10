@@ -7,17 +7,14 @@ import { api } from "../../../../../../convex/_generated/api";
 import type { Id } from "../../../../../../convex/_generated/dataModel";
 import { useSesion } from "@/components/session/use-sesion";
 import { HojaInferior } from "@/components/ui/hoja-inferior";
+import { PRIORIDAD_ESTILO } from "@/components/ui/indicador-prioridad";
 import { LABELS, type Prioridad } from "@/lib/enums";
 import { cn } from "@/lib/utils";
 
 // Prioridad ESTRATÉGICA del cliente (JUA-46), editable inline desde la ficha.
 // Distinta de la prioridad de un seguimiento (esa indica urgencia de una tarea).
-// Ambos roles pueden cambiarla; se guarda al instante.
-const ESTILO: Record<Prioridad, { fondo: string; punto: string; texto: string }> = {
-  alta: { fondo: "bg-[#F6E7E0]", punto: "bg-[#B0573F]", texto: "text-[#8A3F2C]" },
-  media: { fondo: "bg-[#F4ECDB]", punto: "bg-[#C9A25E]", texto: "text-[#9A7327]" },
-  baja: { fondo: "bg-[#EAEFE8]", punto: "bg-[#80847B]", texto: "text-[#5E6E58]" },
-};
+// Ambos roles pueden cambiarla; se guarda al instante. Estilos: fuente única en
+// indicador-prioridad (PRIORIDAD_ESTILO).
 const OPCIONES: (Prioridad | null)[] = ["alta", "media", "baja", null];
 
 export function SelectorPrioridadCliente({
@@ -55,26 +52,28 @@ export function SelectorPrioridadCliente({
         type="button"
         aria-label="Cambiar prioridad del cliente"
         aria-haspopup="dialog"
+        aria-busy={ocupado}
+        disabled={ocupado}
         onClick={() => {
           setError(null);
           setAbierta(true);
         }}
         className={cn(
-          "flex items-center gap-1.5 rounded-lg px-2.5 py-1 transition active:scale-95",
-          prioridad ? ESTILO[prioridad].fondo : "border border-dashed border-border-input bg-surface",
+          "flex items-center gap-1.5 rounded-lg px-2.5 py-1 transition active:scale-95 disabled:opacity-60",
+          prioridad ? PRIORIDAD_ESTILO[prioridad].fondo : "border border-dashed border-border-input bg-surface",
         )}
       >
         {prioridad ? (
           <>
-            <span className={cn("h-1.5 w-1.5 rounded-full", ESTILO[prioridad].punto)} />
-            <span className={cn("text-[12px] font-semibold", ESTILO[prioridad].texto)}>
+            <span className={cn("h-1.5 w-1.5 rounded-full", PRIORIDAD_ESTILO[prioridad].punto)} />
+            <span className={cn("text-[12px] font-semibold", PRIORIDAD_ESTILO[prioridad].texto)}>
               {LABELS.prioridad[prioridad]}
             </span>
           </>
         ) : (
           <span className="text-[12px] font-semibold text-muted">Asignar prioridad</span>
         )}
-        <ChevronDown size={12} strokeWidth={2.2} className={prioridad ? ESTILO[prioridad].texto : "text-muted"} />
+        <ChevronDown size={12} strokeWidth={2.2} className={prioridad ? PRIORIDAD_ESTILO[prioridad].texto : "text-muted"} />
       </button>
 
       <HojaInferior
@@ -103,7 +102,7 @@ export function SelectorPrioridadCliente({
                   activo ? "border-[1.5px] border-gold-500 bg-gold-tint" : "border-border-input bg-surface",
                 )}
               >
-                <span className={cn("h-2.5 w-2.5 rounded-full", op ? ESTILO[op].punto : "bg-neutral-300")} />
+                <span className={cn("h-2.5 w-2.5 rounded-full", op ? PRIORIDAD_ESTILO[op].punto : "bg-neutral-300")} />
                 <span className="flex-1 text-[15px] font-medium text-ink">
                   {op ? LABELS.prioridad[op] : "Sin prioridad"}
                 </span>
