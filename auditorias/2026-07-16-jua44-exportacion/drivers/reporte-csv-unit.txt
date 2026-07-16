@@ -1,0 +1,27 @@
+Reporte driver-18 CSV unit (JUA-44, OBS-3)
+fecha: 2026-07-16T06:37:49.532Z
+resultado: OK (23 PASS / 0 FAIL)
+
+PASS — neutraliza inicio 'igual' → "'=1+1"
+PASS — neutraliza inicio 'más' → "'+1+1"
+PASS — neutraliza inicio 'menos' → "'-1+1"
+PASS — neutraliza inicio 'arroba' → "'@1+1"
+PASS — neutraliza inicio 'tabulador' → "'\t1+1"
+PASS — neutraliza inicio 'CR' → "\"'\r1+1\""
+PASS — neutraliza inicio 'LF' → "\"'\n1+1\""
+PASS — neutraliza inicio 'igual ancho completo' → "'＝1+1"
+PASS — neutraliza inicio 'más ancho completo' → "'＋1+1"
+PASS — neutraliza inicio 'menos ancho completo' → "'－1+1"
+PASS — neutraliza inicio 'arroba ancho completo' → "'＠1+1"
+PASS — texto normal intacto
+PASS — teléfono sin '+' intacto
+PASS — monto -500 (number) intacto, sin apóstrofo
+PASS — cero (number) intacto
+PASS — monto grande (number) intacto
+PASS — coma → campo citado
+PASS — comillas dobladas y citado
+PASS — salto de línea → citado
+PASS — fórmula + coma + comillas: apóstrofo dentro de comillas dobladas
+PASS — csv() añade BOM
+PASS — csv() usa CRLF
+PASS — null/undefined → vacío

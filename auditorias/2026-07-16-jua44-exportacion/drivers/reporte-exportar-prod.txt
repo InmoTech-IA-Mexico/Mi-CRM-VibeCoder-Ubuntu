@@ -1,0 +1,20 @@
+Reporte driver-16 exportar (JUA-44)
+fecha: 2026-07-16T06:43:06.778Z
+baseUrl: https://mi-crm-vibecoder-ubuntu-production.up.railway.app
+resultado: OK (12 PASS / 0 FAIL)
+tokens no persistidos; CSV descargados solo para verificación.
+
+PASS — A: el operativo NO ve 'Exportar datos' en Perfil
+PASS — A: /exportar-datos expulsa al operativo a /inicio
+PASS — B: el admin ve 'Exportar datos' en Perfil
+PASS — B: genera el enlace de descarga
+PASS — B: enlace con token único de 64 hex
+PASS — B: la página de descarga carga (enlace válido)
+PASS — B: se descargan los 4 CSV (4/4)
+PASS — B: clientes.csv lleva BOM (Excel-friendly)
+PASS — B: clientes.csv tiene cabeceras legibles
+PASS — B: clientes.csv contiene datos reales del negocio
+PASS — B: el enlace es de un solo uso
+PASS — sin pageerror ni console.error inesperados
+
+errores de navegador no esperados: 0

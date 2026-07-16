@@ -1,0 +1,20 @@
+Reporte driver-17 export fixtures (JUA-44 remediación B-1/B-2)
+fecha: 2026-07-16T06:42:42.981Z
+entorno: prod
+resultado: OK (14 PASS / 0 FAIL)
+sin tokens ni contraseñas; fixtures QA eliminados al terminar.
+
+PASS — B-1: nombre con '=' neutralizado (prefijo apóstrofo)
+PASS — B-1: teléfono con '+' neutralizado
+PASS — B-1: nombre de oportunidad con '@' neutralizado
+PASS — B-1: comentario con '-' neutralizado
+PASS — B-1: coma y comillas escapadas (RFC 4180)
+PASS — B-1: monto -500 (number) intacto, sin apóstrofo
+PASS — B-2: se localiza la fila de la oportunidad QA por su columna Nombre
+PASS — B-2: columna Comentarios = el comentario capturado
+PASS — B-2: columna 'Actualizada por' = Marta Ruiz exactamente (no confundida con Responsable)
+PASS — B-2: se localiza la fila del recordatorio QA por su columna Título
+PASS — B-2: columna Oportunidad = la vinculada
+PASS — B-2: columna 'Fecha fin' con fecha (no la de Fecha)
+PASS — B-2: columna 'Día de recurrencia' = 15
+PASS — cleanup: fixtures QA eliminados
