@@ -127,6 +127,7 @@ export function PantallaClientes({ estadoInicial }: { estadoInicial?: string }) 
             <button
               key={c.key}
               type="button"
+              aria-pressed={chip === c.key}
               onClick={() => setChip(c.key)}
               className={cn(
                 "inline-flex flex-none items-center gap-1.5 rounded-pill border px-3.5 py-1.5 text-[13px] font-medium",
@@ -146,6 +147,7 @@ export function PantallaClientes({ estadoInicial }: { estadoInicial?: string }) 
               <button
                 key={key}
                 type="button"
+                aria-pressed={chip === key}
                 onClick={() => setChip(key)}
                 className={cn(
                   "inline-flex flex-none items-center gap-1.5 rounded-pill border px-3.5 py-1.5 text-[13px] font-medium",

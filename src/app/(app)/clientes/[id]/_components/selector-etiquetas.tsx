@@ -146,6 +146,7 @@ export function SelectorEtiquetasCliente({
                     key={e._id}
                     type="button"
                     disabled={ocupado}
+                    aria-pressed={activa}
                     onClick={() => alternar(e._id)}
                     className={cn(
                       "flex items-center gap-3 rounded-[14px] border p-3.5 text-left transition active:scale-[0.99] disabled:opacity-60",
