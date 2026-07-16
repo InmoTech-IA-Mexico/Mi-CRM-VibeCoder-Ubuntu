@@ -199,4 +199,18 @@ export default defineSchema({
   })
     .index("por_token", ["token"])
     .index("por_usuario", ["usuarioId"]),
+
+  // Exportación de datos en autoservicio (JUA-44). Solo guarda el METADATO del
+  // enlace temporal: token único, 24 h, un solo uso. Los CSV NO se almacenan —
+  // se generan al consumir el enlace y se devuelven al cliente. Un cron purga
+  // las filas expiradas.
+  exportaciones: defineTable({
+    negocioId: v.id("negocios"),
+    token: v.string(),
+    expiraEn: v.number(),
+    usadoEn: v.optional(v.number()),
+    solicitadoPorId: v.id("usuarios"),
+  })
+    .index("por_token", ["token"])
+    .index("por_negocio", ["negocioId"]),
 });

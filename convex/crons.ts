@@ -13,4 +13,7 @@ crons.daily("purga-papelera", { hourUTC: 8, minuteUTC: 0 }, internal.clientes.pu
 // Inicio (esa pantalla también dispara la sincronización inmediata por negocio).
 crons.daily("transicionar-inactivos", { hourUTC: 8, minuteUTC: 30 }, internal.clientes.transicionarInactivos);
 
+// Purga los enlaces de exportación expirados o ya usados (JUA-44).
+crons.daily("purga-exportaciones", { hourUTC: 9, minuteUTC: 0 }, internal.exportaciones.purgar);
+
 export default crons;
