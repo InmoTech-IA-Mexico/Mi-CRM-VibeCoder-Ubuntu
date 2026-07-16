@@ -156,14 +156,18 @@ export const equipo = query({
       return a.nombre.localeCompare(b.nombre, "es");
     });
 
+    // Carga por miembro (JUA-126, obs. OBS-2): es información de gestión, solo para
+    // el admin. Al operativo se le devuelve la lista (nombres/roles, que necesita
+    // para elegirse a sí mismo y ver responsables) pero SIN la carga de sus colegas.
+    const esAdmin = sesion.usuario.rol === "admin";
     return {
-      soyAdmin: sesion.usuario.rol === "admin",
+      soyAdmin: esAdmin,
       miId: sesion.usuario._id,
       usuarios: usuarios.map((u) => ({
         _id: u._id,
         nombre: u.nombre,
         rol: u.rol,
-        clientes: clientesPorResponsable.get(u._id) ?? 0,
+        clientes: esAdmin ? (clientesPorResponsable.get(u._id) ?? 0) : null,
         esYo: u._id === sesion.usuario._id,
       })),
     };

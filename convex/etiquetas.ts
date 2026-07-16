@@ -3,6 +3,7 @@ import type { MutationCtx, QueryCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import { v, ConvexError } from "convex/values";
 import { resolverSesion } from "./auth";
+import { esDeCartera } from "./clientes";
 
 // Etiquetas de producto (JUA-36): catálogo configurable POR NEGOCIO para
 // clasificar clientes por producto comprado o de interés. Leer es de ambos
@@ -58,14 +59,17 @@ export const listar = query({
       .collect();
 
     // Nº de clientes por etiqueta (excluye papelera) — caso de uso de Marta:
-    // "cuántos clientes tengo en cada segmento de producto".
+    // "cuántos clientes tengo en cada segmento de producto". Cartera (JUA-126,
+    // obs. OBS-2): el conteo se limita a la cartera del operativo, para que
+    // coincida con lo que puede ver/filtrar y no revele volúmenes ajenos; admin
+    // y observador (lectura global) cuentan el negocio completo.
     const clientes = await ctx.db
       .query("clientes")
       .withIndex("por_negocio", (q) => q.eq("negocioId", sesion.negocioId))
       .collect();
     const usoPorEtiqueta = new Map<string, number>();
     for (const c of clientes) {
-      if (c.eliminadoEn != null) continue;
+      if (c.eliminadoEn != null || !esDeCartera(c, sesion)) continue;
       for (const id of c.etiquetaIds ?? []) {
         usoPorEtiqueta.set(id, (usoPorEtiqueta.get(id) ?? 0) + 1);
       }
