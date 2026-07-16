@@ -13,10 +13,24 @@ import { LABELS } from "./enumsServidor";
 
 const EXPORT_MS = 24 * 60 * 60 * 1000; // 24 h
 
-/** Escapa un valor para CSV (RFC 4180): comillas dobles si hay coma/comilla/salto. */
+// Caracteres que, al inicio de una celda, una hoja de cálculo (Excel/LibreOffice)
+// interpreta como fórmula → CSV/formula injection (OWASP). Incluye las variantes
+// Unicode de ancho completo. Se neutralizan SOLO los campos de TEXTO (los números
+// reales, como el monto, no son texto de usuario y no se tocan).
+const INICIO_FORMULA = /^[=+\-@\t\r\n＝＋－＠]/;
+
+/**
+ * Serializa un valor para CSV. Números → tal cual (no son texto de usuario).
+ * Texto → se neutraliza contra inyección de fórmula (prefijo apóstrofo, que la
+ * hoja de cálculo trata como "esto es texto" y no muestra) ANTES del escape
+ * RFC 4180 (comillas dobles si hay coma/comilla/salto). El apóstrofo es el
+ * compromiso documentado: no hay una estrategia idéntica para todos los lectores.
+ */
 function csvCampo(valor: unknown): string {
   if (valor == null) return "";
-  const s = String(valor);
+  if (typeof valor === "number") return String(valor);
+  let s = String(valor);
+  if (INICIO_FORMULA.test(s)) s = "'" + s;
   return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
@@ -148,7 +162,8 @@ async function generarArchivos(ctx: MutationCtx, negocioId: import("./_generated
   // 3) oportunidades.csv — con referencia al cliente y etapa.
   const oportunidadesCsv = csv(
     ["Cliente", "Nombre", "Producto/servicio", "Monto", "Etapa", "Modelo de venta", "Canal",
-     "Fecha de cierre", "Motivo de cierre", "Motivo de pérdida", "Responsable", "Creada", "Actualizada"],
+     "Fecha de cierre", "Comentarios", "Motivo de cierre", "Motivo de pérdida", "Responsable",
+     "Actualizada por", "Creada", "Actualizada"],
     oportunidades.map((o) => [
       nombreCliente.get(o.clienteId) ?? "",
       o.nombre, o.productoServicio,
@@ -157,37 +172,42 @@ async function generarArchivos(ctx: MutationCtx, negocioId: import("./_generated
       o.modeloVenta ? (o.modeloVenta === "unico" ? "Único" : "Recurrente") : "",
       o.canal ? LABELS.canal[o.canal] : "",
       fechaLocal(o.fechaCierre, tz),
-      o.motivoCierre, o.motivoPerdida,
+      o.comentarios, o.motivoCierre, o.motivoPerdida,
       o.responsableId ? (nombreUsuario.get(o.responsableId) ?? "") : "",
+      o.actualizadoPor ? (nombreUsuario.get(o.actualizadoPor) ?? "") : "",
       fechaLocal(o._creationTime, tz),
       fechaLocal(o.actualizadoEn, tz),
     ]),
   );
 
-  // 4) recordatorios.csv — seguimientos, con destino/cliente y estado.
+  // 4) recordatorios.csv — seguimientos, con destino/cliente, oportunidad y estado.
   const estadoSeg: Record<string, string> = {
     pendiente: "Pendiente", realizado: "Realizado", vencido: "Vencido", cancelado: "Cancelado",
   };
   const recordatoriosCsv = csv(
-    ["Destino", "Cliente / Empleado", "Título", "Descripción", "Fecha", "Hora", "Prioridad",
-     "Frecuencia", "Estado", "Responsable", "Notificar", "Automático"],
+    ["Destino", "Cliente / Empleado", "Oportunidad", "Título", "Descripción", "Fecha", "Hora",
+     "Prioridad", "Frecuencia", "Fecha fin", "Día de recurrencia", "Estado", "Responsable",
+     "Notificar", "Automático", "Creado"],
     seguimientos.map((s) => [
       s.destino === "empleado" ? "Empleado" : "Cliente",
       s.destino === "empleado"
         ? (s.empleadoId ? (nombreUsuario.get(s.empleadoId) ?? "") : "")
         : (s.clienteId ? (nombreCliente.get(s.clienteId) ?? "") : ""),
+      s.oportunidadId ? (nombreOpo.get(s.oportunidadId) ?? "") : "",
       s.titulo, s.descripcion,
       fechaLocal(s.fecha, tz), s.hora,
       LABELS.prioridad[s.prioridad],
       LABELS.frecuencia[s.frecuencia],
+      fechaLocal(s.fechaFin, tz),
+      s.diaRecurrencia ?? "",
       estadoSeg[s.estado] ?? s.estado,
       nombreUsuario.get(s.responsableId) ?? "",
       s.notificar ? "Sí" : "No",
       s.origen === "post_venta" ? "Post-venta" : "",
+      fechaLocal(s._creationTime, tz),
     ]),
   );
 
-  void nombreOpo; // referencia disponible por si se amplían columnas
   return [
     { nombre: "clientes.csv", csv: clientesCsv },
     { nombre: "notas.csv", csv: notasCsv },
