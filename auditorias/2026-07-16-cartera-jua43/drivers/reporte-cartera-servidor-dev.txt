@@ -1,0 +1,19 @@
+Reporte driver-23 cartera negativas de servidor (JUA-43, remediación B-1..B-5)
+fecha: 2026-07-16T19:38:49.393Z
+resultado: OK (14 PASS / 0 FAIL)
+sin tokens ni contraseñas; fixtures QA eliminados.
+
+PASS — B-1: cambiarEtapa de oportunidad ajena → No encontrado
+PASS — B-1: la etapa de la oportunidad NO cambió (sigue 'nueva')
+PASS — B-2a: Carlos reprograma seguimiento de cliente ajeno → bloqueado
+PASS — B-2a: Carlos marcaRealizado de cliente ajeno → bloqueado
+PASS — B-2a: Carlos elimina seguimiento de cliente ajeno → bloqueado
+PASS — B-2b: vendedor2 (nuevo dueño) reprograma el seguimiento migrado → OK
+PASS — B-2b: vendedor2 (nuevo dueño) cancela el seguimiento migrado → OK
+PASS — B-2c: Carlos (responsable) NO gestiona seguimiento de cliente ajeno → bloqueado por cartera
+PASS — B-2c: Carlos marcaRealizado del delegado ajeno → bloqueado por cartera
+PASS — B-3: sincronizar (Carlos) NO cambia estados de la cartera de vendedor2 (cambiados=0)
+PASS — B-3+: la sincronización de Carlos evalúa su cartera sin transicionar a un cliente propio recién activo (estado=prospecto, cambiados=0)
+PASS — B-4: buscarDuplicado de un cliente ajeno → null para Carlos (sin datos)
+PASS — B-4: vendedor2 (dueño) SÍ ve su propio duplicado
+PASS — B-5: estadoGlobal de Carlos (9) < admin (18) — solo su cartera

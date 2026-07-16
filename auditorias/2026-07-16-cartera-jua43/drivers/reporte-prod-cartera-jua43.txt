@@ -1,0 +1,19 @@
+Reporte verificación EN VIVO producción — Cartera por vendedor (JUA-43)
+deployment: glad-bird-297 (prod)  commit: 24ba21e+aab2af2
+fecha: 2026-07-16T14:44:30-0600
+resultado: OK (13 PASS / 0 FAIL)
+2º operativo QA creado y REVOCADO; fixtures eliminados. Sin tokens ni contraseñas.
+
+PASS — B-1: cambiarEtapa de oportunidad ajena → No encontrado
+PASS — B-1: la etapa de la oportunidad NO cambió (sigue 'nueva')
+PASS — B-2a: Carlos reprograma seguimiento de cliente ajeno → bloqueado
+PASS — B-2a: Carlos marcaRealizado de cliente ajeno → bloqueado
+PASS — B-2a: Carlos elimina seguimiento de cliente ajeno → bloqueado
+PASS — B-2b: QA (nuevo dueño) reprograma el seguimiento migrado → OK
+PASS — B-2b: QA (nuevo dueño) cancela el seguimiento migrado → OK
+PASS — B-2c: Carlos (responsable) NO gestiona seguimiento de cliente ajeno → bloqueado por cartera
+PASS — B-3: sincronizar (Carlos) NO cambia la cartera del QA (cambiados=0)
+PASS — B-3+: sincronización de Carlos evalúa su cartera sin transicionar a un cliente propio recién activo (cambiados=0)
+PASS — B-4: buscarDuplicado de cliente ajeno → null para Carlos (sin datos)
+PASS — B-4: QA (dueño) SÍ ve su propio duplicado
+PASS — B-5: estadoGlobal de Carlos (10) < admin (11) — solo su cartera

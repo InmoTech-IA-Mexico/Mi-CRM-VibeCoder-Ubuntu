@@ -1,0 +1,20 @@
+Reporte driver-22 cartera (JUA-43)
+fecha: 2026-07-16T18:40:56.035Z
+baseUrl: http://localhost:3000
+resultado: OK (13 PASS / 0 FAIL)
+
+PASS — A: admin en 'Todos' ve todos los clientes (16)
+PASS — A: 'Mis clientes' reduce la lista (7 < 16)
+PASS — A: la ficha muestra el selector de responsable (admin)
+PASS — A: el responsable actual de Ana es 'Vendedor Dos'
+PASS — A: Ana reasignada a Carlos (visible en la ficha)
+PASS — B: el operativo NO ve el toggle de cartera (solo admin)
+PASS — B: vendedor2 ya no ve a Ana en su lista (reasignada)
+PASS — B: la ficha de Ana (ajena) muestra 'no encontrado' para vendedor2
+PASS — C: Carlos ve a Ana en su cartera (reasignada)
+PASS — C: Carlos abre la ficha de Ana (es suya)
+PASS — C: el operativo NO ve el selector de responsable (solo lo cambia el admin)
+PASS — C: la ficha muestra a Carlos como responsable (lectura)
+PASS — sin pageerror ni console.error inesperados
+
+errores navegador: 0
