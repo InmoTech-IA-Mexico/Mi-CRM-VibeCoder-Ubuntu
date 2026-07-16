@@ -1,0 +1,42 @@
+Reporte driver-13 etiquetas v3 (JUA-36)
+fecha: 2026-07-16T04:19:08.324Z
+baseUrl: https://mi-crm-vibecoder-ubuntu-production.up.railway.app
+clienteId: j5799wtgdrk09504se91fqzp8x8a2syw
+sufijo QA: k9t0sr
+resultado: OK (22 PASS / 0 FAIL)
+
+PASS — 2: la lista de clientes carga
+PASS — 2: la ficha abre y muestra la fila de etiquetas
+PASS — 3: etiqueta QA 1 creada
+PASS — 3: etiqueta QA 2 creada
+PASS — 3: duplicado con distinta capitalización rechazado con motivo visible
+PASS — 4: la ficha muestra los chips de ambas etiquetas
+PASS — 5: chip de la etiqueta QA 1 visible con conteo
+PASS — 5: el filtro deja exactamente 1 cliente
+PASS — 5: combinable con el buscador
+PASS — 6: el operativo NO ve el campo de crear etiqueta
+PASS — 6: el operativo pudo quitar una etiqueta
+PASS — 6: /etiquetas redirige al operativo a /inicio
+PASS — 7: renombrada en el catálogo
+PASS — 7: la ficha conserva la asignación con el nombre nuevo
+PASS — 7b: el FILTRO muestra el chip con el nombre nuevo (DOC-2)
+PASS — 7b: filtrar por la etiqueta renombrada conserva la asignación (por id)
+PASS — 8: confirmación avisa del alcance
+PASS — 8: eliminada del catálogo
+PASS — 8: la ficha ya no muestra el chip
+PASS — 8c: el FILTRO ya no ofrece la etiqueta eliminada (DOC-2)
+PASS — 9: datos QA limpiados (catálogo sin residuo de esta corrida)
+PASS — sin pageerror ni console.error inesperados en toda la corrida
+
+errores de navegador no esperados: 0
+requestfailed (informativo, no bloquea): 65
+  [admin] net::ERR_ABORTED https://mi-crm-vibecoder-ubuntu-production.up.railway.app/clientes?_rsc=eqSuvxlv0nBXreIs
+  [admin] net::ERR_ABORTED https://mi-crm-vibecoder-ubuntu-production.up.railway.app/clientes/j5769404wyghvah93hs0myzcqn8a3z5c?_rsc=A22GVYxYv3M_6KN
+  [admin] net::ERR_ABORTED https://mi-crm-vibecoder-ubuntu-production.up.railway.app/clientes/j571c3vxyw4n6w050jwks2rab98a28jh?_rsc=A22GVYxYv3M_6KN
+  [admin] net::ERR_ABORTED https://mi-crm-vibecoder-ubuntu-production.up.railway.app/clientes/j573ty9tnssyfjs9dmvs954f7d8a2mkc?_rsc=A22GVYxYv3M_6KN
+  [admin] net::ERR_ABORTED https://mi-crm-vibecoder-ubuntu-production.up.railway.app/clientes/j57en0rgqewptyjzp5b8fhvw498a3yg8?_rsc=A22GVYxYv3M_6KN
+  [admin] net::ERR_ABORTED https://mi-crm-vibecoder-ubuntu-production.up.railway.app/clientes/j573ty9tnssyfjs9dmvs954f7d8a2mkc?_rsc=eqSuvxlv0nBXreI
+  [admin] net::ERR_ABORTED https://mi-crm-vibecoder-ubuntu-production.up.railway.app/clientes/j57a73va86jja8qv14wqkh6dad8a2cvk?_rsc=eqSuvxlv0nBXreI
+  [admin] net::ERR_ABORTED https://mi-crm-vibecoder-ubuntu-production.up.railway.app/clientes/j5769404wyghvah93hs0myzcqn8a3z5c?_rsc=eqSuvxlv0nBXreI
+  [admin] net::ERR_ABORTED https://mi-crm-vibecoder-ubuntu-production.up.railway.app/clientes/j5799wtgdrk09504se91fqzp8x8a2syw?_rsc=A22GVYxYv3M_6KN
+  [admin] net::ERR_ABORTED https://mi-crm-vibecoder-ubuntu-production.up.railway.app/clientes/j571c3vxyw4n6w050jwks2rab98a28jh?_rsc=eqSuvxlv0nBXreI

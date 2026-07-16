@@ -1,0 +1,14 @@
+Reporte — pruebas negativas de servidor (JUA-36, OBS-4 / DOC-3)
+fecha: 2026-07-15T22:19:36-06:00
+deployment: DEV merry-squirrel-978 (único negocio: demo)
+sesiones reales: marta@demo.mx (admin) y carlos@demo.mx (operativo); tokens omitidos
+
+1) etiquetas:crear con rol operativo → No autorizado
+   (fixture: etiqueta kh73cc4a66rxdzfh7yap27ag318amd7c creada por admin)
+2) etiquetas:renombrar con rol operativo → No autorizado
+3) etiquetas:eliminar con rol operativo → No autorizado
+   (fixture eliminada por admin — id ahora inexistente)
+4) clientes:cambiarEtiquetas con etiqueta ELIMINADA (kh73cc4a66rxdzfh7yap27ag318amd7c) → Etiqueta no válida
+
+Nota: el caso cross-negocio no es ejercitable (dev solo tiene el negocio demo);
+la defensa es el mismo condicional de existencia+pertenencia validado estáticamente (dictamen v1).
