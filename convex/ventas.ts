@@ -1,6 +1,7 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { resolverSesion, resolverSesionEscritura } from "./auth";
+import { verificarCartera } from "./clientes";
 import { canal } from "./schema";
 
 // Ventas / ingresos registrados (Mejora #2, JUA-110). Se leen desde
@@ -29,6 +30,7 @@ export const crear = mutation({
     if (!cliente || cliente.negocioId !== sesion.negocioId || cliente.eliminadoEn != null) {
       throw new Error("No encontrado");
     }
+    verificarCartera(sesion, cliente); // operativo: solo su cartera (JUA-43)
     if (!(args.importe > 0)) throw new Error("El importe debe ser mayor que cero");
 
     if (args.oportunidadId) {

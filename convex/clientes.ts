@@ -7,6 +7,18 @@ import { MS_DIA, recordatorioProximoIds, debeMarcarseInactivo } from "./inactivi
 
 const DIAS_PAPELERA = 30; // días en papelera antes del borrado definitivo (JUA-16)
 
+// Cartera por vendedor (JUA-43): el rol **operativo** solo ve/gestiona los
+// clientes de los que es responsable. El admin ve todos (con toggle "solo míos")
+// y el observador (lectura global del negocio, JUA-42) también ve todos.
+type SesionResuelta = { usuario: Doc<"usuarios">; negocioId: Id<"negocios"> };
+function esDeCartera(cliente: Doc<"clientes">, sesion: SesionResuelta): boolean {
+  return sesion.usuario.rol !== "operativo" || cliente.responsableId === sesion.usuario._id;
+}
+/** Lanza "No encontrado" si un operativo intenta tocar un cliente que no es suyo. */
+export function verificarCartera(sesion: SesionResuelta, cliente: Doc<"clientes">) {
+  if (!esDeCartera(cliente, sesion)) throw new Error("No encontrado");
+}
+
 // Lista de clientes del negocio (JUA-14). Devuelve todos (excepto papelera) con
 // los campos para el buscador en tiempo real (nombre/teléfono/email/empresa) y la
 // etapa de la oportunidad abierta más reciente. El filtrado por texto se hace en
@@ -15,8 +27,10 @@ const DIAS_PAPELERA = 30; // días en papelera antes del borrado definitivo (JUA
 const ETAPAS_CERRADAS = ["ganada", "perdida", "cancelada"];
 
 export const listar = query({
-  args: { token: v.string() },
-  handler: async (ctx, { token }) => {
+  // `soloMios` (JUA-43): el admin puede togglear entre su cartera y todos. Para
+  // el operativo se ignora (siempre ve solo la suya).
+  args: { token: v.string(), soloMios: v.optional(v.boolean()) },
+  handler: async (ctx, { token, soloMios }) => {
     const sesion = await resolverSesion(ctx, token);
     if (!sesion) return [];
     const negocioId = sesion.negocioId;
@@ -26,9 +40,12 @@ export const listar = query({
       .withIndex("por_negocio", (q) => q.eq("negocioId", negocioId))
       .collect();
 
+    const soloDeMiCartera = sesion.usuario.rol === "operativo" || (sesion.usuario.rol === "admin" && soloMios);
     const rows = await Promise.all(
       clientes
         .filter((c) => c.eliminadoEn == null)
+        // Cartera (JUA-43): operativo → solo suyos; admin → todos o solo suyos.
+        .filter((c) => !soloDeMiCartera || c.responsableId === sesion.usuario._id)
         .map(async (c) => {
           const opos = await ctx.db
             .query("oportunidades")
@@ -81,6 +98,9 @@ export const detalle = query({
     if (!id) return null;
     const c = await ctx.db.get(id);
     if (!c || c.negocioId !== sesion.negocioId || c.eliminadoEn != null) return null;
+    // Cartera (JUA-43): un operativo no ve fichas fuera de su cartera (null =
+    // "no encontrado", sin revelar que existe).
+    if (!esDeCartera(c, sesion)) return null;
 
     const opos = await ctx.db
       .query("oportunidades")
@@ -139,6 +159,10 @@ export const detalle = query({
       estado: c.estado,
       prioridad: c.prioridad ?? null,
       etiquetas,
+      // Responsable de la cartera (JUA-43): nombre resuelto, o null si sin asignar.
+      responsable: c.responsableId
+        ? { _id: c.responsableId, nombre: nombrePorId.get(c.responsableId) ?? "—" }
+        : null,
       observaciones: c.observaciones ?? null,
       ultimaInteraccion: c.ultimaInteraccion ?? null,
       creadoEn: c._creationTime,
@@ -196,6 +220,7 @@ export const cambiarEstado = mutation({
     if (!c || c.negocioId !== sesion.negocioId || c.eliminadoEn != null) {
       throw new Error("No encontrado");
     }
+    verificarCartera(sesion, c); // operativo: solo su cartera (JUA-43)
     if (!ESTADOS_MANUALES.includes(estado)) throw new Error("Estado no permitido");
 
     await ctx.db.patch(clienteId, { estado, actualizadoEn: Date.now() });
@@ -222,6 +247,7 @@ export const cambiarPrioridad = mutation({
     if (!c || c.negocioId !== sesion.negocioId || c.eliminadoEn != null) {
       throw new Error("No encontrado");
     }
+    verificarCartera(sesion, c); // operativo: solo su cartera (JUA-43)
 
     await ctx.db.patch(clienteId, { prioridad: prioridad ?? undefined, actualizadoEn: Date.now() });
   },
@@ -246,6 +272,7 @@ export const cambiarEtiquetas = mutation({
     if (!c || c.negocioId !== sesion.negocioId || c.eliminadoEn != null) {
       throw new Error("No encontrado");
     }
+    verificarCartera(sesion, c); // operativo: solo su cartera (JUA-43)
 
     const unicas = [...new Set(etiquetaIds)];
     for (const eid of unicas) {
@@ -255,6 +282,42 @@ export const cambiarEtiquetas = mutation({
 
     await ctx.db.patch(clienteId, {
       etiquetaIds: unicas.length > 0 ? unicas : undefined,
+      actualizadoEn: Date.now(),
+    });
+  },
+});
+
+/**
+ * Asigna (o reasigna / desasigna) el responsable de la cartera de un cliente
+ * (JUA-43). Solo admin. `responsableId = null` deja el cliente en el pool "sin
+ * asignar" (solo visible para el admin). El nuevo responsable debe ser del
+ * negocio, activo y NO observador (el observador es solo lectura, no tiene
+ * cartera). No cuenta como interacción.
+ */
+export const asignarResponsable = mutation({
+  args: {
+    token: v.string(),
+    clienteId: v.id("clientes"),
+    responsableId: v.union(v.id("usuarios"), v.null()),
+  },
+  handler: async (ctx, { token, clienteId, responsableId }) => {
+    const sesion = await resolverSesion(ctx, token);
+    if (!sesion || sesion.usuario.rol !== "admin") throw new Error("No autorizado");
+
+    const c = await ctx.db.get(clienteId);
+    if (!c || c.negocioId !== sesion.negocioId || c.eliminadoEn != null) {
+      throw new Error("No encontrado");
+    }
+
+    if (responsableId) {
+      const resp = await ctx.db.get(responsableId);
+      if (!resp || resp.negocioId !== sesion.negocioId || resp.estado !== "activo" || resp.rol === "observador") {
+        throw new Error("Responsable no válido");
+      }
+    }
+
+    await ctx.db.patch(clienteId, {
+      responsableId: responsableId ?? undefined,
       actualizadoEn: Date.now(),
     });
   },
@@ -395,6 +458,7 @@ export const actualizar = mutation({
     if (!c || c.negocioId !== sesion.negocioId || c.eliminadoEn != null) {
       throw new Error("No encontrado");
     }
+    verificarCartera(sesion, c); // operativo: solo su cartera (JUA-43)
 
     const nombreLimpio = nombre.trim();
     const telLimpio = telefono.trim();

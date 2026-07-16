@@ -3,6 +3,7 @@ import type { MutationCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import { v } from "convex/values";
 import { resolverSesion, resolverSesionEscritura } from "./auth";
+import { verificarCartera } from "./clientes";
 
 // Recordatorios / seguimientos con un cliente (JUA-22). Aparecen en la agenda de
 // Inicio (JUA-23) y en la sección "Seguimientos pendientes" de la ficha. La fecha
@@ -62,6 +63,7 @@ export const crear = mutation({
       if (!cliente || cliente.negocioId !== negocioId || cliente.eliminadoEn != null) {
         throw new Error("No encontrado");
       }
+      verificarCartera(sesion, cliente); // operativo: solo su cartera (JUA-43)
       clienteId = args.clienteId;
       // Responsable: por defecto quien lo crea; el admin puede asignar a otro.
       responsableId = args.responsableId ?? sesion.usuario._id;

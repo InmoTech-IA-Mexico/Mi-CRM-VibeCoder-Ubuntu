@@ -3,6 +3,7 @@ import type { MutationCtx } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
 import { v } from "convex/values";
 import { resolverSesion, resolverSesionEscritura } from "./auth";
+import { verificarCartera } from "./clientes";
 import { partesLocales, epochDeLocal } from "./fechas";
 
 // Oportunidades de venta de un cliente (JUA-20 crear · JUA-21 pipeline). Se leen
@@ -72,6 +73,7 @@ export const crear = mutation({
     if (!cliente || cliente.negocioId !== sesion.negocioId || cliente.eliminadoEn != null) {
       throw new Error("No encontrado");
     }
+    verificarCartera(sesion, cliente); // operativo: solo su cartera (JUA-43)
     const nombre = args.nombre.trim();
     if (!nombre) throw new Error("El nombre de la oportunidad es obligatorio");
 

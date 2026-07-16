@@ -118,6 +118,8 @@ export const agendaDelDia = query({
         // Excluir recordatorios de clientes en papelera (consistencia): si el
         // cliente ya no existe o está eliminado, no aparece en la agenda.
         if (!cliente || cliente.eliminadoEn != null) return null;
+        // Cartera (JUA-43): el operativo solo ve la agenda de SUS clientes.
+        if (sesion.usuario.rol === "operativo" && cliente.responsableId !== sesion.usuario._id) return null;
         return {
           _id: s._id,
           titulo: s.titulo,
@@ -190,6 +192,8 @@ export const panelInactividad = query({
       .filter(
         (c) =>
           c.eliminadoEn == null &&
+          // Cartera (JUA-43): el operativo solo ve sus clientes inactivos.
+          (sesion.usuario.rol !== "operativo" || c.responsableId === sesion.usuario._id) &&
           // Estados que sí cuentan como inactivos (JUA-25): prospecto/activo/inactivo.
           c.estado !== "nuevo" &&
           c.estado !== "descartado" &&

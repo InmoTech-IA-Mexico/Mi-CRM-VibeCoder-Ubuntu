@@ -30,9 +30,12 @@ type Chip = (typeof CHIPS)[number]["key"] | `etq:${string}`;
 const OCULTAR_SCROLL = "[scrollbar-width:none] [&::-webkit-scrollbar]:hidden";
 
 export function PantallaClientes({ estadoInicial }: { estadoInicial?: string }) {
-  const { token } = useSesion();
+  const { token, rol } = useSesion();
+  const esAdmin = rol === "admin";
   const [busqueda, setBusqueda] = useState("");
   const [chip, setChip] = useState<Chip>("todos");
+  // Toggle "Mis clientes / Todos" (JUA-43), solo admin: filtra por su cartera.
+  const [soloMios, setSoloMios] = useState(false);
   // Filtro por estado desde el dashboard (JUA-35). Prevalece sobre los chips.
   const estadoValido = (ESTADOS_CLIENTE as readonly string[]).includes(estadoInicial ?? "")
     ? (estadoInicial as EstadoCliente)
@@ -40,7 +43,7 @@ export function PantallaClientes({ estadoInicial }: { estadoInicial?: string }) 
   const [estadoFiltro, setEstadoFiltro] = useState<EstadoCliente | null>(estadoValido);
   const [ahora] = useState(() => Date.now());
 
-  const clientes = useQuery(api.clientes.listar, { token });
+  const clientes = useQuery(api.clientes.listar, esAdmin ? { token, soloMios } : { token });
   const etiquetas = useQuery(api.etiquetas.listar, { token });
 
   const q = busqueda.trim().toLowerCase();
@@ -77,6 +80,34 @@ export function PantallaClientes({ estadoInicial }: { estadoInicial?: string }) 
         </div>
         <MenuPerfil />
       </header>
+
+      {/* Toggle de cartera (JUA-43), solo admin: Todos / Mis clientes */}
+      {esAdmin && (
+        <div className="mt-1.5 flex rounded-pill border border-border-input bg-neutral-50 p-0.5 text-[13px] font-semibold">
+          <button
+            type="button"
+            aria-pressed={!soloMios}
+            onClick={() => setSoloMios(false)}
+            className={cn(
+              "flex-1 rounded-pill py-1.5 transition",
+              !soloMios ? "bg-surface text-ink shadow-sm" : "text-muted",
+            )}
+          >
+            Todos
+          </button>
+          <button
+            type="button"
+            aria-pressed={soloMios}
+            onClick={() => setSoloMios(true)}
+            className={cn(
+              "flex-1 rounded-pill py-1.5 transition",
+              soloMios ? "bg-surface text-ink shadow-sm" : "text-muted",
+            )}
+          >
+            Mis clientes
+          </button>
+        </div>
+      )}
 
       {/* Buscador (tiempo real) */}
       <div

@@ -1,6 +1,7 @@
 import { mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { resolverSesion, resolverSesionEscritura } from "./auth";
+import { verificarCartera } from "./clientes";
 
 // Notas / interacciones de un cliente (JUA-17). El historial se lee desde
 // `clientes.detalle`. La fecha/hora se guarda automáticamente.
@@ -43,6 +44,7 @@ export const crear = mutation({
     if (!cliente || cliente.negocioId !== sesion.negocioId || cliente.eliminadoEn != null) {
       throw new Error("No encontrado");
     }
+    verificarCartera(sesion, cliente); // operativo: solo su cartera (JUA-43)
 
     const texto = descripcion.trim();
     if (!texto) throw new Error("La nota no puede estar vacía");
