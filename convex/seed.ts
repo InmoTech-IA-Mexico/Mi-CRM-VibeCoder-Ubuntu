@@ -15,17 +15,15 @@ const MS_DIA = 24 * 60 * 60 * 1000;
 
 // Contraseña inicial de los usuarios demo (remediación B-1, dictamen DOC-3 v1):
 // el repo es PÚBLICO, así que NUNCA va hardcodeada. Se lee de las variables de
-// entorno del deployment — SEPARADAS POR ROL (OBS-2 / JUA-125), con respaldo en
-// la genérica — y SOLO se usa al CREAR el usuario (re-ejecutar el seed jamás
-// pisa la contraseña de un usuario existente; las rotaciones sobreviven).
+// entorno del deployment, OBLIGATORIAS y SEPARADAS POR ROL (OBS-2 / JUA-125 —
+// sin respaldo genérico: los deployments existentes ya migraron), y SOLO se usa
+// al CREAR el usuario (re-ejecutar el seed jamás pisa la contraseña de un
+// usuario existente; las rotaciones sobreviven).
 function passwordInicialDemo(rol: "admin" | "operativo"): string {
-  const especifica =
-    rol === "admin" ? process.env.SEED_DEMO_PASSWORD_ADMIN : process.env.SEED_DEMO_PASSWORD_OPERATIVO;
-  const pass = especifica || process.env.SEED_DEMO_PASSWORD;
+  const variable = rol === "admin" ? "SEED_DEMO_PASSWORD_ADMIN" : "SEED_DEMO_PASSWORD_OPERATIVO";
+  const pass = process.env[variable];
   if (!pass) {
-    throw new Error(
-      `Define SEED_DEMO_PASSWORD_${rol === "admin" ? "ADMIN" : "OPERATIVO"} (o SEED_DEMO_PASSWORD) en las variables de entorno del deployment para sembrar usuarios demo`,
-    );
+    throw new Error(`Define ${variable} en las variables de entorno del deployment para sembrar usuarios demo`);
   }
   return pass;
 }

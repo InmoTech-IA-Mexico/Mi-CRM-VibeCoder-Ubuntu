@@ -55,6 +55,9 @@ export const listar = query({
         email: u.email,
         rol: u.rol,
         estado: u.estado,
+        // Activo pero aún sin fijar su contraseña (reactivación en curso,
+        // JUA-125): la UI ofrece regenerar el enlace de nueva contraseña.
+        enlacePendiente: u.estado === "activo" && !u.passwordHash,
         esYo: u._id === sesion.usuario._id,
       })),
       invitaciones: invitaciones
@@ -285,15 +288,28 @@ const REACTIVACION_MS = 24 * 60 * 60 * 1000;
  * contraseña, elimina las sesiones que quedaran y emite un enlace de "nueva
  * contraseña" (recuperación JUA-7, 24 h, un solo uso) que el admin comparte
  * manualmente (como el "Copiar enlace" de las invitaciones). Devuelve el token.
+ *
+ * Estados admisibles (B-1 del dictamen v1): SOLO un usuario `inactivo`
+ * (reactivación) o uno `activo` SIN contraseña (regenerar un enlace pendiente,
+ * B-2). Nunca una cuenta activa con contraseña — eso permitiría convertir una
+ * sesión admin en control persistente de cualquier cuenta esquivando el
+ * requisito de contraseña actual de `auth.cambiarPassword` — y nunca la propia
+ * cuenta de quien ejecuta. Se rechaza ANTES de modificar nada.
  */
 export const reactivar = mutation({
   args: { token: v.string(), usuarioId: v.id("usuarios") },
   handler: async (ctx, { token, usuarioId }) => {
     const sesion = await sesionAdmin(ctx, token);
     if (!sesion) throw new Error("No autorizado");
+    if (usuarioId === sesion.usuario._id) throw new Error("No puedes reactivar tu propia cuenta");
 
     const usuario = await ctx.db.get(usuarioId);
     if (!usuario || usuario.negocioId !== sesion.negocioId) throw new Error("No encontrado");
+
+    const enlacePendiente = usuario.estado === "activo" && !usuario.passwordHash;
+    if (usuario.estado !== "inactivo" && !enlacePendiente) {
+      throw new Error("Solo se puede reactivar a un usuario revocado");
+    }
 
     await ctx.db.patch(usuarioId, {
       estado: "activo",

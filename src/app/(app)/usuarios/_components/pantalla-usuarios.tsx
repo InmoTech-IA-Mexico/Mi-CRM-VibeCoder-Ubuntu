@@ -133,9 +133,27 @@ export function PantallaUsuarios() {
                   </div>
                 </div>
                 {!u.esYo && u.estado === "activo" && (
-                  <BotonAccion tono="peligro" onClick={() => accion(() => desactivar({ token, usuarioId: u._id }), "No se pudo revocar el acceso.")}>
-                    Revocar
-                  </BotonAccion>
+                  <div className="flex flex-shrink-0 flex-col gap-1.5">
+                    {u.enlacePendiente && (
+                      <BotonAccion
+                        onClick={() =>
+                          accion(async () => {
+                            const res = await reactivar({ token, usuarioId: u._id });
+                            setEnlaceCopiado(false);
+                            setReactivado({
+                              nombre: u.nombre,
+                              url: `${window.location.origin}/nueva-password?token=${res.token}`,
+                            });
+                          }, "No se pudo generar el enlace.")
+                        }
+                      >
+                        Nuevo enlace
+                      </BotonAccion>
+                    )}
+                    <BotonAccion tono="peligro" onClick={() => accion(() => desactivar({ token, usuarioId: u._id }), "No se pudo revocar el acceso.")}>
+                      Revocar
+                    </BotonAccion>
+                  </div>
                 )}
                 {!u.esYo && u.estado === "inactivo" && (
                   <BotonAccion
@@ -242,7 +260,8 @@ export function PantallaUsuarios() {
             <p className="text-[13px] leading-snug text-body">
               Comparte este enlace para que cree su nueva contraseña. Es válido{" "}
               <span className="font-semibold text-ink">24 horas</span> y de un solo uso; si se
-              pierde, vuelve a pulsar Reactivar para generar otro.
+              pierde, pulsa <span className="font-semibold text-ink">Nuevo enlace</span> en su
+              tarjeta para generar otro (invalida el anterior).
             </p>
           </div>
           <button
