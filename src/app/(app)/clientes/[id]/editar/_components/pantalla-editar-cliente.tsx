@@ -204,6 +204,7 @@ function Formulario({
                 <button
                   key={key}
                   type="button"
+                  aria-pressed={activo}
                   onClick={() => setCanal(activo ? null : key)}
                   className={cn(
                     "flex flex-col items-center gap-1.5 rounded-xl border py-2.5 transition active:scale-95",
@@ -234,6 +235,7 @@ function Formulario({
                 <button
                   key={key}
                   type="button"
+                  aria-pressed={activo}
                   onClick={() => setFuenteTipo(activo ? null : key)}
                   className={cn(
                     "flex flex-col items-center gap-1.5 rounded-xl border py-2.5 transition active:scale-95",
