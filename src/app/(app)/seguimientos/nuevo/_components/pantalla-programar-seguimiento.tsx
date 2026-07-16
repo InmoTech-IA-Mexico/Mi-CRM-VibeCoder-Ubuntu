@@ -460,6 +460,9 @@ function Formulario({ token, clientes, equipo }: { token: string; clientes: Clie
 }
 
 function subtituloMiembro(m: Miembro) {
+  // La carga de clientes solo la recibe el admin (JUA-126, obs. OBS-2); para el
+  // resto de roles llega como null y se omite (solo el rol), evitando "null clientes".
+  if (m.clientes == null) return LABELS.rol[m.rol];
   return `${LABELS.rol[m.rol]} · ${m.clientes} ${m.clientes === 1 ? "cliente" : "clientes"}`;
 }
 

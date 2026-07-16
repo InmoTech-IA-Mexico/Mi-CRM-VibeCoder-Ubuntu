@@ -113,7 +113,7 @@ export function SelectorResponsableCliente({
               key={u._id}
               activo={responsable?._id === u._id}
               nombre={u.esYo ? `${u.nombre} (tú)` : u.nombre}
-              subtitulo={`${LABELS.rol[u.rol]} · ${u.clientes} ${u.clientes === 1 ? "cliente" : "clientes"}`}
+              subtitulo={u.clientes == null ? LABELS.rol[u.rol] : `${LABELS.rol[u.rol]} · ${u.clientes} ${u.clientes === 1 ? "cliente" : "clientes"}`}
               ocupado={ocupado}
               onClick={() => elegir(u._id)}
             />
