@@ -16,6 +16,8 @@ const eslintConfig = defineConfig([
     "design/**",
     // Código generado por Convex.
     "convex/_generated/**",
+    // Actas, evidencia y drivers de QA archivados (fuera de git, no es código de la app).
+    "tmp/**",
   ]),
 ]);
 

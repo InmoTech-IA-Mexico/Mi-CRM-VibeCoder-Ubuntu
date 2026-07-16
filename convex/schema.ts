@@ -150,6 +150,9 @@ export default defineSchema({
       v.literal("cancelado"),
     ),
     notificar: v.optional(v.boolean()),
+    // Marca de seguimiento creado automáticamente por el sistema (JUA-37):
+    // permite no duplicarlo y cancelarlo si la oportunidad deja de estar ganada.
+    origen: v.optional(v.literal("post_venta")),
   })
     .index("por_negocio", ["negocioId"])
     .index("por_responsable", ["responsableId"])

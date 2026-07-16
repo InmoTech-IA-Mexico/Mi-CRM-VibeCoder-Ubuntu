@@ -1,8 +1,9 @@
 import { mutation, query } from "./_generated/server";
 import type { MutationCtx } from "./_generated/server";
-import type { Id } from "./_generated/dataModel";
+import type { Doc, Id } from "./_generated/dataModel";
 import { v } from "convex/values";
 import { resolverSesion } from "./auth";
+import { partesLocales, epochDeLocal } from "./fechas";
 
 // Oportunidades de venta de un cliente (JUA-20 crear · JUA-21 pipeline). Se leen
 // desde `clientes.detalle`. Etapas: nueva → en_contacto → propuesta → negociacion
@@ -92,11 +93,67 @@ export const crear = mutation({
   },
 });
 
+// Seguimiento post-venta automático (JUA-37): al ganar una oportunidad se
+// programa un recordatorio a +15 días (el umbral del PRD) en el CALENDARIO DEL
+// NEGOCIO (JUA-28), para ofrecer el siguiente producto. Es un seguimiento
+// normal: aparece en la agenda y se puede editar o cancelar (JUA-24).
+const DIAS_POST_VENTA = 15;
+
+/** Seguimientos post-venta PENDIENTES creados automáticamente para la oportunidad. */
+async function postVentaPendientes(ctx: MutationCtx, opo: Doc<"oportunidades">) {
+  const seguimientos = await ctx.db
+    .query("seguimientos")
+    .withIndex("por_cliente", (q) => q.eq("clienteId", opo.clienteId))
+    .collect();
+  return seguimientos.filter(
+    (s) => s.origen === "post_venta" && s.oportunidadId === opo._id && s.estado === "pendiente",
+  );
+}
+
+/** Programa el recordatorio post-venta al ganar. No duplica si ya hay uno pendiente. */
+async function programarPostVenta(ctx: MutationCtx, opo: Doc<"oportunidades">, responsableId: Id<"usuarios">) {
+  if ((await postVentaPendientes(ctx, opo)).length > 0) return;
+
+  const negocio = await ctx.db.get(opo.negocioId);
+  const tz = negocio?.zonaHoraria ?? "America/Mexico_City";
+  // Fecha de cierre (hoy en el negocio) + 15 días; epochDeLocal normaliza el
+  // desbordamiento de mes. Sin hora: recordatorio de día completo.
+  const hoy = partesLocales(Date.now(), tz);
+  const fecha = epochDeLocal(hoy.anio, hoy.mes, hoy.dia + DIAS_POST_VENTA, 0, 0, tz);
+
+  await ctx.db.insert("seguimientos", {
+    negocioId: opo.negocioId,
+    destino: "cliente",
+    clienteId: opo.clienteId,
+    oportunidadId: opo._id,
+    titulo: `Seguimiento post-venta: ${opo.nombre}`,
+    descripcion:
+      `Han pasado ${DIAS_POST_VENTA} días desde el cierre de ${opo.nombre}. ` +
+      "Es el momento de contactar al cliente para ofrecerle el siguiente producto.",
+    fecha,
+    responsableId,
+    prioridad: "media",
+    frecuencia: "una_vez",
+    estado: "pendiente",
+    origen: "post_venta",
+  });
+}
+
+/** Cancela los post-venta pendientes si la oportunidad deja de estar ganada. */
+async function cancelarPostVenta(ctx: MutationCtx, opo: Doc<"oportunidades">) {
+  for (const s of await postVentaPendientes(ctx, opo)) {
+    await ctx.db.patch(s._id, { estado: "cancelado" });
+  }
+}
+
 /**
  * Cambia la etapa de una oportunidad (JUA-21). El estado se puede cambiar en
  * cualquier momento (no hay orden obligatorio). Al pasar a Perdida/Cancelada se
  * exige `motivo`. Registra quién y cuándo (trazabilidad). Valida pertenencia.
  * Cualquier rol puede cambiar la etapa (incluido cancelar); borrar es solo admin.
+ * Al pasar a Ganada programa el seguimiento post-venta (+15 días, JUA-37); al
+ * salir de Ganada, cancela el que siga pendiente (coherente con la limpieza de
+ * motivos entre categorías de JUA-122).
  */
 export const cambiarEtapa = mutation({
   args: {
@@ -108,7 +165,8 @@ export const cambiarEtapa = mutation({
   handler: async (ctx, { token, oportunidadId, etapa, motivo }) => {
     const sesion = await resolverSesion(ctx, token);
     if (!sesion) throw new Error("No autorizado");
-    await oportunidadEditable(ctx, oportunidadId, sesion.negocioId);
+    const opo = await oportunidadEditable(ctx, oportunidadId, sesion.negocioId);
+    const eraGanada = opo.etapa === "ganada";
 
     const base = {
       etapa,
@@ -131,17 +189,29 @@ export const cambiarEtapa = mutation({
       // Al volver a una etapa abierta, se limpian los motivos (ya no aplican).
       await ctx.db.patch(oportunidadId, { ...base, motivoPerdida: undefined, motivoCierre: undefined });
     }
+
+    // Post-venta (JUA-37): solo en las TRANSICIONES hacia/desde Ganada. El
+    // responsable del recordatorio es quien cierra la venta.
+    if (etapa === "ganada" && !eraGanada) {
+      await programarPostVenta(ctx, opo, sesion.usuario._id);
+    } else if (etapa !== "ganada" && eraGanada) {
+      await cancelarPostVenta(ctx, opo);
+    }
   },
 });
 
-/** Elimina una oportunidad permanentemente (JUA-21). Solo admin (Marta). */
+/**
+ * Elimina una oportunidad permanentemente (JUA-21). Solo admin (Marta). Cancela
+ * su post-venta pendiente para no dejar recordatorios automáticos huérfanos.
+ */
 export const eliminar = mutation({
   args: { token: v.string(), oportunidadId: v.id("oportunidades") },
   handler: async (ctx, { token, oportunidadId }) => {
     const sesion = await resolverSesion(ctx, token);
     if (!sesion || sesion.usuario.rol !== "admin") throw new Error("No autorizado");
-    await oportunidadEditable(ctx, oportunidadId, sesion.negocioId);
+    const opo = await oportunidadEditable(ctx, oportunidadId, sesion.negocioId);
 
+    await cancelarPostVenta(ctx, opo);
     await ctx.db.delete(oportunidadId);
   },
 });
