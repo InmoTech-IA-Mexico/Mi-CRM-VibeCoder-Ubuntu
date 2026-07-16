@@ -1,0 +1,30 @@
+Reporte driver-20 Observador UI (JUA-42)
+fecha: 2026-07-16T07:46:14.209Z
+baseUrl: https://mi-crm-vibecoder-ubuntu-production.up.railway.app
+resultado: OK (23 PASS / 0 FAIL)
+
+PASS — A: la hoja de invitar ofrece el rol Administrador
+PASS — A: la hoja de invitar ofrece el rol Operativo
+PASS — A: la hoja de invitar ofrece el rol Observador
+PASS — B: Inicio no muestra el FAB de acción
+PASS — B: la lista de clientes carga (lectura)
+PASS — B: la lista no muestra FAB ni enlaces de creación
+PASS — B: la ficha del cliente carga (lectura)
+PASS — B: la ficha NO muestra 'Editar cliente'
+PASS — B: la ficha NO muestra 'Más acciones' (estado/papelera)
+PASS — B: la ficha NO muestra 'Registrar venta'
+PASS — B: la ficha NO muestra 'Programar seguimiento'
+PASS — B: la ficha NO muestra el '+' de nueva oportunidad
+PASS — B: la ficha NO muestra el selector de prioridad
+PASS — B: la ficha NO muestra el botón de editar etiquetas
+PASS — B: /estado (estado global) es accesible al observador en lectura
+PASS — C: /clientes/nuevo redirige al observador a /inicio
+PASS — C: /clientes/j5799wtgdrk09504se91fqzp8x8a2syw/editar redirige al observador a /inicio
+PASS — C: /clientes/j5799wtgdrk09504se91fqzp8x8a2syw/nota redirige al observador a /inicio
+PASS — C: /clientes/j5799wtgdrk09504se91fqzp8x8a2syw/oportunidad redirige al observador a /inicio
+PASS — C: /clientes/j5799wtgdrk09504se91fqzp8x8a2syw/recordatorio redirige al observador a /inicio
+PASS — C: /seguimientos/nuevo redirige al observador a /inicio
+PASS — C: /ventas/nueva redirige al observador a /inicio
+PASS — sin pageerror ni console.error inesperados
+
+errores de navegador no esperados: 0

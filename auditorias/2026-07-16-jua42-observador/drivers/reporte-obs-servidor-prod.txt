@@ -1,0 +1,27 @@
+Reporte driver-21 negativas de servidor Observador (JUA-42, remediación B-1)
+fecha: 2026-07-16T07:43:54.101Z
+entorno: prod
+resultado: OK (21 PASS / 0 FAIL)
+sin tokens ni contraseñas.
+
+PASS — lectura: clientes.listar funciona para el observador
+PASS — lectura: clientes.detalle funciona
+PASS — escritura clientes:crear → rechazada (No autorizado)
+PASS — escritura clientes:actualizar → rechazada (No autorizado)
+PASS — escritura clientes:cambiarEstado → rechazada (No autorizado)
+PASS — escritura clientes:cambiarPrioridad → rechazada (No autorizado)
+PASS — escritura clientes:cambiarEtiquetas → rechazada (No autorizado)
+PASS — escritura notas:crear → rechazada (No autorizado)
+PASS — escritura oportunidades:crear → rechazada (No autorizado)
+PASS — escritura oportunidades:cambiarEtapa → rechazada (No autorizado)
+PASS — escritura ventas:crear → rechazada (No autorizado)
+PASS — escritura seguimientos:crear → rechazada (No autorizado)
+PASS — escritura seguimientos:reprogramar → rechazada (No autorizado)
+PASS — escritura seguimientos:cancelar → rechazada (No autorizado)
+PASS — escritura seguimientos:eliminar → rechazada (No autorizado)
+PASS — escritura inicio:marcarSeguimientoRealizado → rechazada (No autorizado)
+PASS — B-1: sincronizarInactividad para observador → cambiados=0 (0)
+PASS — B-1: los estados de los clientes NO cambian tras la llamada del observador
+PASS — OBS-4: el admin sincroniza con normalidad (cambiados=0)
+PASS — OBS-7: asignar observador como responsable → rechazado (Uncaught Error: Responsable no válido)
+PASS — OBS-7: asignar observador como empleado destino → rechazado (Uncaught Error: Empleado no válido)
