@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "convex/react";
@@ -15,6 +15,37 @@ import { cn } from "@/lib/utils";
 // admin además configura su negocio (nombre + zona horaria). Al activar se
 // muestra la bienvenida y de ahí entra directo al CRM (sin pasar por Login).
 // Diseño: Activacion Cuenta.dc.html.
+
+type Bienvenida = { nombre: string; esAdmin: boolean; negocio: string | null };
+
+// La bienvenida se guarda en sessionStorage (clave por token) para sobrevivir a
+// una recarga tras activar: la invitación ya está "aceptada" y la taparía
+// (obs. OBS-1 del dictamen). Se limpia al pulsar "Empezar".
+const claveBienvenida = (token: string) => `bienvenida.${token}`;
+
+// sessionStorage no emite cambios; solo interesa el valor al (re)montar.
+const sinSuscripcion = () => () => {};
+
+/** Bienvenida persistida, SSR-safe: null en servidor, sessionStorage en cliente. */
+function useBienvenidaGuardada(token: string): Bienvenida | null {
+  const cruda = useSyncExternalStore(
+    sinSuscripcion,
+    () => {
+      try {
+        return window.sessionStorage.getItem(claveBienvenida(token));
+      } catch {
+        return null;
+      }
+    },
+    () => null,
+  );
+  if (!cruda) return null;
+  try {
+    return JSON.parse(cruda) as Bienvenida;
+  } catch {
+    return null;
+  }
+}
 
 export function PantallaActivar({ token }: { token: string }) {
   const router = useRouter();
@@ -31,10 +62,25 @@ export function PantallaActivar({ token }: { token: string }) {
   const [error, setError] = useState<string | null>(null);
   // Paso final tras activar. Se comprueba ANTES que el estado de la invitación:
   // al aceptarse, la query reactiva pasa a "aceptada" y taparía la bienvenida.
-  const [bienvenida, setBienvenida] = useState<{ nombre: string; esAdmin: boolean; negocio: string | null } | null>(null);
+  // La versión guardada cubre la recarga del navegador tras activar (OBS-1).
+  const [bienvenidaNueva, setBienvenidaNueva] = useState<Bienvenida | null>(null);
+  const bienvenidaGuardada = useBienvenidaGuardada(token);
+  const bienvenida = bienvenidaNueva ?? bienvenidaGuardada;
 
   if (bienvenida)
-    return <PantallaBienvenida {...bienvenida} onEmpezar={() => router.replace("/inicio")} />;
+    return (
+      <PantallaBienvenida
+        {...bienvenida}
+        onEmpezar={() => {
+          try {
+            window.sessionStorage.removeItem(claveBienvenida(token));
+          } catch {
+            // Si no se puede limpiar, la clave muere con la pestaña.
+          }
+          router.replace("/inicio");
+        }}
+      />
+    );
 
   if (!token) return <Mensaje tono="error" titulo="Enlace no válido" texto="Falta el código de invitación en el enlace." />;
   if (info === undefined) return <p className="text-center text-[14px] text-muted">Cargando…</p>;
@@ -77,11 +123,17 @@ export function PantallaActivar({ token }: { token: string }) {
         negocioNombre: requiereZona ? nombreNegocio.trim() || undefined : undefined,
       });
       guardarToken(res.token);
-      setBienvenida({
+      const datos: Bienvenida = {
         nombre: res.nombre,
         esAdmin: info.rol === "admin",
         negocio: (requiereZona ? nombreNegocio.trim() : "") || info.negocioNombre,
-      });
+      };
+      try {
+        window.sessionStorage.setItem(claveBienvenida(token), JSON.stringify(datos));
+      } catch {
+        // Sin persistencia la bienvenida solo no sobrevive a una recarga.
+      }
+      setBienvenidaNueva(datos);
     } catch (e) {
       const msg = e instanceof Error ? e.message.replace(/^\[.*?\]\s*/, "") : "";
       console.error("No se pudo activar la cuenta", e);
@@ -231,7 +283,8 @@ export function PantallaActivar({ token }: { token: string }) {
 /**
  * Paso final de la activación (spec "Bienvenida" de Activacion Cuenta.dc.html):
  * admin = sparkles dorado ("¡Todo listo!"), operativo = check verde. El botón
- * "Empezar" lleva a Inicio (la sesión ya quedó guardada al activar).
+ * "Empezar" lleva a Inicio (la sesión ya quedó guardada al activar). El foco
+ * pasa al título para que los lectores de pantalla anuncien el resultado.
  */
 function PantallaBienvenida({
   nombre,
@@ -244,6 +297,11 @@ function PantallaBienvenida({
   negocio: string | null;
   onEmpezar: () => void;
 }) {
+  const tituloRef = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    tituloRef.current?.focus();
+  }, []);
+
   return (
     <div className="w-full text-center">
       {/* Halo de fondo a pantalla completa (dorado admin / verde operativo). */}
@@ -261,7 +319,7 @@ function PantallaBienvenida({
         <div
           aria-hidden
           className={cn(
-            "absolute -inset-6 animate-glowpulse rounded-full",
+            "absolute -inset-6 animate-glowpulse rounded-full motion-reduce:animate-none",
             esAdmin
               ? "bg-[radial-gradient(circle,rgba(201,162,94,0.35),transparent_70%)]"
               : "bg-[radial-gradient(circle,rgba(46,125,107,0.28),transparent_70%)]",
@@ -283,9 +341,14 @@ function PantallaBienvenida({
         </div>
       </div>
 
-      <h1 className="font-serif text-[28px] font-semibold tracking-[-0.02em] text-ink">
+      <h1
+        ref={tituloRef}
+        tabIndex={-1}
+        className="font-serif text-[28px] font-semibold tracking-[-0.02em] text-ink outline-none"
+      >
         {esAdmin ? "¡Todo listo, " : "¡Te damos la bienvenida, "}
-        <span className="text-gold-500">{nombre}</span>!
+        {/* gold-text (no gold-500): contraste ≥3:1 sobre crema (obs. OBS-2). */}
+        <span className="text-gold-text">{nombre}</span>!
       </h1>
       <p className="mx-auto mt-3 max-w-[290px] text-[14.5px] leading-relaxed text-body">
         {esAdmin ? (
