@@ -279,9 +279,11 @@ function HojaInvitar({
       setRolSel("operativo");
       onCerrar();
     } catch (e) {
-      const msg = e instanceof Error ? e.message.replace(/^\[.*?\]\s*/, "") : "";
+      // Los rechazos de `invitar` son ConvexError: su `data` sí llega al cliente
+      // también en producción (lección JUA-120). Fallback genérico en el resto.
+      const data = e && typeof e === "object" && "data" in e ? (e as { data: unknown }).data : undefined;
       console.error("No se pudo invitar", e);
-      setError(msg && !/Uncaught|Server Error/.test(msg) ? msg : "No se pudo enviar la invitación.");
+      setError(typeof data === "string" && data.trim() ? data.trim() : "No se pudo enviar la invitación.");
     } finally {
       setGuardando(false);
     }

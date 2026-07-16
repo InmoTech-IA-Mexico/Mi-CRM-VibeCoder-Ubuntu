@@ -54,6 +54,21 @@
   --radius-modal: 20px;
   --radius-sheet: 24px;
   --radius-pill: 999px;
+
+  /* ── Animaciones ── */
+  --animate-glowpulse: glowpulse 2.6s ease-in-out infinite;
+
+  @keyframes glowpulse {
+    0%,
+    100% {
+      opacity: 0.5;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.9;
+      transform: scale(1.08);
+    }
+  }
 }
 
 @layer base {

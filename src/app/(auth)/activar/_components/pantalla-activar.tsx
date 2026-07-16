@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "convex/react";
-import { Lock, Eye, EyeOff, AlertCircle, Mail, Clock, Globe, Building2, CheckCircle2 } from "lucide-react";
+import { Lock, Eye, EyeOff, AlertCircle, Mail, Clock, Globe, Building2, CheckCircle2, Sparkles } from "lucide-react";
 import { api } from "../../../../../convex/_generated/api";
 import { guardarToken } from "@/components/session/session-provider";
 import { BarraFortaleza } from "@/components/ui/barra-fortaleza";
@@ -12,8 +12,9 @@ import { ZONAS_MX } from "@/lib/fechas";
 import { cn } from "@/lib/utils";
 
 // Activación de cuenta desde invitación (JUA-8 admin / JUA-9 operativo). El
-// admin además configura su negocio (nombre + zona horaria). Al activar, entra
-// directo al CRM (sin pasar por Login). Diseño: Activacion Cuenta.dc.html.
+// admin además configura su negocio (nombre + zona horaria). Al activar se
+// muestra la bienvenida y de ahí entra directo al CRM (sin pasar por Login).
+// Diseño: Activacion Cuenta.dc.html.
 
 export function PantallaActivar({ token }: { token: string }) {
   const router = useRouter();
@@ -28,7 +29,12 @@ export function PantallaActivar({ token }: { token: string }) {
   const [ver, setVer] = useState(false);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Paso final tras activar. Se comprueba ANTES que el estado de la invitación:
+  // al aceptarse, la query reactiva pasa a "aceptada" y taparía la bienvenida.
+  const [bienvenida, setBienvenida] = useState<{ nombre: string; esAdmin: boolean; negocio: string | null } | null>(null);
 
+  if (bienvenida)
+    return <PantallaBienvenida {...bienvenida} onEmpezar={() => router.replace("/inicio")} />;
 
   if (!token) return <Mensaje tono="error" titulo="Enlace no válido" texto="Falta el código de invitación en el enlace." />;
   if (info === undefined) return <p className="text-center text-[14px] text-muted">Cargando…</p>;
@@ -71,7 +77,11 @@ export function PantallaActivar({ token }: { token: string }) {
         negocioNombre: requiereZona ? nombreNegocio.trim() || undefined : undefined,
       });
       guardarToken(res.token);
-      router.replace("/inicio");
+      setBienvenida({
+        nombre: res.nombre,
+        esAdmin: info.rol === "admin",
+        negocio: (requiereZona ? nombreNegocio.trim() : "") || info.negocioNombre,
+      });
     } catch (e) {
       const msg = e instanceof Error ? e.message.replace(/^\[.*?\]\s*/, "") : "";
       console.error("No se pudo activar la cuenta", e);
@@ -214,6 +224,84 @@ export function PantallaActivar({ token }: { token: string }) {
           {cargando ? "Activando…" : "Activar y entrar"}
         </button>
       </form>
+    </div>
+  );
+}
+
+/**
+ * Paso final de la activación (spec "Bienvenida" de Activacion Cuenta.dc.html):
+ * admin = sparkles dorado ("¡Todo listo!"), operativo = check verde. El botón
+ * "Empezar" lleva a Inicio (la sesión ya quedó guardada al activar).
+ */
+function PantallaBienvenida({
+  nombre,
+  esAdmin,
+  negocio,
+  onEmpezar,
+}: {
+  nombre: string;
+  esAdmin: boolean;
+  negocio: string | null;
+  onEmpezar: () => void;
+}) {
+  return (
+    <div className="w-full text-center">
+      {/* Halo de fondo a pantalla completa (dorado admin / verde operativo). */}
+      <div
+        aria-hidden
+        className={cn(
+          "pointer-events-none fixed inset-0",
+          esAdmin
+            ? "bg-[radial-gradient(circle_at_50%_32%,rgba(201,162,94,0.14),transparent_58%)]"
+            : "bg-[radial-gradient(circle_at_50%_32%,rgba(46,125,107,0.12),transparent_58%)]",
+        )}
+      />
+
+      <div className="relative mx-auto mb-7 w-fit">
+        <div
+          aria-hidden
+          className={cn(
+            "absolute -inset-6 animate-glowpulse rounded-full",
+            esAdmin
+              ? "bg-[radial-gradient(circle,rgba(201,162,94,0.35),transparent_70%)]"
+              : "bg-[radial-gradient(circle,rgba(46,125,107,0.28),transparent_70%)]",
+          )}
+        />
+        <div
+          className={cn(
+            "relative flex h-[104px] w-[104px] items-center justify-center rounded-[28px] border",
+            esAdmin
+              ? "border-gold-tint-border bg-gold-tint shadow-[0_8px_26px_rgba(201,162,94,0.30)]"
+              : "border-[#BFE0D5] bg-[#E2EFEB] shadow-[0_8px_26px_rgba(46,125,107,0.22)]",
+          )}
+        >
+          {esAdmin ? (
+            <Sparkles size={54} strokeWidth={1.5} className="text-gold-600" />
+          ) : (
+            <CheckCircle2 size={56} strokeWidth={1.6} className="text-success" />
+          )}
+        </div>
+      </div>
+
+      <h1 className="font-serif text-[28px] font-semibold tracking-[-0.02em] text-ink">
+        {esAdmin ? "¡Todo listo, " : "¡Te damos la bienvenida, "}
+        <span className="text-gold-500">{nombre}</span>!
+      </h1>
+      <p className="mx-auto mt-3 max-w-[290px] text-[14.5px] leading-relaxed text-body">
+        {esAdmin ? (
+          <>Tu negocio{negocio ? <> <span className="font-medium">{negocio}</span></> : null} está configurado. Ya puedes empezar a gestionar tus clientes.</>
+        ) : (
+          <>Ya puedes empezar a gestionar tus clientes.</>
+        )}
+      </p>
+
+      <button
+        type="button"
+        onClick={onEmpezar}
+        className="mt-9 flex h-12 w-full items-center justify-center rounded-xl bg-gold-500 text-[15px] font-bold text-ink shadow-[0_2px_8px_rgba(201,162,94,0.32)] transition active:scale-[0.99]"
+      >
+        Empezar
+      </button>
     </div>
   );
 }

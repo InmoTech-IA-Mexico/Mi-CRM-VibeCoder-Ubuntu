@@ -64,8 +64,9 @@ export const porToken = query({
     if (rec.usadoEn != null) return { estado: "usada" as const };
     if (rec.expiraEn <= Date.now()) return { estado: "expirada" as const };
 
+    // Un usuario desactivado tras emitirse el enlace no puede usarlo.
     const usuario = await ctx.db.get(rec.usuarioId);
-    if (!usuario) return { estado: "invalida" as const };
+    if (!usuario || usuario.estado !== "activo") return { estado: "invalida" as const };
     return { estado: "valida" as const, email: usuario.email };
   },
 });
@@ -87,8 +88,9 @@ export const restablecer = mutation({
     if (rec.expiraEn <= Date.now()) throw new Error("El enlace ha expirado");
     if (password.length < 8) throw new Error("La contraseña debe tener al menos 8 caracteres");
 
+    // Un usuario desactivado tras emitirse el enlace no puede usarlo.
     const usuario = await ctx.db.get(rec.usuarioId);
-    if (!usuario) throw new Error("Enlace no válido");
+    if (!usuario || usuario.estado !== "activo") throw new Error("Enlace no válido");
 
     await ctx.db.patch(usuario._id, {
       passwordHash: hashPassword(password),

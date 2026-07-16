@@ -91,7 +91,8 @@ export const activar = mutation({
 
     await ctx.db.patch(inv._id, { estado: "aceptada" });
 
-    // Sesión para entrar directo (sin pasar por Login).
+    // Sesión para entrar directo (sin pasar por Login). Se devuelve el nombre
+    // (con el fallback ya aplicado) para la pantalla de bienvenida.
     const sesionToken = bytesToHex(randomBytes(32));
     await ctx.db.insert("sesiones", {
       usuarioId,
@@ -99,6 +100,6 @@ export const activar = mutation({
       token: sesionToken,
       expiraEn: ahora + SESION_MS,
     });
-    return { token: sesionToken };
+    return { token: sesionToken, nombre };
   },
 });

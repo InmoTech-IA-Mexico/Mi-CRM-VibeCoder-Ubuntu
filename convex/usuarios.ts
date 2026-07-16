@@ -167,7 +167,8 @@ export const equipo = query({
 /**
  * Invita a un usuario (JUA-29). Crea una invitación pendiente con token y 7 días
  * de vigencia. Rechaza si ya existe un usuario con ese email o una invitación
- * pendiente vigente. Solo admin.
+ * pendiente vigente. Solo admin. Los rechazos de validación usan `ConvexError`
+ * para que el motivo llegue al cliente también en producción (lección JUA-120).
  */
 export const invitar = mutation({
   args: {
@@ -181,15 +182,16 @@ export const invitar = mutation({
     if (!sesion) throw new Error("No autorizado");
 
     const correo = email.trim().toLowerCase();
-    if (!EMAIL_RE.test(correo)) throw new Error("Email no válido");
+    if (!EMAIL_RE.test(correo)) throw new ConvexError("Email no válido");
 
-    const usuarios = await ctx.db
+    // Unicidad GLOBAL (un email = un usuario en toda la app), igual que en
+    // `invitaciones.activar`: evita invitaciones condenadas a fallar al activar
+    // si el email ya existe en otro negocio.
+    const existente = await ctx.db
       .query("usuarios")
-      .withIndex("por_negocio", (q) => q.eq("negocioId", sesion.negocioId))
-      .collect();
-    if (usuarios.some((u) => u.email.toLowerCase() === correo)) {
-      throw new Error("Ya existe un usuario con ese email");
-    }
+      .withIndex("por_email", (q) => q.eq("email", correo))
+      .first();
+    if (existente) throw new ConvexError("Ya existe una cuenta con ese email");
 
     const ahora = Date.now();
     const invs = await ctx.db
@@ -197,7 +199,7 @@ export const invitar = mutation({
       .withIndex("por_negocio", (q) => q.eq("negocioId", sesion.negocioId))
       .collect();
     if (invs.some((i) => i.email.toLowerCase() === correo && i.estado === "pendiente" && i.expiraEn > ahora)) {
-      throw new Error("Ya hay una invitación pendiente para ese email");
+      throw new ConvexError("Ya hay una invitación pendiente para ese email");
     }
 
     return await ctx.db.insert("invitaciones", {
