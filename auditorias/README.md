@@ -27,8 +27,11 @@ completo) y la evidencia del ciclo se copia aquí (histórico versionado). Los c
 **Prohibido publicar contraseñas, tokens o secretos VIGENTES**, aunque ya aparecieran antes en otra
 parte del repositorio (que un secreto esté repetido no lo vuelve seguro — dictamen DOC-3 v1, B-1).
 
-- Los drivers toman credenciales de **variables de entorno** (p. ej. `QA_ADMIN_PASS`), nunca
-  literales. Los reportes omiten tokens y contraseñas desde su origen.
+- Los drivers **nuevos que se publiquen desde esta política** toman credenciales de **variables de
+  entorno** (p. ej. `QA_ADMIN_PASS`), nunca literales. Los reportes omiten tokens y contraseñas
+  desde su origen. *Excepción histórica documentada:* los drivers de los ciclos del 2026-07-15
+  conservan literales por fidelidad de evidencia; esas credenciales fueron **neutralizadas en
+  origen** (rotación/revocación del 2026-07-15) y ya no autentican.
 - Si un artefacto debe conservarse **verbatim** y contiene secretos: el original se guarda en un
   medio **privado** y aquí se publica solo una copia sanitizada con el hash de integridad del
   original y la lista exacta de campos redactados.

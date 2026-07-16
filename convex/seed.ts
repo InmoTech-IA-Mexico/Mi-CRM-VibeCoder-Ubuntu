@@ -13,7 +13,6 @@ import { hashPassword } from "./auth";
 
 const MS_DIA = 24 * 60 * 60 * 1000;
 
-// Contraseñas demo (JUA-6). Se rehashean en cada seed; la contraseña no cambia.
 // Contraseña inicial de los usuarios demo (remediación B-1, dictamen DOC-3 v1):
 // el repo es PÚBLICO, así que NUNCA va hardcodeada. Se lee de la variable de
 // entorno SEED_DEMO_PASSWORD del deployment y SOLO se usa al CREAR el usuario
