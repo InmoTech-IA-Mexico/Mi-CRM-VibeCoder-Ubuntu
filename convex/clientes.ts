@@ -552,12 +552,14 @@ export const transicionarInactivos = internalMutation({
  * Sincroniza la inactividad del negocio de la sesión (JUA-26). La llama la pantalla
  * de Inicio al cargar para que la transición sea inmediata (complementa al cron
  * diario). Idempotente: no escribe si no hay clientes que transicionar. El negocio
- * sale de la sesión (JUA-10).
+ * sale de la sesión (JUA-10). ESCRIBE (cambia clientes a inactivo), así que el
+ * observador (solo lectura, JUA-42) no puede invocarla — el cron diario mantiene
+ * la transición para él. La autorización se impone aquí, no en la UI (obs. B-1).
  */
 export const sincronizarInactividad = mutation({
   args: { token: v.string() },
   handler: async (ctx, { token }) => {
-    const sesion = await resolverSesion(ctx, token);
+    const sesion = await resolverSesionEscritura(ctx, token);
     if (!sesion) return { cambiados: 0 };
     const ahora = Date.now();
     const clientes = await ctx.db

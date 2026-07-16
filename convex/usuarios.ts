@@ -125,12 +125,14 @@ export const equipo = query({
     const sesion = await resolverSesion(ctx, token);
     if (!sesion) return null;
 
+    // Solo usuarios que pueden ATENDER seguimientos: el observador (solo lectura,
+    // JUA-42) no es asignable como responsable ni destino, así que se excluye.
     const usuarios = (
       await ctx.db
         .query("usuarios")
         .withIndex("por_negocio", (q) => q.eq("negocioId", sesion.negocioId))
         .collect()
-    ).filter((u) => u.estado === "activo");
+    ).filter((u) => u.estado === "activo" && u.rol !== "observador");
 
     const clientes = (
       await ctx.db

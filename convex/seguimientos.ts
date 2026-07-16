@@ -67,9 +67,10 @@ export const crear = mutation({
       responsableId = args.responsableId ?? sesion.usuario._id;
     } else {
       // Seguimiento a un empleado: lo atiende el propio empleado (es el responsable).
+      // El observador (solo lectura, JUA-42) no puede atender tareas → no es destino.
       if (!args.empleadoId) throw new Error("Falta el empleado del seguimiento");
       const emp = await ctx.db.get(args.empleadoId);
-      if (!emp || emp.negocioId !== negocioId || emp.estado !== "activo") {
+      if (!emp || emp.negocioId !== negocioId || emp.estado !== "activo" || emp.rol === "observador") {
         throw new Error("Empleado no válido");
       }
       empleadoId = args.empleadoId;
@@ -82,7 +83,7 @@ export const crear = mutation({
       throw new Error("Solo un administrador puede asignar el seguimiento a otro miembro del equipo");
     }
     const responsable = await ctx.db.get(responsableId);
-    if (!responsable || responsable.negocioId !== negocioId || responsable.estado !== "activo") {
+    if (!responsable || responsable.negocioId !== negocioId || responsable.estado !== "activo" || responsable.rol === "observador") {
       throw new Error("Responsable no válido");
     }
 
