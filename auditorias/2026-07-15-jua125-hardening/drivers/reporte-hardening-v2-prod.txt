@@ -1,0 +1,24 @@
+Reporte driver-15 hardening v2 (JUA-125)
+fecha: 2026-07-16T05:43:49.377Z
+baseUrl: https://mi-crm-vibecoder-ubuntu-production.up.railway.app
+usuarioQA: qa-bienvenida-op@demo.mx
+resultado: OK (15 PASS / 0 FAIL)
+tokens no persistidos; contraseña QA aleatoria y efímera.
+
+PASS — reactivar abre la hoja con el enlace
+PASS — el copy indica la ruta real de regeneración (Nuevo enlace)
+PASS — primer enlace copiado (hoja cerrada después)
+PASS — la tarjeta (activo, enlace pendiente) ofrece 'Nuevo enlace'
+PASS — regenerar reabre la hoja
+PASS — el enlace regenerado es distinto
+PASS — el enlace ANTERIOR quedó inválido tras regenerar
+PASS — el enlace NUEVO abre el formulario
+PASS — el usuario fija su contraseña y entra (sesión viva)
+PASS — reusar el enlace da 'Enlace ya utilizado'
+PASS — con contraseña fijada desaparece 'Nuevo enlace' (solo Revocar)
+PASS — revocado: vuelve a Reactivar
+PASS — la sesión viva del revocado muere al instante (cae en /login)
+PASS — cleanup: el QA queda inactivo (Reactivar disponible)
+PASS — sin pageerror ni console.error inesperados en toda la corrida
+
+errores de navegador no esperados: 0

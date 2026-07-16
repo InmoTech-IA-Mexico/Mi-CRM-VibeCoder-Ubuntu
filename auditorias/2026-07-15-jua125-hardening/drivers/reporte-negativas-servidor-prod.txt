@@ -1,0 +1,7 @@
+Reporte — negativas de servidor de usuarios.reactivar (JUA-125, prod, criterios 1/3)
+fecha: 2026-07-15T23:43:23-06:00 · deployment: prod glad-bird-297 · sin revelar hashes/tokens
+
+caso 1 (propia cuenta admin activa): rechazo=No puedes reactivar tu propia cuenta · hash_unchanged=true · recoveries_unchanged=true
+caso 2 (otra cuenta activa con contraseña): rechazo=Solo se puede reactivar a un usuario revocado · hash_unchanged=true · recoveries_unchanged=true
+
+nota: las sesiones de marta que existan son de los logins-actor de esta prueba (reactivar las habría borrado si el guard no cortara antes).
