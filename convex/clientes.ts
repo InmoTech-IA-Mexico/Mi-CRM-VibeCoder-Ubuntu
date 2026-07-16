@@ -44,6 +44,8 @@ export const listar = query({
             empresa: c.empresa ?? null,
             estado: c.estado,
             prioridad: c.prioridad ?? null,
+            // Etiquetas de producto (JUA-36): ids para el filtro de la lista.
+            etiquetaIds: c.etiquetaIds ?? [],
             ultimaInteraccion: c.ultimaInteraccion ?? c._creationTime,
             etapa: abierta?.etapa ?? null,
           };
@@ -115,6 +117,15 @@ export const detalle = query({
     ).filter((vt) => vt.negocioId === sesion.negocioId);
     const nombreOpoPorId = new Map(opos.map((o) => [o._id, o.nombre]));
 
+    // Etiquetas de producto asignadas (JUA-36), resueltas a nombre. Si alguna
+    // fue eliminada del catálogo se omite (la limpieza vive en etiquetas.eliminar).
+    const etiquetas = (
+      await Promise.all((c.etiquetaIds ?? []).map((eid) => ctx.db.get(eid)))
+    )
+      .filter((e) => e != null && e.negocioId === sesion.negocioId)
+      .map((e) => ({ _id: e!._id, nombre: e!.nombre }))
+      .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+
     return {
       _id: c._id,
       nombre: c.nombre,
@@ -127,6 +138,7 @@ export const detalle = query({
       canal: c.canal ?? null,
       estado: c.estado,
       prioridad: c.prioridad ?? null,
+      etiquetas,
       observaciones: c.observaciones ?? null,
       ultimaInteraccion: c.ultimaInteraccion ?? null,
       creadoEn: c._creationTime,
@@ -212,6 +224,39 @@ export const cambiarPrioridad = mutation({
     }
 
     await ctx.db.patch(clienteId, { prioridad: prioridad ?? undefined, actualizadoEn: Date.now() });
+  },
+});
+
+/**
+ * Asigna las etiquetas de producto del cliente (JUA-36). Ambos roles (como la
+ * prioridad). Reemplaza el conjunto completo; valida que cada etiqueta exista y
+ * sea del negocio de la sesión. No cuenta como interacción.
+ */
+export const cambiarEtiquetas = mutation({
+  args: {
+    token: v.string(),
+    clienteId: v.id("clientes"),
+    etiquetaIds: v.array(v.id("etiquetas")),
+  },
+  handler: async (ctx, { token, clienteId, etiquetaIds }) => {
+    const sesion = await resolverSesion(ctx, token);
+    if (!sesion) throw new Error("No autorizado");
+
+    const c = await ctx.db.get(clienteId);
+    if (!c || c.negocioId !== sesion.negocioId || c.eliminadoEn != null) {
+      throw new Error("No encontrado");
+    }
+
+    const unicas = [...new Set(etiquetaIds)];
+    for (const eid of unicas) {
+      const e = await ctx.db.get(eid);
+      if (!e || e.negocioId !== sesion.negocioId) throw new Error("Etiqueta no válida");
+    }
+
+    await ctx.db.patch(clienteId, {
+      etiquetaIds: unicas.length > 0 ? unicas : undefined,
+      actualizadoEn: Date.now(),
+    });
   },
 });
 

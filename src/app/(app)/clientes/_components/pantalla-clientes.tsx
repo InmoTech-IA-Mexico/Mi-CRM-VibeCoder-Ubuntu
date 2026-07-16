@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useQuery } from "convex/react";
-import { Plus, Search, Users, X } from "lucide-react";
+import { Plus, Search, Tag, Users, X } from "lucide-react";
 import { api } from "../../../../../convex/_generated/api";
 import { useSesion } from "@/components/session/use-sesion";
 import { MenuPerfil } from "@/components/layout/menu-perfil";
@@ -13,8 +13,9 @@ import { TarjetaCliente } from "./tarjeta-cliente";
 import { ESTADOS_CLIENTE, LABELS, type EstadoCliente } from "@/lib/enums";
 import { cn } from "@/lib/utils";
 
-// Chips de filtro rápido: por estado (sin punto) y por prioridad del cliente
-// (con punto de color, JUA-47). Selección única; se combina con el buscador.
+// Chips de filtro rápido: por estado (sin punto), por prioridad del cliente
+// (con punto de color, JUA-47) y por etiqueta de producto (dinámicos, JUA-36).
+// Selección única; se combina con el buscador.
 const CHIPS = [
   { key: "todos", label: "Todos", dot: null },
   { key: "activos", label: "Activos", dot: null },
@@ -23,7 +24,8 @@ const CHIPS = [
   { key: "media", label: "Media", dot: PRIORIDAD_ESTILO.media.punto },
   { key: "baja", label: "Baja", dot: PRIORIDAD_ESTILO.baja.punto },
 ] as const;
-type Chip = (typeof CHIPS)[number]["key"];
+// Chip fijo o etiqueta de producto ("etq:<id>").
+type Chip = (typeof CHIPS)[number]["key"] | `etq:${string}`;
 
 const OCULTAR_SCROLL = "[scrollbar-width:none] [&::-webkit-scrollbar]:hidden";
 
@@ -39,18 +41,23 @@ export function PantallaClientes({ estadoInicial }: { estadoInicial?: string }) 
   const [ahora] = useState(() => Date.now());
 
   const clientes = useQuery(api.clientes.listar, { token });
+  const etiquetas = useQuery(api.etiquetas.listar, { token });
 
   const q = busqueda.trim().toLowerCase();
+  // Filtro por etiqueta de producto (JUA-36): el chip lleva el id ("etq:<id>").
+  const etiquetaFiltro = chip.startsWith("etq:") ? chip.slice(4) : null;
   const porChip = (clientes ?? []).filter((c) =>
     estadoFiltro
       ? c.estado === estadoFiltro
-      : chip === "activos"
-        ? c.estado === "activo"
-        : chip === "prospectos"
-          ? c.estado === "prospecto"
-          : chip === "alta" || chip === "media" || chip === "baja"
-            ? c.prioridad === chip
-            : true,
+      : etiquetaFiltro
+        ? c.etiquetaIds.some((id) => id === etiquetaFiltro)
+        : chip === "activos"
+          ? c.estado === "activo"
+          : chip === "prospectos"
+            ? c.estado === "prospecto"
+            : chip === "alta" || chip === "media" || chip === "baja"
+              ? c.prioridad === chip
+              : true,
   );
   const visibles = q
     ? porChip.filter((c) =>
@@ -132,6 +139,29 @@ export function PantallaClientes({ estadoInicial }: { estadoInicial?: string }) 
               {c.label}
             </button>
           ))}
+          {/* Etiquetas de producto del negocio (JUA-36), con su nº de clientes */}
+          {(etiquetas ?? []).map((e) => {
+            const key: Chip = `etq:${e._id}`;
+            return (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setChip(key)}
+                className={cn(
+                  "inline-flex flex-none items-center gap-1.5 rounded-pill border px-3.5 py-1.5 text-[13px] font-medium",
+                  chip === key
+                    ? "border-gold-500 bg-gold-tint text-gold-700"
+                    : "border-border-input bg-surface text-body",
+                )}
+              >
+                <Tag size={12} strokeWidth={2} className="flex-shrink-0" />
+                {e.nombre}
+                <span className={cn("text-[11.5px] tabular-nums", chip === key ? "text-gold-700/70" : "text-muted")}>
+                  {e.clientes}
+                </span>
+              </button>
+            );
+          })}
         </div>
       )}
 

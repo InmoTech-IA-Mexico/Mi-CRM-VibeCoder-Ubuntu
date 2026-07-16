@@ -91,12 +91,21 @@ export default defineSchema({
     estado: estadoCliente,
     observaciones: v.optional(v.string()),
     responsableId: v.optional(v.id("usuarios")),
+    // Etiquetas de producto del cliente (JUA-36): 0..n, del catálogo del negocio.
+    etiquetaIds: v.optional(v.array(v.id("etiquetas"))),
     ultimaInteraccion: v.optional(v.number()),
     actualizadoEn: v.optional(v.number()), // fecha_ultima_actualizacion (JUA-13)
     eliminadoEn: v.optional(v.number()), // papelera (soft delete, 30 días)
   })
     .index("por_negocio", ["negocioId"])
     .index("por_responsable", ["responsableId"]),
+
+  // Catálogo de etiquetas de producto del negocio (JUA-36). Configurable por la
+  // administradora (no es una lista fija); los clientes referencian por id.
+  etiquetas: defineTable({
+    negocioId: v.id("negocios"),
+    nombre: v.string(),
+  }).index("por_negocio", ["negocioId"]),
 
   notas: defineTable({
     negocioId: v.id("negocios"),

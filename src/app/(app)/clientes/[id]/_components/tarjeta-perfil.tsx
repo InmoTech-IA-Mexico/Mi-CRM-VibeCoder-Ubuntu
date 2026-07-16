@@ -5,6 +5,7 @@ import { BadgeEstado } from "@/components/ui/badge-estado";
 import { LABELS } from "@/lib/enums";
 import { diasDesde, colorUrgenciaDias } from "@/lib/fechas";
 import { SelectorPrioridadCliente } from "./selector-prioridad";
+import { SelectorEtiquetasCliente } from "./selector-etiquetas";
 import { cn } from "@/lib/utils";
 
 export type FichaCliente = NonNullable<FunctionReturnType<typeof api.clientes.detalle>>;
@@ -99,6 +100,10 @@ export function TarjetaPerfil({ cliente, ahora }: { cliente: FichaCliente; ahora
           <span className="text-[13.5px] text-muted">Sin definir</span>
         )}
       </div>
+
+      {/* Etiquetas de producto (JUA-36) */}
+      <div className="my-4 h-px w-full bg-neutral-100" />
+      <SelectorEtiquetasCliente clienteId={cliente._id} asignadas={cliente.etiquetas} />
     </div>
   );
 }
