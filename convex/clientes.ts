@@ -294,10 +294,13 @@ export const cambiarEtiquetas = mutation({
  * negocio, activo y NO observador (el observador es solo lectura, no tiene
  * cartera). No cuenta como interacción.
  *
- * Al reasignar a un NUEVO responsable, los seguimientos de cliente pendientes
- * que eran del responsable anterior migran con la cartera, para que el nuevo
- * dueño herede los recordatorios y no queden "huérfanos" (JUA-43). No se tocan
- * los que un admin hubiera delegado a un tercero (responsable ≠ dueño anterior).
+ * Migración de seguimientos SOLO en el traspaso ENTRE responsables (JUA-43,
+ * obs. OBS-1): al reasignar de un dueño a otro, los seguimientos de cliente
+ * pendientes que eran del dueño anterior pasan al nuevo, para que no queden
+ * "huérfanos". No se tocan los que un admin delegó a un tercero (responsable ≠
+ * dueño anterior). Deliberadamente NO se migra al sacar un cliente del pool
+ * "sin asignar" (no había dueño anterior): esos seguimientos los creó y los
+ * gestiona el admin, que puede re-delegarlos si procede.
  */
 export const asignarResponsable = mutation({
   args: {
@@ -327,8 +330,9 @@ export const asignarResponsable = mutation({
       actualizadoEn: Date.now(),
     });
 
-    // Migrar los seguimientos de cliente PENDIENTES del dueño anterior al nuevo,
-    // para que la cartera y sus recordatorios viajen juntos (JUA-43).
+    // Traspaso entre responsables: los seguimientos de cliente PENDIENTES del
+    // dueño anterior pasan al nuevo (JUA-43, obs. OBS-1). El caso "pool → dueño"
+    // (sin dueño anterior) no migra a propósito: esos los gestiona el admin.
     if (responsableId && anterior && responsableId !== anterior) {
       const seguimientos = await ctx.db
         .query("seguimientos")
