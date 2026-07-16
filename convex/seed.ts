@@ -14,7 +14,20 @@ import { hashPassword } from "./auth";
 const MS_DIA = 24 * 60 * 60 * 1000;
 
 // Contraseñas demo (JUA-6). Se rehashean en cada seed; la contraseña no cambia.
-const PASSWORD_DEMO = { marta: "Marta1234", carlos: "Carlos1234" } as const;
+// Contraseña inicial de los usuarios demo (remediación B-1, dictamen DOC-3 v1):
+// el repo es PÚBLICO, así que NUNCA va hardcodeada. Se lee de la variable de
+// entorno SEED_DEMO_PASSWORD del deployment y SOLO se usa al CREAR el usuario
+// (re-ejecutar el seed jamás pisa la contraseña de un usuario existente; las
+// rotaciones hechas en producción sobreviven a una re-siembra).
+function passwordInicialDemo(): string {
+  const pass = process.env.SEED_DEMO_PASSWORD;
+  if (!pass) {
+    throw new Error(
+      "Define SEED_DEMO_PASSWORD en las variables de entorno del deployment para sembrar usuarios demo",
+    );
+  }
+  return pass;
+}
 
 // El negocio de demostración se identifica SIEMPRE por este email de admin,
 // nunca por "el primer negocio" (evita enganchar datos demo a un negocio real).
@@ -116,6 +129,8 @@ export const poblarDemo = internalMutation({
       .withIndex("por_negocio", (q) => q.eq("negocioId", negocioId))
       .collect();
 
+    // La contraseña SOLO se fija al crear (nunca se pisa la de un usuario
+    // existente — las rotaciones sobreviven a la re-siembra).
     const martaActual = usuariosActuales.find((u) => u.email === "marta@demo.mx");
     const martaId =
       martaActual?._id ??
@@ -125,15 +140,13 @@ export const poblarDemo = internalMutation({
         email: "marta@demo.mx",
         rol: "admin",
         estado: "activo",
+        passwordHash: hashPassword(passwordInicialDemo()),
       }));
     await ctx.db.patch(martaId, {
       nombre: "Marta Ruiz",
       email: "marta@demo.mx",
       rol: "admin",
       estado: "activo",
-      passwordHash: hashPassword(PASSWORD_DEMO.marta),
-      intentosFallidos: 0,
-      bloqueadoHasta: undefined,
     });
 
     const carlosActual = usuariosActuales.find((u) => u.email === "carlos@demo.mx");
@@ -145,15 +158,13 @@ export const poblarDemo = internalMutation({
         email: "carlos@demo.mx",
         rol: "operativo",
         estado: "activo",
+        passwordHash: hashPassword(passwordInicialDemo()),
       }));
     await ctx.db.patch(carlosId, {
       nombre: "Carlos Díaz",
       email: "carlos@demo.mx",
       rol: "operativo",
       estado: "activo",
-      passwordHash: hashPassword(PASSWORD_DEMO.carlos),
-      intentosFallidos: 0,
-      bloqueadoHasta: undefined,
     });
 
     const idClientePorNombre: Record<string, Id<"clientes">> = {};

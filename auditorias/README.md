@@ -22,8 +22,19 @@ recién recibidos). Al ratificarse el cierre: se archiva en `tmp/archivados/` (h
 completo) y la evidencia del ciclo se copia aquí (histórico versionado). Los ciclos anteriores al
 2026-07-15 (MVP) permanecen solo en `tmp/archivados/`.
 
-## Nota de sanitización
+## Política de sanitización (obligatoria — este repositorio es PÚBLICO)
 
-Los reportes omiten tokens y contraseñas. Las credenciales que aparecen en drivers y actas son las
-del **negocio demo** (ya presentes en `convex/seed.ts`) o de **usuarios QA desechables** del demo;
-los usuarios QA de producción quedaron **revocados** al cerrar su ciclo (no pueden iniciar sesión).
+**Prohibido publicar contraseñas, tokens o secretos VIGENTES**, aunque ya aparecieran antes en otra
+parte del repositorio (que un secreto esté repetido no lo vuelve seguro — dictamen DOC-3 v1, B-1).
+
+- Los drivers toman credenciales de **variables de entorno** (p. ej. `QA_ADMIN_PASS`), nunca
+  literales. Los reportes omiten tokens y contraseñas desde su origen.
+- Si un artefacto debe conservarse **verbatim** y contiene secretos: el original se guarda en un
+  medio **privado** y aquí se publica solo una copia sanitizada con el hash de integridad del
+  original y la lista exacta de campos redactados.
+- Antes de copiar evidencia aquí: escanear secretos y **neutralizar en origen** los que aparezcan
+  (rotar contraseñas, revocar usuarios QA, invalidar tokens). Las credenciales citadas en los
+  ciclos del 2026-07-15 quedaron **inertes**: usuarios QA revocados y contraseñas demo de
+  producción y desarrollo **rotadas** (2026-07-15, remediación B-1); el seed ya no re-aplica
+  contraseñas a usuarios existentes y la inicial sale de la env var `SEED_DEMO_PASSWORD`.
+- Datos personales reales (si algún día los hay en capturas): anonimizar antes de publicar.
