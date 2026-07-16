@@ -5,40 +5,16 @@ import { randomBytes, bytesToHex } from "@noble/hashes/utils.js";
 import { resolverSesion } from "./auth";
 import { partesLocales } from "./fechas";
 import { LABELS } from "./enumsServidor";
+import { csv } from "./csv";
 
 // Exportación de datos en autoservicio (JUA-44). Solo el admin puede solicitar
 // una exportación: genera un enlace temporal (token único, 24 h, UN SOLO USO).
 // Los CSV NO se almacenan en el servidor — se generan al consumir el enlace y se
 // devuelven al cliente, que los descarga. La fila de metadatos se purga por cron.
+// La serialización segura (escape RFC 4180 + neutralización de fórmula) vive en
+// `./csv` (unitariamente comprobable).
 
 const EXPORT_MS = 24 * 60 * 60 * 1000; // 24 h
-
-// Caracteres que, al inicio de una celda, una hoja de cálculo (Excel/LibreOffice)
-// interpreta como fórmula → CSV/formula injection (OWASP). Incluye las variantes
-// Unicode de ancho completo. Se neutralizan SOLO los campos de TEXTO (los números
-// reales, como el monto, no son texto de usuario y no se tocan).
-const INICIO_FORMULA = /^[=+\-@\t\r\n＝＋－＠]/;
-
-/**
- * Serializa un valor para CSV. Números → tal cual (no son texto de usuario).
- * Texto → se neutraliza contra inyección de fórmula (prefijo apóstrofo, que la
- * hoja de cálculo trata como "esto es texto" y no muestra) ANTES del escape
- * RFC 4180 (comillas dobles si hay coma/comilla/salto). El apóstrofo es el
- * compromiso documentado: no hay una estrategia idéntica para todos los lectores.
- */
-function csvCampo(valor: unknown): string {
-  if (valor == null) return "";
-  if (typeof valor === "number") return String(valor);
-  let s = String(valor);
-  if (INICIO_FORMULA.test(s)) s = "'" + s;
-  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-}
-
-/** Arma un CSV con BOM (para que Excel lea bien los acentos). */
-function csv(cabeceras: string[], filas: unknown[][]): string {
-  const lineas = [cabeceras, ...filas].map((f) => f.map(csvCampo).join(","));
-  return "﻿" + lineas.join("\r\n") + "\r\n";
-}
 
 /** Fecha/hora local del negocio "YYYY-MM-DD HH:MM" (o vacío). */
 function fechaLocal(epoch: number | undefined | null, tz: string): string {

@@ -11,6 +11,7 @@
 import type * as auth from "../auth.js";
 import type * as clientes from "../clientes.js";
 import type * as crons from "../crons.js";
+import type * as csv from "../csv.js";
 import type * as enumsServidor from "../enumsServidor.js";
 import type * as etiquetas from "../etiquetas.js";
 import type * as exportaciones from "../exportaciones.js";
@@ -36,6 +37,7 @@ declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   clientes: typeof clientes;
   crons: typeof crons;
+  csv: typeof csv;
   enumsServidor: typeof enumsServidor;
   etiquetas: typeof etiquetas;
   exportaciones: typeof exportaciones;
