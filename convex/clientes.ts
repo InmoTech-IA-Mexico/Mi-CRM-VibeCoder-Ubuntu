@@ -63,6 +63,8 @@ export const listar = query({
             prioridad: c.prioridad ?? null,
             // Etiquetas de producto (JUA-36): ids para el filtro de la lista.
             etiquetaIds: c.etiquetaIds ?? [],
+            // Fuente de contacto (JUA-38): tipo para el filtro de la lista.
+            fuenteTipo: c.fuenteTipo ?? null,
             ultimaInteraccion: c.ultimaInteraccion ?? c._creationTime,
             etapa: abierta?.etapa ?? null,
           };
@@ -156,6 +158,9 @@ export const detalle = query({
       cargo: c.cargo ?? null,
       direccion: c.direccion ?? null,
       canal: c.canal ?? null,
+      // Fuente de contacto (JUA-38): tipo + detalle para la ficha.
+      fuenteTipo: c.fuenteTipo ?? null,
+      fuenteDetalle: c.fuenteDetalle ?? null,
       estado: c.estado,
       prioridad: c.prioridad ?? null,
       etiquetas,
@@ -459,6 +464,15 @@ const CANAL_V = v.union(
   v.literal("redes"),
 );
 const PRIORIDAD_V = v.union(v.literal("alta"), v.literal("media"), v.literal("baja"));
+// Fuente de contacto (JUA-38): categoría del origen del cliente.
+const FUENTE_V = v.union(
+  v.literal("referido"),
+  v.literal("campana"),
+  v.literal("evento"),
+  v.literal("visita"),
+  v.literal("otro"),
+);
+const FUENTE_DETALLE_MAX = 120; // el detalle es una etiqueta corta, no un texto largo
 
 /**
  * Edita los datos de un cliente (JUA-67). Reutiliza los campos del alta y añade
@@ -475,9 +489,12 @@ export const actualizar = mutation({
     email: v.string(),
     empresa: v.string(),
     canal: v.optional(CANAL_V),
+    // Fuente de contacto (JUA-38): tipo + detalle opcional. Ausente = sin fuente.
+    fuenteTipo: v.optional(FUENTE_V),
+    fuenteDetalle: v.optional(v.string()),
     prioridad: PRIORIDAD_V,
   },
-  handler: async (ctx, { token, clienteId, nombre, telefono, email, empresa, canal, prioridad }) => {
+  handler: async (ctx, { token, clienteId, nombre, telefono, email, empresa, canal, fuenteTipo, fuenteDetalle, prioridad }) => {
     const sesion = await resolverSesionEscritura(ctx, token);
     if (!sesion) throw new Error("No autorizado");
 
@@ -499,6 +516,9 @@ export const actualizar = mutation({
       email: emailLimpio || undefined,
       empresa: empresa.trim() || undefined,
       canal: canal ?? undefined,
+      // Fuente (JUA-38): el detalle solo se guarda si hay tipo; se acota su longitud.
+      fuenteTipo: fuenteTipo ?? undefined,
+      fuenteDetalle: fuenteTipo ? (fuenteDetalle?.trim().slice(0, FUENTE_DETALLE_MAX) || undefined) : undefined,
       prioridad,
       actualizadoEn: Date.now(),
     });

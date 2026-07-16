@@ -3,14 +3,14 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useQuery } from "convex/react";
-import { Plus, Search, Tag, Users, X } from "lucide-react";
+import { MapPin, Plus, Search, Tag, Users, X } from "lucide-react";
 import { api } from "../../../../../convex/_generated/api";
 import { useSesion, usePuedeEditar } from "@/components/session/use-sesion";
 import { MenuPerfil } from "@/components/layout/menu-perfil";
 import { EsqueletoLista } from "@/components/ui/esqueleto-lista";
 import { PRIORIDAD_ESTILO } from "@/components/ui/indicador-prioridad";
 import { TarjetaCliente } from "./tarjeta-cliente";
-import { ESTADOS_CLIENTE, LABELS, type EstadoCliente } from "@/lib/enums";
+import { ESTADOS_CLIENTE, FUENTES_CONTACTO, LABELS, type EstadoCliente } from "@/lib/enums";
 import { cn } from "@/lib/utils";
 
 // Chips de filtro rápido: por estado (sin punto), por prioridad del cliente
@@ -24,8 +24,8 @@ const CHIPS = [
   { key: "media", label: "Media", dot: PRIORIDAD_ESTILO.media.punto },
   { key: "baja", label: "Baja", dot: PRIORIDAD_ESTILO.baja.punto },
 ] as const;
-// Chip fijo o etiqueta de producto ("etq:<id>").
-type Chip = (typeof CHIPS)[number]["key"] | `etq:${string}`;
+// Chip fijo, etiqueta de producto ("etq:<id>") o fuente de contacto ("fte:<tipo>", JUA-38).
+type Chip = (typeof CHIPS)[number]["key"] | `etq:${string}` | `fte:${string}`;
 
 const OCULTAR_SCROLL = "[scrollbar-width:none] [&::-webkit-scrollbar]:hidden";
 
@@ -47,20 +47,27 @@ export function PantallaClientes({ estadoInicial }: { estadoInicial?: string }) 
   const etiquetas = useQuery(api.etiquetas.listar, { token });
 
   const q = busqueda.trim().toLowerCase();
-  // Filtro por etiqueta de producto (JUA-36): el chip lleva el id ("etq:<id>").
+  // Filtro por etiqueta de producto (JUA-36, "etq:<id>") o fuente de contacto (JUA-38, "fte:<tipo>").
   const etiquetaFiltro = chip.startsWith("etq:") ? chip.slice(4) : null;
+  const fuenteFiltro = chip.startsWith("fte:") ? chip.slice(4) : null;
+  // Fuentes de contacto presentes entre los clientes visibles, con su nº (para los chips).
+  const fuenteCount = new Map<string, number>();
+  for (const c of clientes ?? []) if (c.fuenteTipo) fuenteCount.set(c.fuenteTipo, (fuenteCount.get(c.fuenteTipo) ?? 0) + 1);
+  const fuentesPresentes = FUENTES_CONTACTO.filter((f) => fuenteCount.has(f));
   const porChip = (clientes ?? []).filter((c) =>
     estadoFiltro
       ? c.estado === estadoFiltro
       : etiquetaFiltro
         ? c.etiquetaIds.some((id) => id === etiquetaFiltro)
-        : chip === "activos"
-          ? c.estado === "activo"
-          : chip === "prospectos"
-            ? c.estado === "prospecto"
-            : chip === "alta" || chip === "media" || chip === "baja"
-              ? c.prioridad === chip
-              : true,
+        : fuenteFiltro
+          ? c.fuenteTipo === fuenteFiltro
+          : chip === "activos"
+            ? c.estado === "activo"
+            : chip === "prospectos"
+              ? c.estado === "prospecto"
+              : chip === "alta" || chip === "media" || chip === "baja"
+                ? c.prioridad === chip
+                : true,
   );
   const visibles = q
     ? porChip.filter((c) =>
@@ -191,6 +198,30 @@ export function PantallaClientes({ estadoInicial }: { estadoInicial?: string }) 
                 {e.nombre}
                 <span className={cn("text-[11.5px] tabular-nums", chip === key ? "text-gold-700/70" : "text-muted")}>
                   {e.clientes}
+                </span>
+              </button>
+            );
+          })}
+          {/* Fuente de contacto (JUA-38): un chip por fuente presente, con su nº de clientes */}
+          {fuentesPresentes.map((f) => {
+            const key: Chip = `fte:${f}`;
+            return (
+              <button
+                key={key}
+                type="button"
+                aria-pressed={chip === key}
+                onClick={() => setChip(key)}
+                className={cn(
+                  "inline-flex flex-none items-center gap-1.5 rounded-pill border px-3.5 py-1.5 text-[13px] font-medium",
+                  chip === key
+                    ? "border-gold-500 bg-gold-tint text-gold-700"
+                    : "border-border-input bg-surface text-body",
+                )}
+              >
+                <MapPin size={12} strokeWidth={2} className="flex-shrink-0" />
+                {LABELS.fuenteContacto[f]}
+                <span className={cn("text-[11.5px] tabular-nums", chip === key ? "text-gold-700/70" : "text-muted")}>
+                  {fuenteCount.get(f)}
                 </span>
               </button>
             );

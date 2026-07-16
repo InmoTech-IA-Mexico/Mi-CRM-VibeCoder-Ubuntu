@@ -13,6 +13,11 @@ export type EtapaPipeline = (typeof ETAPAS_PIPELINE)[number];
 export const CANALES = ["whatsapp", "email", "web", "telefono", "referido", "redes"] as const;
 export type Canal = (typeof CANALES)[number];
 
+// Fuente de contacto (JUA-38): origen específico de cómo llegó el cliente. Es un
+// nivel más granular que el canal (medio) — categoría + detalle libre opcional.
+export const FUENTES_CONTACTO = ["referido", "campana", "evento", "visita", "otro"] as const;
+export type FuenteContacto = (typeof FUENTES_CONTACTO)[number];
+
 export const TIPOS_INTERACCION = ["llamada", "reunion", "correo", "mensaje", "visita", "interno"] as const;
 export type TipoInteraccion = (typeof TIPOS_INTERACCION)[number];
 
@@ -37,6 +42,7 @@ export const LABELS = {
   estadoCliente: { nuevo: "Nuevo", prospecto: "Prospecto", activo: "Activo", inactivo: "Inactivo", descartado: "Descartado" },
   etapa: { nueva: "Nueva", en_contacto: "En contacto", propuesta: "Propuesta", negociacion: "Negociación", ganada: "Ganada", perdida: "Perdida", cancelada: "Cancelada" },
   canal: { whatsapp: "WhatsApp", email: "Email", web: "Web", telefono: "Teléfono", referido: "Referido", redes: "Redes" },
+  fuenteContacto: { referido: "Referido", campana: "Campaña", evento: "Evento", visita: "Visita", otro: "Otro" },
   tipoInteraccion: { llamada: "Llamada", reunion: "Reunión", correo: "Correo", mensaje: "Mensaje", visita: "Visita", interno: "Interno" },
   frecuencia: { una_vez: "Una vez", semanal: "Semanal", mensual: "Mensual" },
   rol: { admin: "Administrador", operativo: "Operativo", observador: "Observador" },

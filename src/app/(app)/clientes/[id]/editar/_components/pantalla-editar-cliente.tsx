@@ -5,11 +5,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
-import { X, User, Phone, Mail, Building2, MessageCircle, Globe, Users, Radio, AlertCircle } from "lucide-react";
+import { X, User, Phone, Mail, Building2, MessageCircle, Globe, Users, Radio, AlertCircle, Megaphone, CalendarDays, Store, Ellipsis, MapPin } from "lucide-react";
 import { api } from "../../../../../../../convex/_generated/api";
 import type { Id } from "../../../../../../../convex/_generated/dataModel";
 import { useSesion, useGuardEscritura } from "@/components/session/use-sesion";
-import { LABELS, type Canal, type Prioridad } from "@/lib/enums";
+import { LABELS, type Canal, type FuenteContacto, type Prioridad } from "@/lib/enums";
 import { cn } from "@/lib/utils";
 
 type Cliente = NonNullable<FunctionReturnType<typeof api.clientes.detalle>>;
@@ -27,6 +27,15 @@ const PRIORIDADES: { key: Prioridad; punto: string }[] = [
   { key: "alta", punto: "bg-[#B0573F]" },
   { key: "media", punto: "bg-[#C9A25E]" },
   { key: "baja", punto: "bg-[#80847B]" },
+];
+
+// Fuente de contacto (JUA-38): icono + placeholder contextual para el detalle.
+const FUENTES: { key: FuenteContacto; icon: typeof Users; placeholder: string }[] = [
+  { key: "referido", icon: Users, placeholder: "¿Quién lo refirió? (ej. Ana García)" },
+  { key: "campana", icon: Megaphone, placeholder: "¿Qué campaña? (ej. Black Friday 2026)" },
+  { key: "evento", icon: CalendarDays, placeholder: "¿Qué evento? (ej. Feria junio 2026)" },
+  { key: "visita", icon: Store, placeholder: "¿Dónde? (ej. mostrador sucursal centro)" },
+  { key: "otro", icon: Ellipsis, placeholder: "Detalle de la fuente" },
 ];
 
 export function PantallaEditarCliente({ clienteId }: { clienteId: Id<"clientes"> }) {
@@ -72,6 +81,8 @@ function Formulario({
   const [email, setEmail] = useState(cliente.email ?? "");
   const [empresa, setEmpresa] = useState(cliente.empresa ?? "");
   const [canal, setCanal] = useState<Canal | null>(cliente.canal ?? null);
+  const [fuenteTipo, setFuenteTipo] = useState<FuenteContacto | null>(cliente.fuenteTipo ?? null);
+  const [fuenteDetalle, setFuenteDetalle] = useState(cliente.fuenteDetalle ?? "");
   const [prioridad, setPrioridad] = useState<Prioridad>(cliente.prioridad ?? "media");
   const [intentado, setIntentado] = useState(false);
   const [guardando, setGuardando] = useState(false);
@@ -89,7 +100,18 @@ function Formulario({
     setGuardando(true);
     setErrorGuardar(null);
     try {
-      await actualizar({ token, clienteId, nombre, telefono, email, empresa, canal: canal ?? undefined, prioridad });
+      await actualizar({
+        token,
+        clienteId,
+        nombre,
+        telefono,
+        email,
+        empresa,
+        canal: canal ?? undefined,
+        fuenteTipo: fuenteTipo ?? undefined,
+        fuenteDetalle: fuenteTipo ? fuenteDetalle : undefined,
+        prioridad,
+      });
       router.replace(volver);
     } catch (error) {
       console.error("No se pudo guardar el cliente", error);
@@ -200,6 +222,51 @@ function Formulario({
           </div>
         </section>
 
+        {/* Fuente de contacto (JUA-38): origen específico — categoría + detalle libre */}
+        <section>
+          <p className="mb-3 text-[12px] font-semibold uppercase tracking-wider text-gold-text">
+            Fuente de contacto
+          </p>
+          <div className="grid grid-cols-3 gap-2.5">
+            {FUENTES.map(({ key, icon: Icon }) => {
+              const activo = fuenteTipo === key;
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setFuenteTipo(activo ? null : key)}
+                  className={cn(
+                    "flex flex-col items-center gap-1.5 rounded-xl border py-2.5 transition active:scale-95",
+                    activo
+                      ? "border-gold-500 bg-gold-tint shadow-[0_2px_10px_rgba(201,162,94,0.22)]"
+                      : "border-border-input bg-surface",
+                  )}
+                >
+                  <Icon size={19} strokeWidth={1.7} className={activo ? "text-gold-700" : "text-neutral-400"} />
+                  <span className={cn("text-[12px] font-medium", activo ? "text-ink" : "text-body")}>
+                    {LABELS.fuenteContacto[key]}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          {fuenteTipo && (
+            <div className="mt-2.5">
+              <Input
+                icon={MapPin}
+                label="Detalle de la fuente"
+                value={fuenteDetalle}
+                onChange={setFuenteDetalle}
+                placeholder={FUENTES.find((f) => f.key === fuenteTipo)?.placeholder ?? "Detalle"}
+                maxLength={120}
+              />
+              <p className="mt-1.5 px-1 text-[12px] text-muted">
+                Opcional. Ayuda a personalizar el primer contacto.
+              </p>
+            </div>
+          )}
+        </section>
+
         {/* Clasificación — Prioridad */}
         <section>
           <p className="mb-3 text-[12px] font-semibold uppercase tracking-wider text-gold-text">
@@ -266,6 +333,7 @@ function Input({
   error,
   tabular,
   inputMode,
+  maxLength,
 }: {
   icon: typeof User;
   label: string;
@@ -275,6 +343,7 @@ function Input({
   error?: boolean;
   tabular?: boolean;
   inputMode?: "tel" | "email";
+  maxLength?: number;
 }) {
   return (
     <div
@@ -291,6 +360,7 @@ function Input({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         aria-label={label}
+        maxLength={maxLength}
         inputMode={inputMode}
         autoCapitalize={inputMode === "email" ? "none" : undefined}
         className={cn("w-full bg-transparent text-[15px] text-ink outline-none placeholder:text-muted", tabular && "tabular-nums")}

@@ -1,5 +1,5 @@
 import type { FunctionReturnType } from "convex/server";
-import { Phone, Mail, MessageCircle } from "lucide-react";
+import { Phone, Mail, MessageCircle, MapPin } from "lucide-react";
 import { api } from "../../../../../../convex/_generated/api";
 import { BadgeEstado } from "@/components/ui/badge-estado";
 import { LABELS } from "@/lib/enums";
@@ -96,6 +96,25 @@ export function TarjetaPerfil({ cliente, ahora }: { cliente: FichaCliente; ahora
         {cliente.canal ? (
           <span className="flex items-center gap-1.5 rounded-lg bg-[#F4ECDB] px-2.5 py-1.5">
             <span className="text-[12.5px] font-semibold text-[#9A7327]">{LABELS.canal[cliente.canal]}</span>
+          </span>
+        ) : (
+          <span className="text-[13.5px] text-muted">Sin definir</span>
+        )}
+      </div>
+
+      {/* Fuente de contacto (JUA-38): cómo llegó el cliente (origen específico) */}
+      <div className="my-4 h-px w-full bg-neutral-100" />
+      <div className="flex w-full items-center gap-3">
+        <MapPin size={18} strokeWidth={1.6} className="text-neutral-400" />
+        <span className="flex-1 text-[14.5px] text-ink">Fuente de contacto</span>
+        {cliente.fuenteTipo ? (
+          <span className="flex min-w-0 items-center gap-1.5 rounded-lg bg-[#EDE6F3] px-2.5 py-1.5">
+            <span className="flex-shrink-0 text-[12.5px] font-semibold text-[#6B4E8F]">
+              {LABELS.fuenteContacto[cliente.fuenteTipo]}
+            </span>
+            {cliente.fuenteDetalle && (
+              <span className="truncate text-[12.5px] text-[#6B4E8F]/80">· {cliente.fuenteDetalle}</span>
+            )}
           </span>
         ) : (
           <span className="text-[13.5px] text-muted">Sin definir</span>

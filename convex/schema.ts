@@ -30,6 +30,14 @@ export const canal = v.union(
   v.literal("referido"),
   v.literal("redes"),
 );
+// Fuente de contacto (JUA-38): origen específico, más granular que el canal.
+export const fuenteContacto = v.union(
+  v.literal("referido"),
+  v.literal("campana"),
+  v.literal("evento"),
+  v.literal("visita"),
+  v.literal("otro"),
+);
 const tipoInteraccion = v.union(
   v.literal("llamada"),
   v.literal("reunion"),
@@ -87,6 +95,9 @@ export default defineSchema({
     cargo: v.optional(v.string()),
     direccion: v.optional(v.string()),
     canal: v.optional(canal),
+    // Fuente de contacto (JUA-38): categoría + detalle libre, ambos opcionales.
+    fuenteTipo: v.optional(fuenteContacto),
+    fuenteDetalle: v.optional(v.string()),
     prioridad: v.optional(prioridad),
     estado: estadoCliente,
     observaciones: v.optional(v.string()),
