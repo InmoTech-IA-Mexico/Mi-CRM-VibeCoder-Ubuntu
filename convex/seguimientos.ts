@@ -2,7 +2,7 @@ import { mutation, query } from "./_generated/server";
 import type { MutationCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import { v } from "convex/values";
-import { resolverSesion } from "./auth";
+import { resolverSesion, resolverSesionEscritura } from "./auth";
 
 // Recordatorios / seguimientos con un cliente (JUA-22). Aparecen en la agenda de
 // Inicio (JUA-23) y en la sección "Seguimientos pendientes" de la ficha. La fecha
@@ -42,7 +42,7 @@ export const crear = mutation({
     diaRecurrencia: v.optional(v.number()), // día-del-mes local (lo envía el cliente)
   },
   handler: async (ctx, args) => {
-    const sesion = await resolverSesion(ctx, args.token);
+    const sesion = await resolverSesionEscritura(ctx, args.token);
     if (!sesion) throw new Error("No autorizado");
     const negocioId = sesion.negocioId;
     const esAdmin = sesion.usuario.rol === "admin";
@@ -236,7 +236,9 @@ async function seguimientoGestionable(
   token: string,
   seguimientoId: Id<"seguimientos">,
 ) {
-  const sesion = await resolverSesion(ctx, token);
+  // Escritura: el observador (solo lectura, JUA-42) no gestiona seguimientos,
+  // ni siquiera los propios.
+  const sesion = await resolverSesionEscritura(ctx, token);
   if (!sesion) throw new Error("No autorizado");
   const seguimiento = await ctx.db.get(seguimientoId);
   if (!seguimiento || seguimiento.negocioId !== sesion.negocioId) {

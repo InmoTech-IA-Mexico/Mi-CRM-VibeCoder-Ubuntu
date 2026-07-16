@@ -19,7 +19,7 @@ export type TipoInteraccion = (typeof TIPOS_INTERACCION)[number];
 export const FRECUENCIAS = ["una_vez", "semanal", "mensual"] as const;
 export type Frecuencia = (typeof FRECUENCIAS)[number];
 
-export const ROLES = ["admin", "operativo"] as const;
+export const ROLES = ["admin", "operativo", "observador"] as const;
 export type Rol = (typeof ROLES)[number];
 
 export const ESTADOS_CUENTA = ["activo", "pendiente", "inactivo"] as const;
@@ -39,7 +39,7 @@ export const LABELS = {
   canal: { whatsapp: "WhatsApp", email: "Email", web: "Web", telefono: "Teléfono", referido: "Referido", redes: "Redes" },
   tipoInteraccion: { llamada: "Llamada", reunion: "Reunión", correo: "Correo", mensaje: "Mensaje", visita: "Visita", interno: "Interno" },
   frecuencia: { una_vez: "Una vez", semanal: "Semanal", mensual: "Mensual" },
-  rol: { admin: "Administrador", operativo: "Operativo" },
+  rol: { admin: "Administrador", operativo: "Operativo", observador: "Observador" },
 } as const;
 
 /** Reglas de negocio (PRD). */

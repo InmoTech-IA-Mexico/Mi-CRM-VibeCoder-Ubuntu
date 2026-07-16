@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { api } from "../../../../../../convex/_generated/api";
 import type { Id } from "../../../../../../convex/_generated/dataModel";
-import { useSesion } from "@/components/session/use-sesion";
+import { useSesion, useGuardEscritura } from "@/components/session/use-sesion";
 import { epochDesdeFechaHora } from "@/lib/fechas";
 import { CANALES, LABELS, type Canal } from "@/lib/enums";
 import { cn } from "@/lib/utils";
@@ -31,6 +31,7 @@ const ICONO_CANAL: Record<Canal, typeof MessageCircle> = {
 export function PantallaNuevaVenta() {
   const router = useRouter();
   const { token, negocio, usuario } = useSesion();
+  const puedeEditar = useGuardEscritura();
 
   const [clienteId, setClienteId] = useState<Id<"clientes"> | null>(null);
   const [pickerAbierto, setPickerAbierto] = useState(false);
@@ -91,6 +92,8 @@ export function PantallaNuevaVenta() {
 
   const mostrarErrorCliente = intentado && !clienteOk;
   const mostrarErrorImporte = intentado && !importeOk;
+
+  if (!puedeEditar) return null; // observador: el guard ya redirige a Inicio (JUA-42)
 
   return (
     <div className="flex min-h-full flex-col">

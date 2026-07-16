@@ -8,7 +8,7 @@ import type { FunctionReturnType } from "convex/server";
 import { X, Bell, Calendar, Clock, AlertCircle, Repeat } from "lucide-react";
 import { api } from "../../../../../../../convex/_generated/api";
 import type { Id } from "../../../../../../../convex/_generated/dataModel";
-import { useSesion } from "@/components/session/use-sesion";
+import { useSesion, useGuardEscritura } from "@/components/session/use-sesion";
 import { FRECUENCIAS, LABELS, type Frecuencia, type Prioridad } from "@/lib/enums";
 import { epochDesdeFechaHora } from "@/lib/fechas";
 import { cn } from "@/lib/utils";
@@ -23,8 +23,10 @@ const PRIORIDADES: { key: Prioridad; punto: string }[] = [
 
 export function PantallaNuevoRecordatorio({ clienteId }: { clienteId: Id<"clientes"> }) {
   const { token } = useSesion();
+  const puedeEditar = useGuardEscritura();
   const cliente = useQuery(api.clientes.detalle, { token, clienteId });
 
+  if (!puedeEditar) return null; // observador: el guard ya redirige a Inicio (JUA-42)
   if (cliente === undefined) {
     return (
       <div className="flex flex-col gap-5 px-4 pt-16">

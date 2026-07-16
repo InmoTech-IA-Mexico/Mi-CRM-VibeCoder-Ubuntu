@@ -39,7 +39,7 @@ const tipoInteraccion = v.union(
   v.literal("interno"),
 );
 const frecuencia = v.union(v.literal("una_vez"), v.literal("semanal"), v.literal("mensual"));
-export const rol = v.union(v.literal("admin"), v.literal("operativo"));
+export const rol = v.union(v.literal("admin"), v.literal("operativo"), v.literal("observador"));
 
 export default defineSchema({
   // Contenedor multi-tenant: todo pertenece a un negocio.

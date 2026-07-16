@@ -8,6 +8,7 @@ import { ChevronLeft, Pencil, MoreVertical, Check, Trash2 } from "lucide-react";
 import { api } from "../../../../../../convex/_generated/api";
 import type { Id } from "../../../../../../convex/_generated/dataModel";
 import { HojaConfirmar } from "@/components/ui/hoja-confirmar";
+import { usePuedeEditar } from "@/components/session/use-sesion";
 import { LABELS, type EstadoCliente } from "@/lib/enums";
 import { cn } from "@/lib/utils";
 
@@ -33,6 +34,7 @@ export function CabeceraFicha({
   token: string;
 }) {
   const router = useRouter();
+  const puedeEditar = usePuedeEditar(); // observador: sin editar/estado/papelera (JUA-42)
   const [abierto, setAbierto] = useState(false);
   const [ocupado, setOcupado] = useState(false);
   const [confirmarPapelera, setConfirmarPapelera] = useState(false);
@@ -91,20 +93,24 @@ export function CabeceraFicha({
         {nombre}
       </h1>
 
-      <div className="flex gap-2">
-        <Link href={`/clientes/${clienteId}/editar`} aria-label="Editar cliente" className={botonCuadrado}>
-          <Pencil size={17} strokeWidth={1.7} className="text-ink" />
-        </Link>
-        <button
-          type="button"
-          aria-label="Más acciones"
-          aria-expanded={abierto}
-          onClick={() => setAbierto((v) => !v)}
-          className={botonCuadrado}
-        >
-          <MoreVertical size={18} strokeWidth={2} className="text-ink" />
-        </button>
-      </div>
+      {puedeEditar ? (
+        <div className="flex gap-2">
+          <Link href={`/clientes/${clienteId}/editar`} aria-label="Editar cliente" className={botonCuadrado}>
+            <Pencil size={17} strokeWidth={1.7} className="text-ink" />
+          </Link>
+          <button
+            type="button"
+            aria-label="Más acciones"
+            aria-expanded={abierto}
+            onClick={() => setAbierto((v) => !v)}
+            className={botonCuadrado}
+          >
+            <MoreVertical size={18} strokeWidth={2} className="text-ink" />
+          </button>
+        </div>
+      ) : (
+        <div className="w-11" aria-hidden /> // spacer: mantiene el título centrado
+      )}
 
       {abierto && (
         <>

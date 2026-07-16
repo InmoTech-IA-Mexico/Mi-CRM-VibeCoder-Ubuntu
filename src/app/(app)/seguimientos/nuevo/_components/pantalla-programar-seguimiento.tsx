@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { api } from "../../../../../../convex/_generated/api";
 import type { Id } from "../../../../../../convex/_generated/dataModel";
-import { useSesion } from "@/components/session/use-sesion";
+import { useSesion, useGuardEscritura } from "@/components/session/use-sesion";
 import { HojaInferior } from "@/components/ui/hoja-inferior";
 import { FRECUENCIAS, LABELS, type Frecuencia, type Prioridad } from "@/lib/enums";
 import { epochDesdeFechaHora } from "@/lib/fechas";
@@ -35,9 +35,11 @@ const inicial = (nombre: string) => nombre.trim().charAt(0).toUpperCase() || "?"
 
 export function PantallaProgramarSeguimiento() {
   const { token } = useSesion();
+  const puedeEditar = useGuardEscritura();
   const clientes = useQuery(api.clientes.listar, { token });
   const equipo = useQuery(api.usuarios.equipo, { token });
 
+  if (!puedeEditar) return null; // observador: el guard ya redirige a Inicio (JUA-42)
   if (clientes === undefined || equipo === undefined) {
     return (
       <div className="flex flex-col gap-5 px-4 pt-16">

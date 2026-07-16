@@ -2,7 +2,7 @@ import { query, mutation, internalMutation } from "./_generated/server";
 import type { MutationCtx } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
 import { v } from "convex/values";
-import { resolverSesion } from "./auth";
+import { resolverSesion, resolverSesionEscritura } from "./auth";
 import { MS_DIA, recordatorioProximoIds, debeMarcarseInactivo } from "./inactividad";
 
 const DIAS_PAPELERA = 30; // días en papelera antes del borrado definitivo (JUA-16)
@@ -189,7 +189,7 @@ export const cambiarEstado = mutation({
     estado: v.union(v.literal("prospecto"), v.literal("activo"), v.literal("descartado")),
   },
   handler: async (ctx, { token, clienteId, estado }) => {
-    const sesion = await resolverSesion(ctx, token);
+    const sesion = await resolverSesionEscritura(ctx, token);
     if (!sesion) throw new Error("No autorizado");
 
     const c = await ctx.db.get(clienteId);
@@ -215,7 +215,7 @@ export const cambiarPrioridad = mutation({
     prioridad: v.union(v.literal("alta"), v.literal("media"), v.literal("baja"), v.null()),
   },
   handler: async (ctx, { token, clienteId, prioridad }) => {
-    const sesion = await resolverSesion(ctx, token);
+    const sesion = await resolverSesionEscritura(ctx, token);
     if (!sesion) throw new Error("No autorizado");
 
     const c = await ctx.db.get(clienteId);
@@ -239,7 +239,7 @@ export const cambiarEtiquetas = mutation({
     etiquetaIds: v.array(v.id("etiquetas")),
   },
   handler: async (ctx, { token, clienteId, etiquetaIds }) => {
-    const sesion = await resolverSesion(ctx, token);
+    const sesion = await resolverSesionEscritura(ctx, token);
     if (!sesion) throw new Error("No autorizado");
 
     const c = await ctx.db.get(clienteId);
@@ -338,7 +338,7 @@ export const crear = mutation({
     email: v.string(),
   },
   handler: async (ctx, { token, nombre, telefono, email }) => {
-    const sesion = await resolverSesion(ctx, token);
+    const sesion = await resolverSesionEscritura(ctx, token);
     if (!sesion) throw new Error("No autorizado");
 
     const nombreLimpio = nombre.trim();
@@ -388,7 +388,7 @@ export const actualizar = mutation({
     prioridad: PRIORIDAD_V,
   },
   handler: async (ctx, { token, clienteId, nombre, telefono, email, empresa, canal, prioridad }) => {
-    const sesion = await resolverSesion(ctx, token);
+    const sesion = await resolverSesionEscritura(ctx, token);
     if (!sesion) throw new Error("No autorizado");
 
     const c = await ctx.db.get(clienteId);

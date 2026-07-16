@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { BottomNav } from "./bottom-nav";
 import { BotonFlotante } from "./boton-flotante";
 import { BannerSinConexion } from "./banner-sin-conexion";
+import { usePuedeEditar } from "@/components/session/use-sesion";
 
 // Pantallas de nivel superior con barra inferior (se puede navegar entre ellas).
 // El FAB "nuevo cliente" solo aparece donde tiene sentido (Inicio/Clientes). Las
@@ -17,8 +18,10 @@ const RUTAS_FAB = ["/inicio", "/clientes", "/ventas"];
 
 export function MarcoApp({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const puedeEditar = usePuedeEditar();
   const conNav = RUTAS_NAV.includes(pathname);
-  const conFab = RUTAS_FAB.includes(pathname);
+  // El FAB crea registros → oculto para el observador (solo lectura, JUA-42).
+  const conFab = RUTAS_FAB.includes(pathname) && puedeEditar;
 
   return (
     <>

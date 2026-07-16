@@ -54,6 +54,19 @@ export async function resolverSesion(ctx: QueryCtx | MutationCtx, token: string)
   return { usuario, negocioId: sesion.negocioId };
 }
 
+/**
+ * Como `resolverSesion`, pero para mutaciones que ESCRIBEN datos del negocio:
+ * el rol **observador** (solo lectura, JUA-42) no puede modificar nada, así que
+ * devuelve `null` para él. Las mutaciones ya lanzan "No autorizado" ante `null`,
+ * de modo que el observador recibe el mismo 403 que una sesión inválida. El
+ * enforcement vive aquí (servidor), no solo en la UI.
+ */
+export async function resolverSesionEscritura(ctx: MutationCtx, token: string) {
+  const sesion = await resolverSesion(ctx, token);
+  if (!sesion || sesion.usuario.rol === "observador") return null;
+  return sesion;
+}
+
 type ResultadoLogin =
   | { ok: true; token: string }
   | { ok: false; bloqueadoHasta?: number };

@@ -29,6 +29,7 @@ export function SelectorEtiquetasCliente({
 }) {
   const { token, rol } = useSesion();
   const esAdmin = rol === "admin";
+  const puedeEditar = rol !== "observador"; // solo lectura: sin editar (JUA-42)
   const catalogo = useQuery(api.etiquetas.listar, { token });
   const cambiar = useMutation(api.clientes.cambiarEtiquetas);
   const crear = useMutation(api.etiquetas.crear);
@@ -94,15 +95,19 @@ export function SelectorEtiquetasCliente({
       <div className="flex w-full items-center gap-3">
         <Tag size={18} strokeWidth={1.6} className="text-neutral-400" />
         <span className="flex-1 text-[14.5px] text-ink">Etiquetas de producto</span>
-        <button
-          type="button"
-          aria-label="Editar etiquetas de producto"
-          aria-haspopup="dialog"
-          onClick={abrir}
-          className="rounded-lg border border-dashed border-border-input bg-surface px-2.5 py-1 text-[12px] font-semibold text-muted transition active:scale-95"
-        >
-          {asignadas.length > 0 ? "Editar" : "Añadir"}
-        </button>
+        {puedeEditar ? (
+          <button
+            type="button"
+            aria-label="Editar etiquetas de producto"
+            aria-haspopup="dialog"
+            onClick={abrir}
+            className="rounded-lg border border-dashed border-border-input bg-surface px-2.5 py-1 text-[12px] font-semibold text-muted transition active:scale-95"
+          >
+            {asignadas.length > 0 ? "Editar" : "Añadir"}
+          </button>
+        ) : (
+          asignadas.length === 0 && <span className="text-[13.5px] text-muted">Sin etiquetas</span>
+        )}
       </div>
       {asignadas.length > 0 && (
         <div className="mt-2.5 flex w-full flex-wrap gap-1.5">

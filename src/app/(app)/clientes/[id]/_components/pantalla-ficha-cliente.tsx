@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import { api } from "../../../../../../convex/_generated/api";
 import type { Id } from "../../../../../../convex/_generated/dataModel";
-import { useSesion } from "@/components/session/use-sesion";
+import { useSesion, usePuedeEditar } from "@/components/session/use-sesion";
 import { LABELS, type EtapaPipeline, type TipoInteraccion } from "@/lib/enums";
 import { fechaCortaES, diasDesde } from "@/lib/fechas";
 import { bordePrioridadClase } from "@/components/ui/indicador-prioridad";
@@ -55,6 +55,7 @@ const ICONO_TIPO: Record<TipoInteraccion, typeof Phone> = {
 
 export function PantallaFichaCliente({ clienteId }: { clienteId: Id<"clientes"> }) {
   const { token, negocio, rol, usuario } = useSesion();
+  const puedeEditar = usePuedeEditar(); // observador: sin acciones de escritura (JUA-42)
   const [ahora] = useState(() => Date.now());
   const cliente = useQuery(api.clientes.detalle, { token, clienteId });
   const eliminarNota = useMutation(api.notas.eliminar);
@@ -107,37 +108,43 @@ export function PantallaFichaCliente({ clienteId }: { clienteId: Id<"clientes"> 
       <div className="flex flex-col gap-[18px] px-4 pt-2 pb-8">
         <TarjetaPerfil cliente={cliente} ahora={ahora} />
 
-        {/* Acciones rápidas */}
-        <div className="flex gap-2">
-          <AccionRapida
-            href={cliente.telefono ? `tel:${cliente.telefono.replace(/\s/g, "")}` : `${base}/nota`}
-            icon={Phone}
-            label="Llamada"
-            externa={!!cliente.telefono}
-          />
-          <AccionRapida href={`${base}/recordatorio`} icon={Calendar} label="Reunión" />
-          <AccionRapida href={`${base}/nota`} icon={FileText} label="Nota" />
-          <AccionRapida href={`${base}/recordatorio`} icon={Bell} label="Recordatorio" />
-        </div>
+        {/* Acciones de escritura ocultas para el observador (JUA-42). Los botones
+            de contacto (tel/email) siguen en la tarjeta de perfil. */}
+        {puedeEditar && (
+          <>
+            {/* Acciones rápidas */}
+            <div className="flex gap-2">
+              <AccionRapida
+                href={cliente.telefono ? `tel:${cliente.telefono.replace(/\s/g, "")}` : `${base}/nota`}
+                icon={Phone}
+                label="Llamada"
+                externa={!!cliente.telefono}
+              />
+              <AccionRapida href={`${base}/recordatorio`} icon={Calendar} label="Reunión" />
+              <AccionRapida href={`${base}/nota`} icon={FileText} label="Nota" />
+              <AccionRapida href={`${base}/recordatorio`} icon={Bell} label="Recordatorio" />
+            </div>
 
-        {/* Acciones principales */}
-        <div className="flex gap-2.5">
-          <Link
-            href={`${base}/recordatorio`}
-            className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl border border-border-input bg-surface text-[13.5px] font-semibold text-ink shadow-sm active:scale-[0.99]"
-          >
-            <CalendarClock size={18} strokeWidth={1.7} />
-            Programar seguimiento
-          </Link>
-          <button
-            type="button"
-            onClick={() => setVentaAbierta(true)}
-            className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-gold-500 text-[13.5px] font-bold text-ink shadow-[0_2px_8px_rgba(201,162,94,0.32)] active:scale-[0.99]"
-          >
-            <Trophy size={18} strokeWidth={1.9} />
-            Registrar venta
-          </button>
-        </div>
+            {/* Acciones principales */}
+            <div className="flex gap-2.5">
+              <Link
+                href={`${base}/recordatorio`}
+                className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl border border-border-input bg-surface text-[13.5px] font-semibold text-ink shadow-sm active:scale-[0.99]"
+              >
+                <CalendarClock size={18} strokeWidth={1.7} />
+                Programar seguimiento
+              </Link>
+              <button
+                type="button"
+                onClick={() => setVentaAbierta(true)}
+                className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-gold-500 text-[13.5px] font-bold text-ink shadow-[0_2px_8px_rgba(201,162,94,0.32)] active:scale-[0.99]"
+              >
+                <Trophy size={18} strokeWidth={1.9} />
+                Registrar venta
+              </button>
+            </div>
+          </>
+        )}
 
         {/* Seguimientos pendientes */}
         <Seccion titulo="Seguimientos pendientes" contador={cliente.seguimientos.length}>
@@ -168,7 +175,7 @@ export function PantallaFichaCliente({ clienteId }: { clienteId: Id<"clientes"> 
                     seguimientoId={s._id}
                     fecha={s.fecha}
                     hora={s.hora}
-                    puedeGestionar={s.responsableId === usuario._id || rol === "admin"}
+                    puedeGestionar={puedeEditar && (s.responsableId === usuario._id || rol === "admin")}
                   />
                 </div>
               ))}
@@ -180,13 +187,15 @@ export function PantallaFichaCliente({ clienteId }: { clienteId: Id<"clientes"> 
         <Seccion
           titulo="Oportunidades"
           accion={
-            <Link
-              href={`${base}/oportunidad`}
-              aria-label="Nueva oportunidad"
-              className="flex h-[30px] w-[30px] items-center justify-center rounded-full bg-gold-500 shadow-[0_2px_8px_rgba(201,162,94,0.32)] active:scale-95"
-            >
-              <Plus size={16} strokeWidth={2.2} className="text-ink" />
-            </Link>
+            puedeEditar ? (
+              <Link
+                href={`${base}/oportunidad`}
+                aria-label="Nueva oportunidad"
+                className="flex h-[30px] w-[30px] items-center justify-center rounded-full bg-gold-500 shadow-[0_2px_8px_rgba(201,162,94,0.32)] active:scale-95"
+              >
+                <Plus size={16} strokeWidth={2.2} className="text-ink" />
+              </Link>
+            ) : undefined
           }
         >
           {cliente.oportunidades.length === 0 ? (
@@ -199,9 +208,12 @@ export function PantallaFichaCliente({ clienteId }: { clienteId: Id<"clientes"> 
                   <button
                     key={o._id}
                     type="button"
-                    onClick={() => setOportunidadSel(o)}
+                    // Observador: la tarjeta no abre la hoja de cambio de etapa
+                    // (solo lectura); toda la info ya está visible aquí (JUA-42).
+                    onClick={puedeEditar ? () => setOportunidadSel(o) : undefined}
                     className={cn(
-                      "block w-full rounded-2xl border border-l-[3px] border-neutral-100 bg-surface p-3.5 text-left shadow-sm transition active:scale-[0.99]",
+                      "block w-full rounded-2xl border border-l-[3px] border-neutral-100 bg-surface p-3.5 text-left shadow-sm transition",
+                      puedeEditar && "active:scale-[0.99]",
                       activa ? "border-l-gold-500" : "border-l-neutral-100",
                     )}
                   >

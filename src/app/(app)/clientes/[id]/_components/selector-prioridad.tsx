@@ -5,9 +5,10 @@ import { useMutation } from "convex/react";
 import { Check, ChevronDown, AlertCircle } from "lucide-react";
 import { api } from "../../../../../../convex/_generated/api";
 import type { Id } from "../../../../../../convex/_generated/dataModel";
-import { useSesion } from "@/components/session/use-sesion";
+import { useSesion, usePuedeEditar } from "@/components/session/use-sesion";
 import { HojaInferior } from "@/components/ui/hoja-inferior";
 import { PRIORIDAD_ESTILO } from "@/components/ui/indicador-prioridad";
+import { BadgePrioridad } from "@/components/ui/indicador-prioridad";
 import { LABELS, type Prioridad } from "@/lib/enums";
 import { cn } from "@/lib/utils";
 
@@ -25,10 +26,20 @@ export function SelectorPrioridadCliente({
   prioridad: Prioridad | null;
 }) {
   const { token } = useSesion();
+  const puedeEditar = usePuedeEditar();
   const cambiar = useMutation(api.clientes.cambiarPrioridad);
   const [abierta, setAbierta] = useState(false);
   const [ocupado, setOcupado] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Observador (JUA-42): muestra la prioridad en solo lectura, sin el selector.
+  if (!puedeEditar) {
+    return prioridad ? (
+      <BadgePrioridad prioridad={prioridad} />
+    ) : (
+      <span className="text-[12px] font-semibold text-muted">Sin prioridad</span>
+    );
+  }
 
   const elegir = async (nueva: Prioridad | null) => {
     if (ocupado) return;

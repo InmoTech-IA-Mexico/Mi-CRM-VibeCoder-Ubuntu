@@ -1,6 +1,6 @@
 import { mutation } from "./_generated/server";
 import { v } from "convex/values";
-import { resolverSesion } from "./auth";
+import { resolverSesion, resolverSesionEscritura } from "./auth";
 
 // Notas / interacciones de un cliente (JUA-17). El historial se lee desde
 // `clientes.detalle`. La fecha/hora se guarda automáticamente.
@@ -36,7 +36,7 @@ export const crear = mutation({
     resultado: v.optional(v.string()),
   },
   handler: async (ctx, { token, clienteId, tipo, descripcion, resultado }) => {
-    const sesion = await resolverSesion(ctx, token);
+    const sesion = await resolverSesionEscritura(ctx, token);
     if (!sesion) throw new Error("No autorizado");
 
     const cliente = await ctx.db.get(clienteId);

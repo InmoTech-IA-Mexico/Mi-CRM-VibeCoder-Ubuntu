@@ -30,8 +30,9 @@ function Contenido({ clienteId, children }: { clienteId: string | null; children
 
 export function TarjetaRecordatorio({ item }: { item: ItemAgenda }) {
   const { token, usuario, rol } = useSesion();
-  // Solo el responsable asignado o un admin pueden gestionarlo (JUA-24).
-  const puedeGestionar = item.responsableId === usuario._id || rol === "admin";
+  // Solo el responsable asignado o un admin pueden gestionarlo (JUA-24); nunca el
+  // observador, aunque sea el responsable (solo lectura, JUA-42).
+  const puedeGestionar = rol !== "observador" && (item.responsableId === usuario._id || rol === "admin");
   const marcarRealizado = useMutation(api.inicio.marcarSeguimientoRealizado);
   const [marcando, setMarcando] = useState(false);
 

@@ -10,5 +10,5 @@ export const LABELS = {
   canal: { whatsapp: "WhatsApp", email: "Email", web: "Web", telefono: "Teléfono", referido: "Referido", redes: "Redes" },
   tipoInteraccion: { llamada: "Llamada", reunion: "Reunión", correo: "Correo", mensaje: "Mensaje", visita: "Visita", interno: "Interno" },
   frecuencia: { una_vez: "Una vez", semanal: "Semanal", mensual: "Mensual" },
-  rol: { admin: "Administrador", operativo: "Operativo" },
+  rol: { admin: "Administrador", operativo: "Operativo", observador: "Observador" },
 } as const;

@@ -1,6 +1,6 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
-import { resolverSesion } from "./auth";
+import { resolverSesion, resolverSesionEscritura } from "./auth";
 import { canal } from "./schema";
 
 // Ventas / ingresos registrados (Mejora #2, JUA-110). Se leen desde
@@ -22,7 +22,7 @@ export const crear = mutation({
     canal: v.optional(canal),
   },
   handler: async (ctx, args) => {
-    const sesion = await resolverSesion(ctx, args.token);
+    const sesion = await resolverSesionEscritura(ctx, args.token);
     if (!sesion) throw new Error("No autorizado");
 
     const cliente = await ctx.db.get(args.clienteId);

@@ -2,7 +2,7 @@ import { mutation, query } from "./_generated/server";
 import type { MutationCtx } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
 import { v } from "convex/values";
-import { resolverSesion } from "./auth";
+import { resolverSesion, resolverSesionEscritura } from "./auth";
 import { partesLocales, epochDeLocal } from "./fechas";
 
 // Oportunidades de venta de un cliente (JUA-20 crear · JUA-21 pipeline). Se leen
@@ -65,7 +65,7 @@ export const crear = mutation({
     comentarios: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const sesion = await resolverSesion(ctx, args.token);
+    const sesion = await resolverSesionEscritura(ctx, args.token);
     if (!sesion) throw new Error("No autorizado");
 
     const cliente = await ctx.db.get(args.clienteId);
@@ -163,7 +163,7 @@ export const cambiarEtapa = mutation({
     motivo: v.optional(v.string()),
   },
   handler: async (ctx, { token, oportunidadId, etapa, motivo }) => {
-    const sesion = await resolverSesion(ctx, token);
+    const sesion = await resolverSesionEscritura(ctx, token);
     if (!sesion) throw new Error("No autorizado");
     const opo = await oportunidadEditable(ctx, oportunidadId, sesion.negocioId);
     const eraGanada = opo.etapa === "ganada";

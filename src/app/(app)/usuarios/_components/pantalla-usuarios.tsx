@@ -26,6 +26,12 @@ const LABEL_ESTADO: Record<string, string> = {
   pendiente: "Pendiente",
   expirada: "Expirada",
 };
+// Descripción breve de cada rol para el selector de invitación (JUA-42).
+const DESC_ROL: Record<Rol, string> = {
+  admin: "Acceso completo: gestiona usuarios, papelera y datos.",
+  operativo: "Crea y edita clientes, notas, oportunidades y recordatorios.",
+  observador: "Solo lectura: consulta todo, no modifica nada.",
+};
 
 export function PantallaUsuarios() {
   const router = useRouter();
@@ -426,20 +432,27 @@ function HojaInvitar({
 
         <div>
           <p className="mb-2 text-[13px] font-medium text-ink">Rol</p>
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2">
             {ROLES.map((r) => {
               const activo = rolSel === r;
               return (
                 <button
                   key={r}
                   type="button"
+                  aria-pressed={activo}
                   onClick={() => setRolSel(r)}
                   className={cn(
-                    "flex-1 rounded-xl border py-2.5 text-[14px] font-medium transition active:scale-[0.98]",
-                    activo ? "border-gold-500 bg-gold-tint text-gold-700" : "border-border-input bg-surface text-body",
+                    "flex items-center gap-3 rounded-xl border px-3.5 py-2.5 text-left transition active:scale-[0.99]",
+                    activo ? "border-[1.5px] border-gold-500 bg-gold-tint" : "border-border-input bg-surface",
                   )}
                 >
-                  {LABELS.rol[r]}
+                  <div className="min-w-0 flex-1">
+                    <p className={cn("text-[14.5px] font-semibold", activo ? "text-gold-700" : "text-ink")}>
+                      {LABELS.rol[r]}
+                    </p>
+                    <p className="text-[12px] leading-snug text-muted">{DESC_ROL[r]}</p>
+                  </div>
+                  {activo && <Check size={17} strokeWidth={2.4} className="flex-shrink-0 text-gold-700" />}
                 </button>
               );
             })}

@@ -1,6 +1,6 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
-import { resolverSesion } from "./auth";
+import { resolverSesion, resolverSesionEscritura } from "./auth";
 import { partesLocales, epochDeLocal, diasEnMes } from "./fechas";
 // Regla de inactividad compartida (JUA-25/35/26): un cliente "requiere atención" a
 // partir de 15 días sin interacción real, salvo que ya tenga un recordatorio
@@ -229,7 +229,7 @@ export const panelInactividad = query({
 export const marcarSeguimientoRealizado = mutation({
   args: { token: v.string(), seguimientoId: v.id("seguimientos") },
   handler: async (ctx, { token, seguimientoId }) => {
-    const sesion = await resolverSesion(ctx, token);
+    const sesion = await resolverSesionEscritura(ctx, token);
     if (!sesion) throw new Error("No autorizado");
 
     const seguimiento = await ctx.db.get(seguimientoId);

@@ -5,7 +5,7 @@ import { useMutation } from "convex/react";
 import { MoreVertical, Check, CalendarClock, XCircle, Trash2, AlertCircle } from "lucide-react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
-import { useSesion } from "@/components/session/use-sesion";
+import { useSesion, usePuedeEditar } from "@/components/session/use-sesion";
 import { HojaInferior } from "@/components/ui/hoja-inferior";
 import { epochDesdeFechaHora } from "@/lib/fechas";
 import { cn } from "@/lib/utils";
@@ -33,6 +33,7 @@ export function AccionesRecordatorio({
   puedeGestionar: boolean;
 }) {
   const { token, negocio } = useSesion();
+  const puedeEditar = usePuedeEditar(); // defensa en profundidad: observador nunca gestiona (JUA-42)
   const marcarRealizado = useMutation(api.inicio.marcarSeguimientoRealizado);
   const reprogramar = useMutation(api.seguimientos.reprogramar);
   const cancelar = useMutation(api.seguimientos.cancelar);
@@ -47,7 +48,7 @@ export function AccionesRecordatorio({
   );
   const [horaRepro, setHoraRepro] = useState(hora ?? "");
 
-  if (!puedeGestionar) return null;
+  if (!puedeGestionar || !puedeEditar) return null;
 
   const abrirHoja = (h: Hoja) => {
     setError(null);

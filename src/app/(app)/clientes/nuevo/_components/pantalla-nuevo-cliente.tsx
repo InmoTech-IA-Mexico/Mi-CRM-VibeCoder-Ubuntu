@@ -6,12 +6,13 @@ import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "convex/react";
 import { X, User, Phone, Mail, AlertCircle, ChevronRight } from "lucide-react";
 import { api } from "../../../../../../convex/_generated/api";
-import { useSesion } from "@/components/session/use-sesion";
+import { useSesion, useGuardEscritura } from "@/components/session/use-sesion";
 import { cn } from "@/lib/utils";
 
 export function PantallaNuevoCliente() {
   const router = useRouter();
   const { token } = useSesion();
+  const puedeEditar = useGuardEscritura();
   const [nombre, setNombre] = useState("");
   const [telefono, setTelefono] = useState("");
   const [email, setEmail] = useState("");
@@ -50,6 +51,8 @@ export function PantallaNuevoCliente() {
 
   const mostrarErrorNombre = intentado && !nombreOk;
   const mostrarErrorContacto = intentado && nombreOk && !contactoOk;
+
+  if (!puedeEditar) return null; // observador: el guard ya redirige a Inicio (JUA-42)
 
   return (
     <div className="flex min-h-full flex-col">

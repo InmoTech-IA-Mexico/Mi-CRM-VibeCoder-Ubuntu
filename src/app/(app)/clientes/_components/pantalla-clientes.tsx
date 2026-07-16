@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useQuery } from "convex/react";
 import { Plus, Search, Tag, Users, X } from "lucide-react";
 import { api } from "../../../../../convex/_generated/api";
-import { useSesion } from "@/components/session/use-sesion";
+import { useSesion, usePuedeEditar } from "@/components/session/use-sesion";
 import { MenuPerfil } from "@/components/layout/menu-perfil";
 import { EsqueletoLista } from "@/components/ui/esqueleto-lista";
 import { PRIORIDAD_ESTILO } from "@/components/ui/indicador-prioridad";
@@ -196,6 +196,7 @@ export function PantallaClientes({ estadoInicial }: { estadoInicial?: string }) 
 }
 
 function SinResultados({ busqueda }: { busqueda: string }) {
+  const puedeEditar = usePuedeEditar();
   return (
     <div className="flex flex-col items-center px-8 pt-16 text-center">
       <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-[24px] border border-neutral-100 bg-neutral-50">
@@ -205,33 +206,44 @@ function SinResultados({ busqueda }: { busqueda: string }) {
         {busqueda ? <>No encontramos &ldquo;{busqueda}&rdquo;</> : "No se encontraron clientes"}
       </p>
       <p className="mt-1.5 text-[13px] text-muted">Prueba con otro nombre o empresa</p>
-      <Link
-        href="/clientes/nuevo"
-        className="mt-5 inline-flex items-center gap-2 rounded-[24px] border border-border-input bg-surface px-[18px] py-2.5 text-[14px] font-semibold text-ink shadow-sm active:scale-[0.99]"
-      >
-        <Plus size={16} strokeWidth={1.9} />
-        Crear nuevo cliente
-      </Link>
+      {puedeEditar && (
+        <Link
+          href="/clientes/nuevo"
+          className="mt-5 inline-flex items-center gap-2 rounded-[24px] border border-border-input bg-surface px-[18px] py-2.5 text-[14px] font-semibold text-ink shadow-sm active:scale-[0.99]"
+        >
+          <Plus size={16} strokeWidth={1.9} />
+          Crear nuevo cliente
+        </Link>
+      )}
     </div>
   );
 }
 
 /** Estado de lista totalmente vacía (aún no hay ningún cliente) — JUA-31. */
 function ListaVacia() {
+  const puedeEditar = usePuedeEditar();
   return (
     <div className="flex flex-col items-center px-8 pt-16 text-center">
       <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-[24px] border border-neutral-100 bg-neutral-50">
         <Users size={36} strokeWidth={1.5} className="text-neutral-400" />
       </div>
-      <p className="text-[16px] font-semibold text-ink">Aún no tienes clientes</p>
-      <p className="mt-1.5 text-[13px] text-muted">Añade el primero para empezar a darles seguimiento.</p>
-      <Link
-        href="/clientes/nuevo"
-        className="mt-5 inline-flex items-center gap-2 rounded-[24px] bg-gold-500 px-5 py-2.5 text-[14px] font-bold text-ink shadow-[0_2px_8px_rgba(201,162,94,0.32)] active:scale-[0.99]"
-      >
-        <Plus size={16} strokeWidth={2} />
-        Añadir el primer cliente
-      </Link>
+      <p className="text-[16px] font-semibold text-ink">
+        {puedeEditar ? "Aún no tienes clientes" : "Todavía no hay clientes"}
+      </p>
+      {puedeEditar ? (
+        <>
+          <p className="mt-1.5 text-[13px] text-muted">Añade el primero para empezar a darles seguimiento.</p>
+          <Link
+            href="/clientes/nuevo"
+            className="mt-5 inline-flex items-center gap-2 rounded-[24px] bg-gold-500 px-5 py-2.5 text-[14px] font-bold text-ink shadow-[0_2px_8px_rgba(201,162,94,0.32)] active:scale-[0.99]"
+          >
+            <Plus size={16} strokeWidth={2} />
+            Añadir el primer cliente
+          </Link>
+        </>
+      ) : (
+        <p className="mt-1.5 text-[13px] text-muted">Cuando el equipo dé de alta clientes, aparecerán aquí.</p>
+      )}
     </div>
   );
 }
