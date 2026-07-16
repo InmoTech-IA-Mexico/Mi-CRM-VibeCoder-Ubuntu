@@ -10,8 +10,8 @@ const DIAS_PAPELERA = 30; // días en papelera antes del borrado definitivo (JUA
 // Cartera por vendedor (JUA-43): el rol **operativo** solo ve/gestiona los
 // clientes de los que es responsable. El admin ve todos (con toggle "solo míos")
 // y el observador (lectura global del negocio, JUA-42) también ve todos.
-type SesionResuelta = { usuario: Doc<"usuarios">; negocioId: Id<"negocios"> };
-function esDeCartera(cliente: Doc<"clientes">, sesion: SesionResuelta): boolean {
+export type SesionResuelta = { usuario: Doc<"usuarios">; negocioId: Id<"negocios"> };
+export function esDeCartera(cliente: Doc<"clientes">, sesion: SesionResuelta): boolean {
   return sesion.usuario.rol !== "operativo" || cliente.responsableId === sesion.usuario._id;
 }
 /** Lanza "No encontrado" si un operativo intenta tocar un cliente que no es suyo. */
@@ -293,6 +293,11 @@ export const cambiarEtiquetas = mutation({
  * asignar" (solo visible para el admin). El nuevo responsable debe ser del
  * negocio, activo y NO observador (el observador es solo lectura, no tiene
  * cartera). No cuenta como interacción.
+ *
+ * Al reasignar a un NUEVO responsable, los seguimientos de cliente pendientes
+ * que eran del responsable anterior migran con la cartera, para que el nuevo
+ * dueño herede los recordatorios y no queden "huérfanos" (JUA-43). No se tocan
+ * los que un admin hubiera delegado a un tercero (responsable ≠ dueño anterior).
  */
 export const asignarResponsable = mutation({
   args: {
@@ -316,10 +321,25 @@ export const asignarResponsable = mutation({
       }
     }
 
+    const anterior = c.responsableId;
     await ctx.db.patch(clienteId, {
       responsableId: responsableId ?? undefined,
       actualizadoEn: Date.now(),
     });
+
+    // Migrar los seguimientos de cliente PENDIENTES del dueño anterior al nuevo,
+    // para que la cartera y sus recordatorios viajen juntos (JUA-43).
+    if (responsableId && anterior && responsableId !== anterior) {
+      const seguimientos = await ctx.db
+        .query("seguimientos")
+        .withIndex("por_cliente", (q) => q.eq("clienteId", clienteId))
+        .collect();
+      for (const s of seguimientos) {
+        if (s.destino === "cliente" && s.estado === "pendiente" && s.responsableId === anterior) {
+          await ctx.db.patch(s._id, { responsableId });
+        }
+      }
+    }
   },
 });
 
@@ -372,6 +392,9 @@ export const buscarDuplicado = query({
     const match = clientes.find(
       (c) =>
         c.eliminadoEn == null &&
+        // Cartera (JUA-43): un operativo solo detecta duplicados de SU cartera; no
+        // se le revelan datos de clientes de otro vendedor.
+        esDeCartera(c, sesion) &&
         ((tel && c.telefono && soloDigitos(c.telefono) === tel) ||
           (mail && c.email && normalizarEmail(c.email) === mail)),
     );
@@ -634,7 +657,10 @@ export const sincronizarInactividad = mutation({
       .query("seguimientos")
       .withIndex("por_negocio", (q) => q.eq("negocioId", sesion.negocioId))
       .collect();
-    const cambiados = await transicionarClientes(ctx, clientes, seguimientos, ahora);
+    // Cartera (JUA-43): un operativo solo transiciona SUS clientes; jamás toca los
+    // de otro vendedor. La transición global del negocio la garantiza el cron.
+    const deMiCartera = clientes.filter((c) => esDeCartera(c, sesion));
+    const cambiados = await transicionarClientes(ctx, deMiCartera, seguimientos, ahora);
     return { cambiados };
   },
 });

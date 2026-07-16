@@ -1,6 +1,7 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { resolverSesion, resolverSesionEscritura } from "./auth";
+import { verificarCartera, esDeCartera } from "./clientes";
 import { partesLocales, epochDeLocal, diasEnMes } from "./fechas";
 // Regla de inactividad compartida (JUA-25/35/26): un cliente "requiere atención" a
 // partir de 15 días sin interacción real, salvo que ya tenga un recordatorio
@@ -244,6 +245,13 @@ export const marcarSeguimientoRealizado = mutation({
     if (seguimiento.responsableId !== sesion.usuario._id && sesion.usuario.rol !== "admin") {
       throw new Error("No autorizado");
     }
+    // Cartera (JUA-43): un seguimiento de CLIENTE solo lo gestiona quien tiene ese
+    // cliente en su cartera (aunque siga siendo el responsable tras reasignar).
+    if (seguimiento.destino === "cliente" && seguimiento.clienteId) {
+      const cliente = await ctx.db.get(seguimiento.clienteId);
+      if (!cliente) throw new Error("No encontrado");
+      verificarCartera(sesion, cliente);
+    }
 
     // Recurrente (JUA-115): en vez de cerrarlo, avanza a la próxima ocurrencia
     // (sigue pendiente). Si la próxima supera la fecha de fin, la serie termina.
@@ -284,9 +292,11 @@ export const estadoGlobal = query({
     const negocioId = sesion.negocioId;
     const ahora = Date.now();
 
+    // Cartera (JUA-43): el operativo ve el estado de SU cartera; admin y observador
+    // el del negocio completo. Todos los agregados derivan de esta colección.
     const clientes = (
       await ctx.db.query("clientes").withIndex("por_negocio", (q) => q.eq("negocioId", negocioId)).collect()
-    ).filter((c) => c.eliminadoEn == null);
+    ).filter((c) => c.eliminadoEn == null && esDeCartera(c, sesion));
     const total = clientes.length;
     // Solo clientes activos (no en papelera): las oportunidades y seguimientos de
     // un cliente enviado a papelera NO deben sumar al estado global (consistencia).

@@ -33,18 +33,20 @@ const ETAPA_INICIAL = v.union(
 const REQUIEREN_MOTIVO = ["perdida", "cancelada"];
 
 // Valida que la oportunidad pertenezca al negocio de la sesión Y que su cliente
-// padre exista y no esté en papelera (JUA-10/JUA-16). Devuelve la oportunidad.
+// padre exista, no esté en papelera (JUA-10/JUA-16) y esté en la cartera del
+// operativo (JUA-43). Devuelve la oportunidad.
 async function oportunidadEditable(
   ctx: MutationCtx,
   oportunidadId: Id<"oportunidades">,
-  negocioId: Id<"negocios">,
+  sesion: { usuario: Doc<"usuarios">; negocioId: Id<"negocios"> },
 ) {
   const opo = await ctx.db.get(oportunidadId);
-  if (!opo || opo.negocioId !== negocioId) throw new Error("No encontrado");
+  if (!opo || opo.negocioId !== sesion.negocioId) throw new Error("No encontrado");
   const cliente = await ctx.db.get(opo.clienteId);
-  if (!cliente || cliente.negocioId !== negocioId || cliente.eliminadoEn != null) {
+  if (!cliente || cliente.negocioId !== sesion.negocioId || cliente.eliminadoEn != null) {
     throw new Error("No encontrado");
   }
+  verificarCartera(sesion, cliente); // operativo: solo su cartera (JUA-43)
   return opo;
 }
 
@@ -167,7 +169,7 @@ export const cambiarEtapa = mutation({
   handler: async (ctx, { token, oportunidadId, etapa, motivo }) => {
     const sesion = await resolverSesionEscritura(ctx, token);
     if (!sesion) throw new Error("No autorizado");
-    const opo = await oportunidadEditable(ctx, oportunidadId, sesion.negocioId);
+    const opo = await oportunidadEditable(ctx, oportunidadId, sesion);
     const eraGanada = opo.etapa === "ganada";
 
     const base = {
@@ -211,7 +213,7 @@ export const eliminar = mutation({
   handler: async (ctx, { token, oportunidadId }) => {
     const sesion = await resolverSesion(ctx, token);
     if (!sesion || sesion.usuario.rol !== "admin") throw new Error("No autorizado");
-    const opo = await oportunidadEditable(ctx, oportunidadId, sesion.negocioId);
+    const opo = await oportunidadEditable(ctx, oportunidadId, sesion);
 
     await cancelarPostVenta(ctx, opo);
     await ctx.db.delete(oportunidadId);

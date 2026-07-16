@@ -250,6 +250,13 @@ async function seguimientoGestionable(
   if (seguimiento.responsableId !== sesion.usuario._id && sesion.usuario.rol !== "admin") {
     throw new Error("No autorizado");
   }
+  // Cartera (JUA-43): un seguimiento de CLIENTE solo lo gestiona quien tiene ese
+  // cliente en su cartera, aunque siga siendo el responsable tras una reasignación.
+  if (seguimiento.destino === "cliente" && seguimiento.clienteId) {
+    const cliente = await ctx.db.get(seguimiento.clienteId);
+    if (!cliente) throw new Error("No encontrado");
+    verificarCartera(sesion, cliente);
+  }
   return { sesion, seguimiento };
 }
 
