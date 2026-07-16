@@ -1,0 +1,11 @@
+Reporte driver-26 fuente de contacto — negativas de servidor (JUA-38, obs. OBS-2)
+fecha: 2026-07-16T21:13:18.517Z
+resultado: OK (6 PASS / 0 FAIL)
+observador y clientes QA creados y limpiados; sin tokens ni contraseñas.
+
+PASS — 1: detalle sin tipo → no se guarda (tipo y detalle quedan null)
+PASS — 2: detalle > 120 → recortado a 120 (len=120)
+PASS — 3: tipo de fuente inválido → rechazado (ArgumentValidationError)
+PASS — 3: tras el rechazo, la fuente válida previa se mantiene
+PASS — 4: observador no puede fijar la fuente → No autorizado
+PASS — 5: operativo fija la fuente de un cliente ajeno → No encontrado (cartera)

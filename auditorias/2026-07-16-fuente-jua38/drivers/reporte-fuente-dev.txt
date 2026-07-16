@@ -1,0 +1,17 @@
+Reporte driver-25 fuente de contacto (JUA-38)
+fecha: 2026-07-16T21:12:24.283Z
+baseUrl: http://localhost:3000
+resultado: OK (11 PASS / 0 FAIL)
+errores navegador: 0
+
+PASS — 1: el formulario de edición tiene la sección 'Fuente de contacto'
+PASS — 1: al elegir tipo aparece el campo de detalle
+PASS — 2: la ficha muestra la fila 'Fuente de contacto'
+PASS — 2: la ficha muestra el tipo 'Campaña'
+PASS — 2: la ficha muestra el detalle 'Black Friday 2026'
+PASS — 3: la lista muestra el chip de fuente 'Campaña'
+PASS — 3: al filtrar por 'Campaña' aparece el cliente (n=1)
+PASS — 4: el alta rápida NO incluye 'Fuente de contacto' (opcional, no rompe el flujo mínimo)
+PASS — 5: al deseleccionar el tipo desaparece el detalle
+PASS — 5: tras limpiar, la fuente vuelve a 'Sin definir'
+PASS — sin errores de navegador
