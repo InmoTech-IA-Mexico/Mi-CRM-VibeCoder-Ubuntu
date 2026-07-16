@@ -14,15 +14,17 @@ import { hashPassword } from "./auth";
 const MS_DIA = 24 * 60 * 60 * 1000;
 
 // Contraseña inicial de los usuarios demo (remediación B-1, dictamen DOC-3 v1):
-// el repo es PÚBLICO, así que NUNCA va hardcodeada. Se lee de la variable de
-// entorno SEED_DEMO_PASSWORD del deployment y SOLO se usa al CREAR el usuario
-// (re-ejecutar el seed jamás pisa la contraseña de un usuario existente; las
-// rotaciones hechas en producción sobreviven a una re-siembra).
-function passwordInicialDemo(): string {
-  const pass = process.env.SEED_DEMO_PASSWORD;
+// el repo es PÚBLICO, así que NUNCA va hardcodeada. Se lee de las variables de
+// entorno del deployment — SEPARADAS POR ROL (OBS-2 / JUA-125), con respaldo en
+// la genérica — y SOLO se usa al CREAR el usuario (re-ejecutar el seed jamás
+// pisa la contraseña de un usuario existente; las rotaciones sobreviven).
+function passwordInicialDemo(rol: "admin" | "operativo"): string {
+  const especifica =
+    rol === "admin" ? process.env.SEED_DEMO_PASSWORD_ADMIN : process.env.SEED_DEMO_PASSWORD_OPERATIVO;
+  const pass = especifica || process.env.SEED_DEMO_PASSWORD;
   if (!pass) {
     throw new Error(
-      "Define SEED_DEMO_PASSWORD en las variables de entorno del deployment para sembrar usuarios demo",
+      `Define SEED_DEMO_PASSWORD_${rol === "admin" ? "ADMIN" : "OPERATIVO"} (o SEED_DEMO_PASSWORD) en las variables de entorno del deployment para sembrar usuarios demo`,
     );
   }
   return pass;
@@ -139,7 +141,7 @@ export const poblarDemo = internalMutation({
         email: "marta@demo.mx",
         rol: "admin",
         estado: "activo",
-        passwordHash: hashPassword(passwordInicialDemo()),
+        passwordHash: hashPassword(passwordInicialDemo("admin")),
       }));
     await ctx.db.patch(martaId, {
       nombre: "Marta Ruiz",
@@ -157,7 +159,7 @@ export const poblarDemo = internalMutation({
         email: "carlos@demo.mx",
         rol: "operativo",
         estado: "activo",
-        passwordHash: hashPassword(passwordInicialDemo()),
+        passwordHash: hashPassword(passwordInicialDemo("operativo")),
       }));
     await ctx.db.patch(carlosId, {
       nombre: "Carlos Díaz",

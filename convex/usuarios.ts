@@ -1,5 +1,6 @@
 import { mutation, query } from "./_generated/server";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
+import type { Id } from "./_generated/dataModel";
 import { v } from "convex/values";
 import { ConvexError } from "convex/values";
 import { randomBytes, bytesToHex } from "@noble/hashes/utils.js";
@@ -236,10 +237,20 @@ export const reenviar = mutation({
   },
 });
 
+/** Elimina todas las sesiones de un usuario (hardening JUA-125). */
+async function eliminarSesiones(ctx: MutationCtx, usuarioId: Id<"usuarios">) {
+  const sesiones = await ctx.db
+    .query("sesiones")
+    .withIndex("por_usuario", (q) => q.eq("usuarioId", usuarioId))
+    .collect();
+  for (const s of sesiones) await ctx.db.delete(s._id);
+}
+
 /**
  * Revoca (desactiva) el acceso de un usuario. No puede iniciar sesión, pero sus
  * notas, registros e historial se conservan. No permite desactivarse a uno mismo
- * ni dejar el negocio sin ningún admin activo. Solo admin.
+ * ni dejar el negocio sin ningún admin activo. Solo admin. Elimina todas sus
+ * sesiones (JUA-125): la revocación surte efecto inmediato, sin sesiones vivas.
  */
 export const desactivar = mutation({
   args: { token: v.string(), usuarioId: v.id("usuarios") },
@@ -261,10 +272,20 @@ export const desactivar = mutation({
     }
 
     await ctx.db.patch(usuarioId, { estado: "inactivo" });
+    await eliminarSesiones(ctx, usuarioId);
   },
 });
 
-/** Reactiva a un usuario desactivado. Solo admin; usuario del propio negocio. */
+// Vigencia del enlace de contraseña emitido al reactivar (igual que JUA-7).
+const REACTIVACION_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Reactiva a un usuario desactivado. Solo admin; usuario del propio negocio.
+ * Hardening JUA-125: reactivar NO revalida la credencial anterior — anula la
+ * contraseña, elimina las sesiones que quedaran y emite un enlace de "nueva
+ * contraseña" (recuperación JUA-7, 24 h, un solo uso) que el admin comparte
+ * manualmente (como el "Copiar enlace" de las invitaciones). Devuelve el token.
+ */
 export const reactivar = mutation({
   args: { token: v.string(), usuarioId: v.id("usuarios") },
   handler: async (ctx, { token, usuarioId }) => {
@@ -274,6 +295,27 @@ export const reactivar = mutation({
     const usuario = await ctx.db.get(usuarioId);
     if (!usuario || usuario.negocioId !== sesion.negocioId) throw new Error("No encontrado");
 
-    await ctx.db.patch(usuarioId, { estado: "activo" });
+    await ctx.db.patch(usuarioId, {
+      estado: "activo",
+      passwordHash: undefined,
+      intentosFallidos: 0,
+      bloqueadoHasta: undefined,
+    });
+    await eliminarSesiones(ctx, usuarioId);
+
+    // Un solo enlace vigente: se invalidan los de recuperación previos.
+    const previos = await ctx.db
+      .query("recuperaciones")
+      .withIndex("por_usuario", (q) => q.eq("usuarioId", usuarioId))
+      .collect();
+    for (const p of previos) await ctx.db.delete(p._id);
+
+    const tokenRecuperacion = bytesToHex(randomBytes(32));
+    await ctx.db.insert("recuperaciones", {
+      usuarioId,
+      token: tokenRecuperacion,
+      expiraEn: Date.now() + REACTIVACION_MS,
+    });
+    return { token: tokenRecuperacion };
   },
 });

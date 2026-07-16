@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "convex/react";
-import { ChevronLeft, UserPlus, Mail, AlertCircle, Clock, Link2, Check } from "lucide-react";
+import { ChevronLeft, UserPlus, Mail, AlertCircle, Clock, Link2, Check, KeyRound } from "lucide-react";
 import { api } from "../../../../../convex/_generated/api";
 import { useSesion } from "@/components/session/use-sesion";
 import { HojaInferior } from "@/components/ui/hoja-inferior";
@@ -35,6 +35,10 @@ export function PantallaUsuarios() {
   const [invitarAbierto, setInvitarAbierto] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
   const [copiadoId, setCopiadoId] = useState<string | null>(null);
+  // Enlace de nueva contraseña emitido al reactivar (hardening JUA-125): la
+  // credencial anterior queda anulada y el admin comparte este enlace a mano.
+  const [reactivado, setReactivado] = useState<{ nombre: string; url: string } | null>(null);
+  const [enlaceCopiado, setEnlaceCopiado] = useState(false);
 
   const data = useQuery(api.usuarios.listar, esAdmin ? { token } : "skip");
   const reenviar = useMutation(api.usuarios.reenviar);
@@ -134,7 +138,18 @@ export function PantallaUsuarios() {
                   </BotonAccion>
                 )}
                 {!u.esYo && u.estado === "inactivo" && (
-                  <BotonAccion onClick={() => accion(() => reactivar({ token, usuarioId: u._id }), "No se pudo reactivar el usuario.")}>
+                  <BotonAccion
+                    onClick={() =>
+                      accion(async () => {
+                        const res = await reactivar({ token, usuarioId: u._id });
+                        setEnlaceCopiado(false);
+                        setReactivado({
+                          nombre: u.nombre,
+                          url: `${window.location.origin}/nueva-password?token=${res.token}`,
+                        });
+                      }, "No se pudo reactivar el usuario.")
+                    }
+                  >
                     Reactivar
                   </BotonAccion>
                 )}
@@ -204,6 +219,63 @@ export function PantallaUsuarios() {
         token={token}
         onCerrar={() => setInvitarAbierto(false)}
       />
+
+      {/* Enlace de nueva contraseña tras reactivar (hardening JUA-125): la
+          contraseña anterior y las sesiones quedaron anuladas en servidor. */}
+      <HojaInferior
+        abierta={reactivado !== null}
+        onCerrar={() => setReactivado(null)}
+        titulo={
+          <div>
+            <p className="font-serif text-lg font-semibold text-ink">Usuario reactivado</p>
+            <p className="mt-1 text-[13px] leading-snug text-body">
+              Por seguridad, la contraseña anterior de{" "}
+              <span className="font-semibold">{reactivado?.nombre}</span> quedó anulada y sus
+              sesiones cerradas.
+            </p>
+          </div>
+        }
+      >
+        <div className="flex flex-col gap-3 pt-1">
+          <div className="flex items-start gap-2.5 rounded-2xl border border-neutral-100 bg-neutral-50/60 p-3.5">
+            <KeyRound size={18} strokeWidth={1.8} className="mt-0.5 flex-shrink-0 text-gold-700" />
+            <p className="text-[13px] leading-snug text-body">
+              Comparte este enlace para que cree su nueva contraseña. Es válido{" "}
+              <span className="font-semibold text-ink">24 horas</span> y de un solo uso; si se
+              pierde, vuelve a pulsar Reactivar para generar otro.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={async () => {
+              if (!reactivado) return;
+              try {
+                await navigator.clipboard.writeText(reactivado.url);
+                setEnlaceCopiado(true);
+              } catch {
+                setAviso("No se pudo copiar. Enlace: " + reactivado.url);
+                setReactivado(null);
+              }
+            }}
+            className={cn(
+              "flex h-12 w-full items-center justify-center gap-2 rounded-xl text-[15px] font-bold transition active:scale-[0.99]",
+              enlaceCopiado
+                ? "border border-teal-800/30 bg-[#E4F0EC] text-teal-800"
+                : "bg-gold-500 text-ink shadow-[0_2px_8px_rgba(201,162,94,0.32)]",
+            )}
+          >
+            {enlaceCopiado ? <Check size={17} strokeWidth={2.4} /> : <Link2 size={17} strokeWidth={2} />}
+            {enlaceCopiado ? "Enlace copiado" : "Copiar enlace de nueva contraseña"}
+          </button>
+          <button
+            type="button"
+            onClick={() => setReactivado(null)}
+            className="flex h-11 w-full items-center justify-center rounded-xl border border-border-input bg-surface text-[14px] font-semibold text-ink active:scale-[0.99]"
+          >
+            Entendido
+          </button>
+        </div>
+      </HojaInferior>
     </div>
   );
 }
