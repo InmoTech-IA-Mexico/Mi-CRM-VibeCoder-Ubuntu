@@ -1,0 +1,15 @@
+Reporte driver-38 JUA-41 remediación B-1 (recuperación del alta inicial) + OBS-1
+fecha: 2026-07-17T17:26:54-0600
+resultado: OK (10 PASS / 0 FAIL)
+helpers QA (dev); negocios de prueba borrados; sin secretos.
+
+PASS — R1: reemitir invalida el token viejo y deja uno nuevo pendiente
+PASS — R2: corrige el email del admin; invitación nueva para el correo nuevo, la anterior invalidada
+PASS — R3: rechaza reemitir si el negocio ya tiene admin activo
+PASS — R4a: reemitir rechaza un email ya tomado por otra cuenta
+PASS — R4b: reemitir con un email libre recupera el alta (correo corregido)
+PASS — R5a: cancelarNegocioVacio borra un negocio sin usuarios/clientes
+PASS — R5b: rechaza cancelar un negocio con usuarios
+PASS — OBS-1a: rechaza zona horaria IANA inválida
+PASS — OBS-1b: rechaza baseUrl no https
+PASS — limpieza: sin negocios de prueba residuales
