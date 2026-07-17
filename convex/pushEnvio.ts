@@ -93,7 +93,8 @@ export const flushNotificaciones = internalAction({
       await ctx.runMutation(internal.notificaciones.registrarResultado, {
         id: r.id,
         intentos: r.intentos,
-        total: res.total,
+        enviadas: res.enviadas,
+        caducadas: res.caducadas,
         fallidas: res.fallidas,
       });
       if (res.fallidas === 0) enviadas++;

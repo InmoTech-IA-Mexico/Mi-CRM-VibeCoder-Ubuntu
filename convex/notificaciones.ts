@@ -82,37 +82,104 @@ export const reclamarLote = internalMutation({
 });
 
 /**
- * Registra el resultado REAL de un intento de envío (obs. B-3): éxito o "sin
- * dispositivos" → `enviada`; con fallos transitorios → reintento con backoff hasta
- * `MAX_INTENTOS`, luego `descartada`. Idempotente frente a leases perdidos: solo
- * actúa si la fila sigue en `enviando` y en el MISMO intento reclamado.
+ * Registra el resultado REAL de un intento de envío (obs. B-3, P-1). Terminal sin
+ * reintento cuando no hay fallos transitorios: `entregada` solo si algún dispositivo
+ * recibió el push (`enviadas > 0`); `suscripcion_caducada` si todos devolvieron
+ * 404/410 (ya borradas, no se reintentan); `sin_dispositivos` si no había ninguno.
+ * Con fallos transitorios (`fallidas > 0`): reintento con backoff hasta `MAX_INTENTOS`,
+ * luego `descartada`. Idempotente frente a leases perdidos: solo actúa si la fila
+ * sigue en `enviando` y en el MISMO intento reclamado.
+ *
+ * Entrega parcial: ante `fallidas > 0` se reintenta el conjunto completo de
+ * suscripciones del usuario, por lo que un dispositivo que ya recibió el push podría
+ * volver a verlo (duplicado aceptado; el `tag` los colapsa en el dispositivo).
  */
 export const registrarResultado = internalMutation({
   args: {
     id: v.id("notificacionesPush"),
     intentos: v.number(),
-    total: v.number(),
+    enviadas: v.number(),
+    caducadas: v.number(),
     fallidas: v.number(),
   },
-  handler: async (ctx, { id, intentos, total, fallidas }) => {
+  handler: async (ctx, { id, intentos, enviadas, caducadas, fallidas }) => {
     const n = await ctx.db.get(id);
     if (!n || n.estado !== "enviando" || (n.intentos ?? 0) !== intentos) return; // lease perdido / ya resuelto
     const ahora = Date.now();
-    if (fallidas === 0) {
-      await ctx.db.patch(id, {
-        estado: "enviada",
-        enviadaEn: ahora,
-        leaseHasta: undefined,
-        resultado: total === 0 ? "sin_dispositivos" : "entregada",
-      });
-    } else if (intentos >= MAX_INTENTOS) {
-      await ctx.db.patch(id, { estado: "descartada", leaseHasta: undefined, resultado: "fallo_persistente" });
-    } else {
-      await ctx.db.patch(id, {
-        estado: "pendiente",
-        leaseHasta: undefined,
-        proximoIntento: ahora + BACKOFF_MS * intentos,
-      });
+    if (fallidas > 0) {
+      if (intentos >= MAX_INTENTOS) {
+        await ctx.db.patch(id, { estado: "descartada", leaseHasta: undefined, resultado: "fallo_persistente" });
+      } else {
+        await ctx.db.patch(id, {
+          estado: "pendiente",
+          leaseHasta: undefined,
+          proximoIntento: ahora + BACKOFF_MS * intentos,
+        });
+      }
+      return;
     }
+    // Sin fallos transitorios → terminal, sin reintento.
+    let resultado: string;
+    if (enviadas > 0) resultado = "entregada";
+    else if (caducadas > 0) resultado = "suscripcion_caducada";
+    else resultado = "sin_dispositivos"; // sin ninguna suscripción
+    await ctx.db.patch(id, { estado: "enviada", enviadaEn: ahora, leaseHasta: undefined, resultado });
+  },
+});
+
+// --- Helpers SOLO para pruebas (dev) ---------------------------------------
+// Permiten ejercer ramas dependientes del tiempo/estado (recuperación de lease,
+// backoff, idempotencia) sin poder controlar el reloj. Son internos (no los llama
+// la app) y además exigen la env `QA_HELPERS=1`, que solo existe en dev → inertes
+// en producción. El auditor los admitió como vía para la cobertura dinámica.
+
+const ESTADO_V = v.union(v.literal("pendiente"), v.literal("enviando"), v.literal("enviada"), v.literal("descartada"));
+
+/** Ajusta campos de control de una notificación (solo pruebas). */
+export const qaAjustarNotif = internalMutation({
+  args: {
+    id: v.id("notificacionesPush"),
+    estado: v.optional(ESTADO_V),
+    intentos: v.optional(v.number()),
+    proximoIntento: v.optional(v.number()),
+    leaseHasta: v.optional(v.union(v.number(), v.null())),
+  },
+  handler: async (ctx, { id, estado, intentos, proximoIntento, leaseHasta }) => {
+    if (process.env.QA_HELPERS !== "1") throw new Error("QA helpers deshabilitados");
+    const patch: Record<string, unknown> = {};
+    if (estado !== undefined) patch.estado = estado;
+    if (intentos !== undefined) patch.intentos = intentos;
+    if (proximoIntento !== undefined) patch.proximoIntento = proximoIntento;
+    if (leaseHasta !== undefined) patch.leaseHasta = leaseHasta ?? undefined;
+    await ctx.db.patch(id, patch);
+  },
+});
+
+/** Lista las notificaciones (id + estado/control) para las aserciones (solo pruebas). */
+export const qaListarNotifs = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    if (process.env.QA_HELPERS !== "1") throw new Error("QA helpers deshabilitados");
+    const all = (await ctx.db.query("notificacionesPush").collect()).sort((a, b) => b.creadoEn - a.creadoEn);
+    return all.map((n) => ({
+      id: n._id,
+      clienteId: n.clienteId,
+      estado: n.estado,
+      intentos: n.intentos ?? 0,
+      resultado: n.resultado ?? null,
+      proximoIntentoFuturo: (n.proximoIntento ?? 0) > Date.now(),
+      leaseHasta: n.leaseHasta ?? null,
+    }));
+  },
+});
+
+/** Borra todas las notificaciones (limpieza de residuos QA en dev). */
+export const qaPurgarNotifs = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    if (process.env.QA_HELPERS !== "1") throw new Error("QA helpers deshabilitados");
+    const all = await ctx.db.query("notificacionesPush").collect();
+    for (const n of all) await ctx.db.delete(n._id);
+    return { borradas: all.length };
   },
 });
