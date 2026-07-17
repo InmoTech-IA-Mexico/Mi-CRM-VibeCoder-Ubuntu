@@ -19,6 +19,7 @@ import type * as fechas from "../fechas.js";
 import type * as inactividad from "../inactividad.js";
 import type * as inicio from "../inicio.js";
 import type * as invitaciones from "../invitaciones.js";
+import type * as negocios from "../negocios.js";
 import type * as notas from "../notas.js";
 import type * as notificaciones from "../notificaciones.js";
 import type * as oportunidades from "../oportunidades.js";
@@ -48,6 +49,7 @@ declare const fullApi: ApiFromModules<{
   inactividad: typeof inactividad;
   inicio: typeof inicio;
   invitaciones: typeof invitaciones;
+  negocios: typeof negocios;
   notas: typeof notas;
   notificaciones: typeof notificaciones;
   oportunidades: typeof oportunidades;
