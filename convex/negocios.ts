@@ -36,7 +36,7 @@ function zonaValida(tz: string): boolean {
 }
 
 /** Nombre de negocio saneado, o ConvexError. */
-function validarNombre(nombre: string): string {
+export function validarNombre(nombre: string): string {
   const n = nombre.trim();
   if (!n) throw new ConvexError("El nombre del negocio es obligatorio");
   if (n.length > NOMBRE_MAX) throw new ConvexError("El nombre del negocio es demasiado largo");
@@ -44,7 +44,7 @@ function validarNombre(nombre: string): string {
 }
 
 /** Zona horaria saneada (por defecto `America/Mexico_City`), validada IANA (OBS-1). */
-function validarZona(zonaHoraria: string | undefined): string {
+export function validarZona(zonaHoraria: string | undefined): string {
   const z = zonaHoraria?.trim() || ZONA_DEFECTO;
   if (!zonaValida(z)) throw new ConvexError("Zona horaria no válida (usa una zona IANA, p. ej. America/Mexico_City)");
   return z;
@@ -65,7 +65,7 @@ function validarBaseUrl(baseUrl: string | undefined): void {
  * ni OTRO negocio (índice `por_email_admin`, excluyendo `negocioIdExcluir`) lo usan.
  * Devuelve el email normalizado o lanza ConvexError.
  */
-async function validarEmailAdminLibre(
+export async function validarEmailAdminLibre(
   ctx: MutationCtx,
   emailRaw: string,
   negocioIdExcluir?: Id<"negocios">,
