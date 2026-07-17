@@ -1,7 +1,9 @@
 import { internalMutation } from "./_generated/server";
+import type { MutationCtx } from "./_generated/server";
 import { v } from "convex/values";
-import type { Id } from "./_generated/dataModel";
+import type { Doc, Id } from "./_generated/dataModel";
 import { partesLocales } from "./fechas";
+import { recordatorioProximoIds } from "./inactividad";
 
 // Cola de notificaciones push (JUA-33 Fase C, remediación B-3). El envío real lo
 // hace la action Node `pushEnvio.flushNotificaciones`, que reclama un lote aquí,
@@ -25,6 +27,40 @@ export type Reclamo = {
   nombre: string;
   intentos: number;
 };
+
+/**
+ * Revalidación transaccional del destino (JUA-33, obs. B-1), en el momento del
+ * envío (no en el de encolar). Descarta si:
+ *  - apareció un recordatorio próximo (≤3 días) → ya hay seguimiento previsto;
+ *  - el destinatario ya no corresponde (responsable inactivo, o el del pool ya no
+ *    es admin activo).
+ * Si el cliente se REASIGNÓ mientras esperaba, redirige al responsable actual (si
+ * está activo). Devuelve el `usuarioId` vigente a notificar, o la razón de descarte.
+ */
+async function revalidarDestino(
+  ctx: MutationCtx,
+  n: Doc<"notificacionesPush">,
+  cliente: Doc<"clientes">,
+  ahora: number,
+): Promise<{ ok: true; usuarioId: Id<"usuarios"> } | { ok: false; razon: string }> {
+  // 1) Recordatorio próximo recalculado ahora (pudo crearse tras encolar).
+  const segs = await ctx.db
+    .query("seguimientos")
+    .withIndex("por_cliente", (q) => q.eq("clienteId", cliente._id))
+    .collect();
+  if (recordatorioProximoIds(segs, ahora).has(cliente._id)) return { ok: false, razon: "recordatorio_proximo" };
+
+  // 2) Destinatario vigente. Cliente con responsable → el destino correcto es el
+  //    responsable ACTUAL (redirige si cambió); pool → un admin activo.
+  if (cliente.responsableId) {
+    const resp = await ctx.db.get(cliente.responsableId);
+    if (!resp || resp.estado !== "activo") return { ok: false, razon: "responsable_inactivo" };
+    return { ok: true, usuarioId: cliente.responsableId };
+  }
+  const dest = await ctx.db.get(n.usuarioId);
+  if (!dest || dest.estado !== "activo" || dest.rol !== "admin") return { ok: false, razon: "destinatario_no_corresponde" };
+  return { ok: true, usuarioId: n.usuarioId };
+}
 
 /**
  * Reclama un lote de notificaciones listas para enviar. Antes: recupera las
@@ -59,9 +95,14 @@ export const reclamarLote = internalMutation({
     const reclamos: Reclamo[] = [];
     for (const n of elegibles) {
       const cliente = await ctx.db.get(n.clienteId);
-      // Revalidación (base; B-1 la ampliará con recordatorio próximo y destinatario).
       if (!cliente || cliente.eliminadoEn != null || cliente.estado !== "inactivo") {
         await ctx.db.patch(n._id, { estado: "descartada", resultado: "cliente_obsoleto", leaseHasta: undefined });
+        continue;
+      }
+      // B-1: revalidación transaccional (recordatorio próximo + destinatario vigente).
+      const rev = await revalidarDestino(ctx, n, cliente, ahora);
+      if (!rev.ok) {
+        await ctx.db.patch(n._id, { estado: "descartada", resultado: rev.razon, leaseHasta: undefined });
         continue;
       }
       let tz = negocioCache.get(n.negocioId);
@@ -74,8 +115,10 @@ export const reclamarLote = internalMutation({
       if (hora < HORA_INICIO || hora >= HORA_FIN) continue; // fuera de horario: sigue pendiente
 
       const intentos = (n.intentos ?? 0) + 1;
-      await ctx.db.patch(n._id, { estado: "enviando", leaseHasta: ahora + LEASE_MS, intentos });
-      reclamos.push({ id: n._id, usuarioId: n.usuarioId, clienteId: n.clienteId, nombre: cliente.nombre, intentos });
+      const patch: Record<string, unknown> = { estado: "enviando", leaseHasta: ahora + LEASE_MS, intentos };
+      if (rev.usuarioId !== n.usuarioId) patch.usuarioId = rev.usuarioId; // redirección tras reasignación
+      await ctx.db.patch(n._id, patch);
+      reclamos.push({ id: n._id, usuarioId: rev.usuarioId, clienteId: n.clienteId, nombre: cliente.nombre, intentos });
     }
     return reclamos;
   },
@@ -164,6 +207,7 @@ export const qaListarNotifs = internalMutation({
     return all.map((n) => ({
       id: n._id,
       clienteId: n.clienteId,
+      usuarioId: n.usuarioId,
       estado: n.estado,
       intentos: n.intentos ?? 0,
       resultado: n.resultado ?? null,
