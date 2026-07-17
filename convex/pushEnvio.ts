@@ -40,7 +40,7 @@ async function enviarAUsuario(ctx: ActionCtx, usuarioId: Id<"usuarios">, payload
     } catch (e) {
       const code = (e as { statusCode?: number }).statusCode;
       if (code === 404 || code === 410) {
-        await ctx.runMutation(internal.push.borrarPorEndpoint, { endpoint: s.endpoint });
+        await ctx.runMutation(internal.push.borrarPorEndpoint, { endpoint: s.endpoint, usuarioId });
         caducadas++;
       } else {
         fallidas++;

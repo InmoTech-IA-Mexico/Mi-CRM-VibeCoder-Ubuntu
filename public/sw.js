@@ -12,8 +12,8 @@ self.addEventListener("push", (event) => {
   const titulo = data.titulo || "InmoTech IA México";
   const opciones = {
     body: data.cuerpo || "",
-    icon: data.icon || "/favicon.ico",
-    badge: data.badge || "/favicon.ico",
+    icon: data.icon || "/icon-192.png",
+    badge: data.badge || "/icon-192.png",
     // La URL de destino viaja en `data` para el notificationclick.
     data: { url: data.url || "/inicio" },
     // `tag` colapsa notificaciones repetidas del mismo cliente/tema.

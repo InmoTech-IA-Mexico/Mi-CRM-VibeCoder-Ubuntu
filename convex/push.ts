@@ -1,6 +1,13 @@
-import { mutation, internalQuery, internalMutation } from "./_generated/server";
+import { mutation, query, internalQuery, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 import { resolverSesion } from "./auth";
+
+// Límites de saneamiento (JUA-33, obs. OBS-2): el endpoint es una URL HTTPS del
+// push service; las claves son base64url cortas. Se acota tamaño y nº de
+// dispositivos por usuario (evictando el más antiguo) para evitar abuso.
+const ENDPOINT_MAX = 2048;
+const CLAVE_MAX = 300;
+const MAX_DISPOSITIVOS = 20;
 
 // Suscripciones Web Push (JUA-33). El envío real (action Node con web-push +
 // VAPID) y el disparo automático llegan en fases posteriores; aquí solo se
@@ -24,6 +31,17 @@ export const guardarSubscription = mutation({
     const sesion = await resolverSesion(ctx, token);
     if (!sesion) throw new Error("No autorizado");
 
+    // Saneamiento (obs. OBS-2): endpoint HTTPS acotado + claves no vacías y cortas.
+    if (!endpoint.startsWith("https://") || endpoint.length > ENDPOINT_MAX) {
+      throw new Error("Suscripción no válida");
+    }
+    if (!p256dh || p256dh.length > CLAVE_MAX || !auth || auth.length > CLAVE_MAX) {
+      throw new Error("Suscripción no válida");
+    }
+
+    // Upsert por endpoint: reasigna el endpoint al usuario de la sesión (clave del
+    // fix B-1: al cambiar de cuenta en el mismo navegador, el endpoint pasa a ser
+    // del usuario actual). Refresca las claves (el navegador puede rotarlas).
     const existente = await ctx.db
       .query("pushSubscriptions")
       .withIndex("por_endpoint", (q) => q.eq("endpoint", endpoint))
@@ -36,6 +54,16 @@ export const guardarSubscription = mutation({
         auth,
       });
       return existente._id;
+    }
+
+    // Tope de dispositivos por usuario: si se alcanza, evicta el más antiguo.
+    const propias = await ctx.db
+      .query("pushSubscriptions")
+      .withIndex("por_usuario", (q) => q.eq("usuarioId", sesion.usuario._id))
+      .collect();
+    if (propias.length >= MAX_DISPOSITIVOS) {
+      const masAntigua = propias.sort((a, b) => a.creadoEn - b.creadoEn)[0];
+      if (masAntigua) await ctx.db.delete(masAntigua._id);
     }
     return await ctx.db.insert("pushSubscriptions", {
       usuarioId: sesion.usuario._id,
@@ -69,6 +97,20 @@ export const borrarSubscription = mutation({
   },
 });
 
+/** Nº de dispositivos (suscripciones) del propio usuario de la sesión. */
+export const misDispositivos = query({
+  args: { token: v.string() },
+  handler: async (ctx, { token }) => {
+    const sesion = await resolverSesion(ctx, token);
+    if (!sesion) return 0;
+    const subs = await ctx.db
+      .query("pushSubscriptions")
+      .withIndex("por_usuario", (q) => q.eq("usuarioId", sesion.usuario._id))
+      .collect();
+    return subs.length;
+  },
+});
+
 // ---- Internos para el emisor (action Node en pushEnvio.ts, JUA-33 Fase B) ----
 
 /** Resuelve la sesión y devuelve el usuario/negocio, o null. (Uso interno.) */
@@ -92,14 +134,19 @@ export const subsDeUsuario = internalQuery({
   },
 });
 
-/** Borra una suscripción por su endpoint (al detectar 404/410 = caducada). Interno. */
+/**
+ * Borra una suscripción caducada (404/410) por su endpoint. Interno. Condicional
+ * por dueño (obs. OBS-1): solo borra si la fila SIGUE siendo del usuario que la
+ * leyó el emisor, evitando una carrera en la que el endpoint se reasignó a otro
+ * usuario entre la lectura y la respuesta de error.
+ */
 export const borrarPorEndpoint = internalMutation({
-  args: { endpoint: v.string() },
-  handler: async (ctx, { endpoint }) => {
+  args: { endpoint: v.string(), usuarioId: v.id("usuarios") },
+  handler: async (ctx, { endpoint, usuarioId }) => {
     const s = await ctx.db
       .query("pushSubscriptions")
       .withIndex("por_endpoint", (q) => q.eq("endpoint", endpoint))
       .first();
-    if (s) await ctx.db.delete(s._id);
+    if (s && s.usuarioId === usuarioId) await ctx.db.delete(s._id);
   },
 });

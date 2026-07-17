@@ -29,7 +29,11 @@ export function TarjetaNotificaciones() {
   const borrar = useMutation(api.push.borrarSubscription);
   const enviarPrueba = useAction(api.pushEnvio.enviarPrueba);
 
+  // Navegador compatible (independiente de la config). `configurado` = la clave
+  // pública VAPID está presente (obs. OBS-3: distinguir "no compatible" de "config
+  // de despliegue pendiente" — p. ej. falta el env en Railway).
   const [soportado, setSoportado] = useState<boolean | null>(null);
+  const configurado = !!VAPID_PUBLIC;
   const [activa, setActiva] = useState(false);
   const [ocupado, setOcupado] = useState(false);
   const [denegado, setDenegado] = useState(false);
@@ -40,31 +44,38 @@ export function TarjetaNotificaciones() {
   useEffect(() => {
     let cancelado = false;
     const detectar = async () => {
-      const ok =
+      const navOk =
         typeof window !== "undefined" &&
         "serviceWorker" in navigator &&
         "PushManager" in window &&
-        "Notification" in window &&
-        !!VAPID_PUBLIC;
+        "Notification" in window;
       let activaLocal = false;
-      if (ok) {
+      if (navOk && !!VAPID_PUBLIC) {
         try {
           const reg = await navigator.serviceWorker.getRegistration();
-          activaLocal = !!(await reg?.pushManager.getSubscription());
+          const sub = await reg?.pushManager.getSubscription();
+          const json = sub?.toJSON();
+          if (sub && json?.keys?.p256dh && json.keys.auth) {
+            // B-1: al montar, re-asocia el endpoint al usuario ACTUAL de la sesión
+            // (upsert idempotente). Evita que, tras cambiar de cuenta en el mismo
+            // navegador, la fila remota siga apuntando al usuario anterior.
+            await guardar({ token, endpoint: sub.endpoint, p256dh: json.keys.p256dh, auth: json.keys.auth });
+            activaLocal = true;
+          }
         } catch {
           /* sin registro previo */
         }
       }
       if (cancelado) return;
-      setSoportado(ok);
-      setDenegado(ok && Notification.permission === "denied");
+      setSoportado(navOk);
+      setDenegado(navOk && Notification.permission === "denied");
       setActiva(activaLocal);
     };
     void detectar();
     return () => {
       cancelado = true;
     };
-  }, []);
+  }, [guardar, token]);
 
   const activar = useCallback(async () => {
     setOcupado(true);
@@ -119,11 +130,19 @@ export function TarjetaNotificaciones() {
     setError(null);
     try {
       const r = await enviarPrueba({ token });
-      setResultadoPrueba(
-        r.enviadas > 0
-          ? `Enviada a ${r.enviadas} ${r.enviadas === 1 ? "dispositivo" : "dispositivos"}.`
-          : "No hay dispositivos suscritos ahora mismo.",
-      );
+      // B-3: el mensaje distingue "sin dispositivos" (total 0) de éxito total,
+      // entrega parcial y fallo total; no se confunde un fallo con "no hay".
+      let msg: string;
+      if (r.total === 0) {
+        msg = "No hay dispositivos suscritos ahora mismo.";
+      } else if (r.enviadas === r.total) {
+        msg = `Enviada a ${r.enviadas} ${r.enviadas === 1 ? "dispositivo" : "dispositivos"}.`;
+      } else if (r.enviadas > 0) {
+        msg = `Enviada a ${r.enviadas} de ${r.total}; ${r.total - r.enviadas} no se pudo entregar.`;
+      } else {
+        msg = "No se pudo entregar a ningún dispositivo. Revisa la conexión e inténtalo de nuevo.";
+      }
+      setResultadoPrueba(msg);
     } catch (e) {
       console.error("No se pudo enviar la notificación de prueba", e);
       setError("No se pudo enviar la notificación de prueba.");
@@ -146,7 +165,7 @@ export function TarjetaNotificaciones() {
               Te avisamos cuando un cliente lleva 15 días sin contacto, aunque la app esté cerrada.
             </p>
           </div>
-          {soportado && (
+          {soportado && configurado && (
             <button
               type="button"
               role="switch"
@@ -170,7 +189,7 @@ export function TarjetaNotificaciones() {
           )}
         </div>
 
-        {activa && soportado && (
+        {activa && soportado && configurado && (
           <div className="flex flex-col gap-2 border-t border-neutral-100 pt-3">
             <button
               type="button"
@@ -198,7 +217,18 @@ export function TarjetaNotificaciones() {
           </div>
         )}
 
-        {denegado && soportado && (
+        {/* OBS-3: el navegador es compatible pero falta la clave pública VAPID
+            (config de despliegue), distinto de "navegador no compatible". */}
+        {soportado && !configurado && (
+          <div className="flex items-start gap-2 rounded-xl border border-neutral-100 bg-neutral-50 px-3 py-2.5">
+            <AlertCircle size={15} strokeWidth={1.9} className="mt-0.5 flex-shrink-0 text-neutral-400" />
+            <p className="text-[12px] leading-snug text-muted">
+              Las notificaciones aún no están disponibles en este entorno. Inténtalo más tarde.
+            </p>
+          </div>
+        )}
+
+        {denegado && soportado && configurado && (
           <div className="flex items-start gap-2 rounded-xl border border-neutral-100 bg-neutral-50 px-3 py-2.5">
             <AlertCircle size={15} strokeWidth={1.9} className="mt-0.5 flex-shrink-0 text-neutral-400" />
             <p className="text-[12px] leading-snug text-muted">

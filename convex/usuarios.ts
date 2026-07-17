@@ -282,6 +282,13 @@ export const desactivar = mutation({
 
     await ctx.db.patch(usuarioId, { estado: "inactivo" });
     await eliminarSesiones(ctx, usuarioId);
+    // Al revocar, elimina también sus suscripciones push (JUA-33, obs. B-2): no se
+    // retienen endpoints/claves de una cuenta desactivada y deja de recibir avisos.
+    const subs = await ctx.db
+      .query("pushSubscriptions")
+      .withIndex("por_usuario", (q) => q.eq("usuarioId", usuarioId))
+      .collect();
+    for (const s of subs) await ctx.db.delete(s._id);
   },
 });
 
