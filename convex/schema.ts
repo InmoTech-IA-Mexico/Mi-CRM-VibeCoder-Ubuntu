@@ -255,9 +255,16 @@ export default defineSchema({
   // best-effort (puede duplicarse excepcionalmente tras una recuperación).
   notificacionesPush: defineTable({
     negocioId: v.id("negocios"),
-    usuarioId: v.id("usuarios"), // destinatario
+    usuarioId: v.id("usuarios"), // destinatario ORIGINAL (según su audiencia al encolar)
     clienteId: v.id("clientes"),
     tipo: v.literal("cliente_frio"),
+    // Audiencia MATERIALIZADA de la fila (JUA-33 B-1/B-2): por qué se le encoló a
+    // este destinatario. La revalidación al reclamar la respeta (no reasigna una
+    // fila de admin al responsable ni ignora la preferencia vigente). Opcional para
+    // tolerar filas de dev previas al campo (se descartan como "sin_audiencia").
+    audiencia: v.optional(
+      v.union(v.literal("responsable"), v.literal("admin_negocio"), v.literal("admin_pool")),
+    ),
     estado: v.union(
       v.literal("pendiente"),
       v.literal("enviando"),

@@ -44,6 +44,27 @@ export function recordatorioProximoIds(
   return ids;
 }
 
+export type PrefFrio = "ninguna" | "cartera" | "pool" | "negocio";
+
+/**
+ * Preferencia EFECTIVA de alertas de cliente frío (JUA-33 B-2). FUENTE ÚNICA de
+ * verdad, usada tanto al ENCOLAR (`clientes.encolarClienteFrio`) como al REVALIDAR
+ * el destino al reclamar (`notificaciones.revalidarDestino`): que ambas rutas usen
+ * la MISMA regla es justo lo que faltaba en el defecto B-1/B-2 (el encolado fijaba
+ * una audiencia que la reclamación luego ignoraba). Ausente → por defecto de rol:
+ * el operativo recibe su cartera; el admin y el observador quedan en "ninguna"
+ * (opt-in explícito del admin; el observador no gestiona cartera → nunca recibe).
+ */
+export function prefFrioEfectiva(rol: string, pref: string | undefined): PrefFrio {
+  if (pref === "ninguna" || pref === "cartera" || pref === "pool" || pref === "negocio") return pref;
+  return rol === "operativo" ? "cartera" : "ninguna";
+}
+
+/** Preferencia efectiva de alertas de cliente frío de un usuario (conveniencia sobre `prefFrioEfectiva`). */
+export function prefFrio(u: Doc<"usuarios">): PrefFrio {
+  return prefFrioEfectiva(u.rol, u.prefClienteFrio);
+}
+
 /**
  * ¿El cliente debe pasar automáticamente a Inactivo? (JUA-26). Mismo criterio que
  * el panel/estado global: en Prospecto o Activo, no en papelera, 15+ días sin

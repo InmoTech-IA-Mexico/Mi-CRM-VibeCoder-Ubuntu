@@ -1,6 +1,7 @@
 import { mutation, query, internalQuery, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 import { resolverSesion } from "./auth";
+import { prefFrioEfectiva } from "./inactividad";
 
 // Límites de saneamiento (JUA-33, obs. OBS-2): el endpoint es una URL HTTPS del
 // push service; las claves son base64url cortas. Se acota tamaño y nº de
@@ -111,19 +112,15 @@ export const borrarSubscription = mutation({
 
 const PREF_V = v.union(v.literal("ninguna"), v.literal("cartera"), v.literal("pool"), v.literal("negocio"));
 
-/** Preferencia efectiva de alertas de cliente frío (ausente → por defecto de rol). */
-function prefEfectiva(rol: string, pref: string | undefined): "ninguna" | "cartera" | "pool" | "negocio" {
-  if (pref === "ninguna" || pref === "cartera" || pref === "pool" || pref === "negocio") return pref;
-  return rol === "admin" ? "ninguna" : "cartera";
-}
-
 /** Preferencia de alertas de cliente frío del propio usuario (JUA-33 B-2), con su rol. */
 export const miPreferenciaFrio = query({
   args: { token: v.string() },
   handler: async (ctx, { token }) => {
     const sesion = await resolverSesion(ctx, token);
     if (!sesion) return null;
-    return { rol: sesion.usuario.rol, pref: prefEfectiva(sesion.usuario.rol, sesion.usuario.prefClienteFrio) };
+    // Misma regla que el encolado/revalidación (fuente única `prefFrioEfectiva`): el
+    // observador queda en "ninguna" (obs. no bloqueante del dictamen B-1/B-2).
+    return { rol: sesion.usuario.rol, pref: prefFrioEfectiva(sesion.usuario.rol, sesion.usuario.prefClienteFrio) };
   },
 });
 

@@ -3,7 +3,7 @@ import type { MutationCtx } from "./_generated/server";
 import { v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
 import { partesLocales } from "./fechas";
-import { recordatorioProximoIds } from "./inactividad";
+import { recordatorioProximoIds, prefFrio } from "./inactividad";
 
 // Cola de notificaciones push (JUA-33 Fase C, remediación B-3). El envío real lo
 // hace la action Node `pushEnvio.flushNotificaciones`, que reclama un lote aquí,
@@ -29,13 +29,21 @@ export type Reclamo = {
 };
 
 /**
- * Revalidación transaccional del destino (JUA-33, obs. B-1), en el momento del
- * envío (no en el de encolar). Descarta si:
- *  - apareció un recordatorio próximo (≤3 días) → ya hay seguimiento previsto;
- *  - el destinatario ya no corresponde (responsable inactivo, o el del pool ya no
- *    es admin activo).
- * Si el cliente se REASIGNÓ mientras esperaba, redirige al responsable actual (si
- * está activo). Devuelve el `usuarioId` vigente a notificar, o la razón de descarte.
+ * Revalidación transaccional del destino (JUA-33, obs. B-1/B-2), en el momento del
+ * envío (no en el de encolar). Respeta la AUDIENCIA materializada de la fila para no
+ * mezclar destinatarios (el defecto del dictamen: una fila de admin se reasignaba al
+ * responsable). Además revalida la preferencia VIGENTE del destinatario (opt-in de
+ * B-2): si el usuario pasó a "ninguna" tras encolar, ya no se le envía. Descarta si
+ * apareció un recordatorio próximo (≤3 días → ya hay seguimiento previsto).
+ *
+ * Por audiencia:
+ *  - `responsable`: destino = el responsable ACTUAL del cliente (redirige si se
+ *    reasignó), si está activo y su pref incluye su cartera ("cartera"/"negocio").
+ *  - `admin_negocio`: el admin ORIGINAL, solo si sigue activo y con "negocio". Nunca
+ *    se redirige al responsable.
+ *  - `admin_pool`: el admin ORIGINAL, solo si el cliente sigue SIN asignar y el admin
+ *    sigue activo y con "pool".
+ * Devuelve el `usuarioId` vigente a notificar, o la razón de descarte.
  */
 async function revalidarDestino(
   ctx: MutationCtx,
@@ -43,22 +51,38 @@ async function revalidarDestino(
   cliente: Doc<"clientes">,
   ahora: number,
 ): Promise<{ ok: true; usuarioId: Id<"usuarios"> } | { ok: false; razon: string }> {
-  // 1) Recordatorio próximo recalculado ahora (pudo crearse tras encolar).
+  // 1) Recordatorio próximo recalculado ahora (pudo crearse tras encolar) — aplica a
+  //    todas las audiencias: si ya hay seguimiento previsto, el episodio sobra.
   const segs = await ctx.db
     .query("seguimientos")
     .withIndex("por_cliente", (q) => q.eq("clienteId", cliente._id))
     .collect();
   if (recordatorioProximoIds(segs, ahora).has(cliente._id)) return { ok: false, razon: "recordatorio_proximo" };
 
-  // 2) Destinatario vigente. Cliente con responsable → el destino correcto es el
-  //    responsable ACTUAL (redirige si cambió); pool → un admin activo.
-  if (cliente.responsableId) {
+  // 2) Revalidación POR AUDIENCIA. Filas de dev previas al campo → se descartan.
+  if (!n.audiencia) return { ok: false, razon: "sin_audiencia" };
+
+  if (n.audiencia === "responsable") {
+    if (!cliente.responsableId) return { ok: false, razon: "sin_responsable" }; // pasó al pool
     const resp = await ctx.db.get(cliente.responsableId);
     if (!resp || resp.estado !== "activo") return { ok: false, razon: "responsable_inactivo" };
-    return { ok: true, usuarioId: cliente.responsableId };
+    const p = prefFrio(resp);
+    if (p !== "cartera" && p !== "negocio") return { ok: false, razon: "excluido_por_preferencia" };
+    return { ok: true, usuarioId: resp._id }; // redirige al responsable ACTUAL
   }
-  const dest = await ctx.db.get(n.usuarioId);
-  if (!dest || dest.estado !== "activo" || dest.rol !== "admin") return { ok: false, razon: "destinatario_no_corresponde" };
+
+  if (n.audiencia === "admin_negocio") {
+    const admin = await ctx.db.get(n.usuarioId); // el admin ORIGINAL; nunca se redirige
+    if (!admin || admin.estado !== "activo" || admin.rol !== "admin") return { ok: false, razon: "destinatario_no_corresponde" };
+    if (prefFrio(admin) !== "negocio") return { ok: false, razon: "excluido_por_preferencia" };
+    return { ok: true, usuarioId: n.usuarioId };
+  }
+
+  // admin_pool: solo si el cliente sigue SIN asignar.
+  if (cliente.responsableId) return { ok: false, razon: "destinatario_no_corresponde" };
+  const admin = await ctx.db.get(n.usuarioId);
+  if (!admin || admin.estado !== "activo" || admin.rol !== "admin") return { ok: false, razon: "destinatario_no_corresponde" };
+  if (prefFrio(admin) !== "pool") return { ok: false, razon: "excluido_por_preferencia" };
   return { ok: true, usuarioId: n.usuarioId };
 }
 
@@ -208,12 +232,27 @@ export const qaListarNotifs = internalMutation({
       id: n._id,
       clienteId: n.clienteId,
       usuarioId: n.usuarioId,
+      audiencia: n.audiencia ?? null,
       estado: n.estado,
       intentos: n.intentos ?? 0,
       resultado: n.resultado ?? null,
       proximoIntentoFuturo: (n.proximoIntento ?? 0) > Date.now(),
       leaseHasta: n.leaseHasta ?? null,
     }));
+  },
+});
+
+/**
+ * Voltea el `estado` (activo/inactivo) de un usuario para ejercer dinámicamente los
+ * ramos de "destinatario inactivo" de la revalidación (solo pruebas). No toca sesiones
+ * ni credenciales (a diferencia de `usuarios.desactivar`/`reactivar`): es reversible y
+ * no rompe el login demo. Sin el guard de "último admin activo" — es dev, controlado.
+ */
+export const qaSetEstadoUsuario = internalMutation({
+  args: { usuarioId: v.id("usuarios"), estado: v.union(v.literal("activo"), v.literal("inactivo")) },
+  handler: async (ctx, { usuarioId, estado }) => {
+    if (process.env.QA_HELPERS !== "1") throw new Error("QA helpers deshabilitados");
+    await ctx.db.patch(usuarioId, { estado });
   },
 });
 

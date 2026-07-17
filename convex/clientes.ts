@@ -3,7 +3,7 @@ import type { MutationCtx } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
 import { v } from "convex/values";
 import { resolverSesion, resolverSesionEscritura } from "./auth";
-import { MS_DIA, recordatorioProximoIds, debeMarcarseInactivo } from "./inactividad";
+import { MS_DIA, recordatorioProximoIds, debeMarcarseInactivo, prefFrio } from "./inactividad";
 
 const DIAS_PAPELERA = 30; // días en papelera antes del borrado definitivo (JUA-16)
 
@@ -647,10 +647,7 @@ async function transicionarClientes(
   return cambiados;
 }
 
-/** Preferencia efectiva de alertas de cliente frío (ausente → por defecto de rol). */
-function prefFrio(u: Doc<"usuarios">): "ninguna" | "cartera" | "pool" | "negocio" {
-  return u.prefClienteFrio ?? (u.rol === "admin" ? "ninguna" : "cartera");
-}
+type Audiencia = "responsable" | "admin_negocio" | "admin_pool";
 
 /** Encola la alerta de cliente frío para sus destinatarios, con dedup por pendiente. */
 async function encolarClienteFrio(
@@ -666,21 +663,28 @@ async function encolarClienteFrio(
     ).filter((u) => u.estado === "activo");
     usuariosPorNegocio.set(c.negocioId, usuarios);
   }
-  // Destinatarios según preferencia (JUA-33 B-2): el responsable recibe si su pref
-  // incluye su cartera; los admin reciben según "negocio" (todas) o "pool" (solo sin
-  // asignar). La suscripción del dispositivo es transporte, no aceptación de alertas.
-  const destinatarios = new Set<Id<"usuarios">>();
+  // Audiencia por destinatario (JUA-33 B-1/B-2): se MATERIALIZA por qué recibe cada
+  // uno, para que la revalidación al reclamar respete esa política (y no reasigne una
+  // fila de admin al responsable). El responsable recibe si su pref incluye su cartera
+  // ("cartera"/"negocio"); los admin, según "negocio" (todas) o "pool" (solo sin
+  // asignar). Un usuario que califique por varias vías queda con la más estable: si un
+  // admin es a la vez responsable y tiene "negocio", prevalece "admin_negocio" (el bucle
+  // de admin corre después y pisa la entrada), por lo que su alerta nunca depende de que
+  // siga siendo responsable. La suscripción del dispositivo es transporte, no opt-in.
+  const audiencias = new Map<Id<"usuarios">, Audiencia>();
   if (c.responsableId) {
     const resp = usuarios.find((u) => u._id === c.responsableId);
-    if (resp && (prefFrio(resp) === "cartera" || prefFrio(resp) === "negocio")) destinatarios.add(resp._id);
+    if (resp && (prefFrio(resp) === "cartera" || prefFrio(resp) === "negocio")) {
+      audiencias.set(resp._id, "responsable");
+    }
   }
   for (const u of usuarios) {
     if (u.rol !== "admin") continue;
     const p = prefFrio(u);
-    if (p === "negocio") destinatarios.add(u._id);
-    else if (p === "pool" && !c.responsableId) destinatarios.add(u._id);
+    if (p === "negocio") audiencias.set(u._id, "admin_negocio");
+    else if (p === "pool" && !c.responsableId) audiencias.set(u._id, "admin_pool");
   }
-  if (destinatarios.size === 0) return;
+  if (audiencias.size === 0) return;
 
   // Dedup: no dupliques una PENDIENTE del mismo cliente para el mismo destinatario
   // (una nueva alerta solo se encola en un episodio de enfriamiento posterior).
@@ -689,13 +693,14 @@ async function encolarClienteFrio(
     .withIndex("por_cliente_tipo", (q) => q.eq("clienteId", c._id).eq("tipo", "cliente_frio"))
     .collect();
   const yaPendiente = new Set(previas.filter((n) => n.estado === "pendiente").map((n) => n.usuarioId));
-  for (const usuarioId of destinatarios) {
+  for (const [usuarioId, audiencia] of audiencias) {
     if (yaPendiente.has(usuarioId)) continue;
     await ctx.db.insert("notificacionesPush", {
       negocioId: c.negocioId,
       usuarioId,
       clienteId: c._id,
       tipo: "cliente_frio",
+      audiencia,
       estado: "pendiente",
       intentos: 0,
       proximoIntento: ahora, // elegible de inmediato (el flush aplica el guard de horario)
