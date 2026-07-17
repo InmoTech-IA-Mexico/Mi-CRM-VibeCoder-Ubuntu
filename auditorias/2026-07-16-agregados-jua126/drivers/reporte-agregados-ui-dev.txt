@@ -1,0 +1,11 @@
+Reporte driver-28 remediación B-1 fuente/agregados (JUA-126, UI)
+fecha: 2026-07-16T22:20:50.240Z
+baseUrl: http://localhost:3000
+resultado: OK (5 PASS / 0 FAIL)
+errores navegador: 0
+
+PASS — A: operativo — la tarjeta de empleado muestra el rol (Operativo)
+PASS — A: operativo — la tarjeta NO muestra 'null' (B-1 corregido)
+PASS — B: admin — la hoja de empleados muestra la carga (N clientes)
+PASS — B: admin — sin 'null' en las cargas
+PASS — sin errores de navegador

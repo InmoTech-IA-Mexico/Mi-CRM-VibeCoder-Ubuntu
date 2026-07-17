@@ -1,0 +1,10 @@
+Reporte driver-27 visibilidad de agregados por cartera (JUA-126)
+fecha: 2026-07-16T22:27:44.483Z
+resultado: OK (5 PASS / 0 FAIL)
+observador, etiqueta y clientes QA creados y limpiados; sin tokens ni contraseñas.
+
+PASS — A: equipo del operativo → lista con nombres/roles pero SIN carga (clientes=null en todos)
+PASS — A: equipo del observador → también SIN carga (clientes=null) [OBS-2]
+PASS — A: equipo del admin → SÍ incluye la carga por miembro (numérica)
+PASS — B: el operativo cuenta solo su cartera para la etiqueta (1 = 1)
+PASS — B: el admin cuenta el negocio completo para la etiqueta (2 = 2)
