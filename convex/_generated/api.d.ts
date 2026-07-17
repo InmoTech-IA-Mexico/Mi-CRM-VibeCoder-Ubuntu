@@ -20,6 +20,7 @@ import type * as inactividad from "../inactividad.js";
 import type * as inicio from "../inicio.js";
 import type * as invitaciones from "../invitaciones.js";
 import type * as notas from "../notas.js";
+import type * as notificaciones from "../notificaciones.js";
 import type * as oportunidades from "../oportunidades.js";
 import type * as push from "../push.js";
 import type * as pushEnvio from "../pushEnvio.js";
@@ -48,6 +49,7 @@ declare const fullApi: ApiFromModules<{
   inicio: typeof inicio;
   invitaciones: typeof invitaciones;
   notas: typeof notas;
+  notificaciones: typeof notificaciones;
   oportunidades: typeof oportunidades;
   push: typeof push;
   pushEnvio: typeof pushEnvio;

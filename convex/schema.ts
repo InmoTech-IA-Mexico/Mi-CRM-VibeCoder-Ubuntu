@@ -240,4 +240,20 @@ export default defineSchema({
   })
     .index("por_endpoint", ["endpoint"])
     .index("por_usuario", ["usuarioId"]),
+
+  // Cola de notificaciones push (JUA-33, Fase C): se ENCOLA una fila al pasar un
+  // cliente a Inactivo (cliente frío), con destinatario. Un cron `flush` la envía
+  // en horario diurno de la zona del negocio (desacopla detección de entrega y
+  // permite el guard de horario). Estados: pendiente → enviada / descartada.
+  notificacionesPush: defineTable({
+    negocioId: v.id("negocios"),
+    usuarioId: v.id("usuarios"), // destinatario
+    clienteId: v.id("clientes"),
+    tipo: v.literal("cliente_frio"),
+    estado: v.union(v.literal("pendiente"), v.literal("enviada"), v.literal("descartada")),
+    creadoEn: v.number(),
+    enviadaEn: v.optional(v.number()),
+  })
+    .index("por_estado", ["estado"])
+    .index("por_cliente_tipo", ["clienteId", "tipo"]),
 });

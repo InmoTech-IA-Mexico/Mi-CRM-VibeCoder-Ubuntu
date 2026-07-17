@@ -632,14 +632,61 @@ async function transicionarClientes(
   ahora: number,
 ) {
   const conRecordatorioProximo = recordatorioProximoIds(seguimientos, ahora);
+  const adminsPorNegocio = new Map<Id<"negocios">, Id<"usuarios">[]>();
   let cambiados = 0;
   for (const c of clientes) {
     if (debeMarcarseInactivo(c, ahora, conRecordatorioProximo)) {
       await ctx.db.patch(c._id, { estado: "inactivo", actualizadoEn: ahora });
       cambiados++;
+      // Alerta de cliente frío (JUA-33 Fase C): encola una notificación push para
+      // el responsable (o, si está en el pool, los admin activos). El cron `flush`
+      // la envía en horario diurno. La entrega efectiva es best-effort.
+      await encolarClienteFrio(ctx, c, ahora, adminsPorNegocio);
     }
   }
   return cambiados;
+}
+
+/** Encola la alerta de cliente frío para sus destinatarios, con dedup por pendiente. */
+async function encolarClienteFrio(
+  ctx: MutationCtx,
+  c: Doc<"clientes">,
+  ahora: number,
+  adminsPorNegocio: Map<Id<"negocios">, Id<"usuarios">[]>,
+) {
+  let destinatarios: Id<"usuarios">[];
+  if (c.responsableId) {
+    destinatarios = [c.responsableId];
+  } else {
+    let admins = adminsPorNegocio.get(c.negocioId);
+    if (!admins) {
+      const us = await ctx.db
+        .query("usuarios")
+        .withIndex("por_negocio", (q) => q.eq("negocioId", c.negocioId))
+        .collect();
+      admins = us.filter((u) => u.rol === "admin" && u.estado === "activo").map((u) => u._id);
+      adminsPorNegocio.set(c.negocioId, admins);
+    }
+    destinatarios = admins;
+  }
+  // Dedup: no dupliques una PENDIENTE del mismo cliente para el mismo destinatario
+  // (una nueva alerta solo se encola en un episodio de enfriamiento posterior).
+  const previas = await ctx.db
+    .query("notificacionesPush")
+    .withIndex("por_cliente_tipo", (q) => q.eq("clienteId", c._id).eq("tipo", "cliente_frio"))
+    .collect();
+  const yaPendiente = new Set(previas.filter((n) => n.estado === "pendiente").map((n) => n.usuarioId));
+  for (const usuarioId of destinatarios) {
+    if (yaPendiente.has(usuarioId)) continue;
+    await ctx.db.insert("notificacionesPush", {
+      negocioId: c.negocioId,
+      usuarioId,
+      clienteId: c._id,
+      tipo: "cliente_frio",
+      estado: "pendiente",
+      creadoEn: ahora,
+    });
+  }
 }
 
 /**

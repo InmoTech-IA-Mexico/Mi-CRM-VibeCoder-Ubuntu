@@ -8,6 +8,20 @@ import { resolverSesion } from "./auth";
 const ENDPOINT_MAX = 2048;
 const CLAVE_MAX = 300;
 const MAX_DISPOSITIVOS = 20;
+const BASE64URL = /^[A-Za-z0-9_-]+$/;
+
+/** Valida una suscripción (obs. OBS-1): endpoint URL HTTPS acotada + claves base64url cortas. */
+function suscripcionValida(endpoint: string, p256dh: string, auth: string): boolean {
+  if (endpoint.length > ENDPOINT_MAX) return false;
+  try {
+    if (new URL(endpoint).protocol !== "https:") return false;
+  } catch {
+    return false;
+  }
+  if (!p256dh || p256dh.length > CLAVE_MAX || !BASE64URL.test(p256dh)) return false;
+  if (!auth || auth.length > CLAVE_MAX || !BASE64URL.test(auth)) return false;
+  return true;
+}
 
 // Suscripciones Web Push (JUA-33). El envío real (action Node con web-push +
 // VAPID) y el disparo automático llegan en fases posteriores; aquí solo se
@@ -31,13 +45,7 @@ export const guardarSubscription = mutation({
     const sesion = await resolverSesion(ctx, token);
     if (!sesion) throw new Error("No autorizado");
 
-    // Saneamiento (obs. OBS-2): endpoint HTTPS acotado + claves no vacías y cortas.
-    if (!endpoint.startsWith("https://") || endpoint.length > ENDPOINT_MAX) {
-      throw new Error("Suscripción no válida");
-    }
-    if (!p256dh || p256dh.length > CLAVE_MAX || !auth || auth.length > CLAVE_MAX) {
-      throw new Error("Suscripción no válida");
-    }
+    if (!suscripcionValida(endpoint, p256dh, auth)) throw new Error("Suscripción no válida");
 
     // Upsert por endpoint: reasigna el endpoint al usuario de la sesión (clave del
     // fix B-1: al cambiar de cuenta en el mismo navegador, el endpoint pasa a ser
@@ -46,33 +54,37 @@ export const guardarSubscription = mutation({
       .query("pushSubscriptions")
       .withIndex("por_endpoint", (q) => q.eq("endpoint", endpoint))
       .first();
+    let id;
     if (existente) {
-      await ctx.db.patch(existente._id, {
+      await ctx.db.patch(existente._id, { usuarioId: sesion.usuario._id, negocioId: sesion.negocioId, p256dh, auth });
+      id = existente._id;
+    } else {
+      id = await ctx.db.insert("pushSubscriptions", {
         usuarioId: sesion.usuario._id,
         negocioId: sesion.negocioId,
+        endpoint,
         p256dh,
         auth,
+        creadoEn: Date.now(),
       });
-      return existente._id;
     }
 
-    // Tope de dispositivos por usuario: si se alcanza, evicta el más antiguo.
+    // Tope de dispositivos por usuario (obs. OBS-1): se aplica DESPUÉS de insertar o
+    // reasignar; evicta las más antiguas del usuario, nunca la que se acaba de fijar.
     const propias = await ctx.db
       .query("pushSubscriptions")
       .withIndex("por_usuario", (q) => q.eq("usuarioId", sesion.usuario._id))
       .collect();
-    if (propias.length >= MAX_DISPOSITIVOS) {
-      const masAntigua = propias.sort((a, b) => a.creadoEn - b.creadoEn)[0];
-      if (masAntigua) await ctx.db.delete(masAntigua._id);
+    if (propias.length > MAX_DISPOSITIVOS) {
+      const evictables = propias.filter((s) => s._id !== id).sort((a, b) => a.creadoEn - b.creadoEn);
+      let sobran = propias.length - MAX_DISPOSITIVOS;
+      for (const s of evictables) {
+        if (sobran <= 0) break;
+        await ctx.db.delete(s._id);
+        sobran--;
+      }
     }
-    return await ctx.db.insert("pushSubscriptions", {
-      usuarioId: sesion.usuario._id,
-      negocioId: sesion.negocioId,
-      endpoint,
-      p256dh,
-      auth,
-      creadoEn: Date.now(),
-    });
+    return id;
   },
 });
 
@@ -122,7 +134,7 @@ export const usuarioDeSesion = internalQuery({
   },
 });
 
-/** Suscripciones de un usuario (endpoint + claves) para enviarle push. Interno. */
+/** Suscripciones de un usuario (id + endpoint + claves) para enviarle push. Interno. */
 export const subsDeUsuario = internalQuery({
   args: { usuarioId: v.id("usuarios") },
   handler: async (ctx, { usuarioId }) => {
@@ -130,23 +142,20 @@ export const subsDeUsuario = internalQuery({
       .query("pushSubscriptions")
       .withIndex("por_usuario", (q) => q.eq("usuarioId", usuarioId))
       .collect();
-    return subs.map((s) => ({ endpoint: s.endpoint, p256dh: s.p256dh, auth: s.auth }));
+    return subs.map((s) => ({ id: s._id, endpoint: s.endpoint, p256dh: s.p256dh, auth: s.auth }));
   },
 });
 
 /**
- * Borra una suscripción caducada (404/410) por su endpoint. Interno. Condicional
- * por dueño (obs. OBS-1): solo borra si la fila SIGUE siendo del usuario que la
- * leyó el emisor, evitando una carrera en la que el endpoint se reasignó a otro
- * usuario entre la lectura y la respuesta de error.
+ * Borra una suscripción caducada (404/410). Interno. Condicional por **id + versión**
+ * (obs. OBS-2): solo borra si la fila con ese id SIGUE siendo del mismo usuario y con
+ * la misma clave `p256dh` que leyó el emisor. Evita borrar una fila reasignada a otro
+ * usuario o con claves renovadas por una carrera entre la lectura y la respuesta.
  */
-export const borrarPorEndpoint = internalMutation({
-  args: { endpoint: v.string(), usuarioId: v.id("usuarios") },
-  handler: async (ctx, { endpoint, usuarioId }) => {
-    const s = await ctx.db
-      .query("pushSubscriptions")
-      .withIndex("por_endpoint", (q) => q.eq("endpoint", endpoint))
-      .first();
-    if (s && s.usuarioId === usuarioId) await ctx.db.delete(s._id);
+export const borrarSubCaducada = internalMutation({
+  args: { id: v.id("pushSubscriptions"), usuarioId: v.id("usuarios"), p256dh: v.string() },
+  handler: async (ctx, { id, usuarioId, p256dh }) => {
+    const s = await ctx.db.get(id);
+    if (s && s.usuarioId === usuarioId && s.p256dh === p256dh) await ctx.db.delete(id);
   },
 });

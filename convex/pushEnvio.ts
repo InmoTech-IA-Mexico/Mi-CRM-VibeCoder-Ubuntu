@@ -1,6 +1,6 @@
 "use node";
 
-import { action } from "./_generated/server";
+import { action, internalAction } from "./_generated/server";
 import type { ActionCtx } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { v } from "convex/values";
@@ -16,7 +16,7 @@ type Payload = { titulo: string; cuerpo: string; url: string; tag?: string };
 // Tipos de retorno EXPLÍCITOS: rompen la inferencia circular entre la action y la
 // API generada (si se omiten, el codegen degrada `api`/`internal` a `any`).
 type Resultado = { total: number; enviadas: number; caducadas: number; fallidas: number };
-type Suscripcion = { endpoint: string; p256dh: string; auth: string };
+type Suscripcion = { id: Id<"pushSubscriptions">; endpoint: string; p256dh: string; auth: string };
 
 function configurarVapid() {
   const pub = process.env.VAPID_PUBLIC_KEY;
@@ -40,7 +40,7 @@ async function enviarAUsuario(ctx: ActionCtx, usuarioId: Id<"usuarios">, payload
     } catch (e) {
       const code = (e as { statusCode?: number }).statusCode;
       if (code === 404 || code === 410) {
-        await ctx.runMutation(internal.push.borrarPorEndpoint, { endpoint: s.endpoint, usuarioId });
+        await ctx.runMutation(internal.push.borrarSubCaducada, { id: s.id, usuarioId, p256dh: s.p256dh });
         caducadas++;
       } else {
         fallidas++;
@@ -67,5 +67,35 @@ export const enviarPrueba = action({
       url: "/inicio",
       tag: "prueba-jua33",
     });
+  },
+});
+
+/**
+ * Vacía la cola de alertas de cliente frío (JUA-33 Fase C). Lo dispara el cron
+ * horario: toma las pendientes cuya hora local del negocio es diurna, envía la
+ * notificación al destinatario y las marca; descarta las obsoletas. Interno.
+ */
+export const flushNotificaciones = internalAction({
+  args: {},
+  handler: async (ctx): Promise<{ enviadas: number; descartadas: number }> => {
+    const items = await ctx.runQuery(internal.notificaciones.paraEnviar, {});
+    let enviadas = 0;
+    let descartadas = 0;
+    for (const it of items) {
+      if (it.accion === "descartar") {
+        await ctx.runMutation(internal.notificaciones.marcarDescartada, { id: it.id });
+        descartadas++;
+        continue;
+      }
+      await enviarAUsuario(ctx, it.usuarioId, {
+        titulo: "⚠️ Cliente frío",
+        cuerpo: `${it.nombre} lleva 15 días sin contacto`,
+        url: `/clientes/${it.clienteId}`,
+        tag: `frio-${it.clienteId}`,
+      });
+      await ctx.runMutation(internal.notificaciones.marcarEnviada, { id: it.id });
+      enviadas++;
+    }
+    return { enviadas, descartadas };
   },
 });
