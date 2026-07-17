@@ -1,7 +1,8 @@
 # Alerta push de cliente frío (JUA-33) — ciclo de auditoría y despliegue
 
 **Fecha:** 2026-07-16 → 2026-07-17
-**Resultado:** **GO CON OBSERVACIONES** (Fase C global v2) → **DESPLEGADO Y VERIFICADO EN VIVO (prod)**
+**Resultado:** **GO CON OBSERVACIONES** (Fase C global v2) → **DESPLEGADO Y VERIFICADO EN VIVO (prod)** →
+**CIERRE PRODUCTIVO RATIFICADO** (postdespliegue v3).
 **Commit desplegado:** `6a693cc` (main). **Base productiva previa:** `2136a30`.
 **Prod:** Convex `glad-bird-297` + Railway `Mi-CRM-VibeCoder-Ubuntu` (deployment `ed8f1c22`).
 
@@ -31,12 +32,17 @@ responsable (duplicado + admin perdía su alerta) y no se revalidaba la preferen
 `6a693cc`: audiencia **materializada** por fila (`responsable`/`admin_negocio`/`admin_pool`) + fuente única
 `prefFrioEfectiva` usada por encolar y revalidar.
 
-## Manejo de observaciones (dictamen global v2)
+## Manejo de observaciones (dictámenes global v2 y postdespliegue v3)
 
-- **OBS-2** — `QA_HELPERS` ausente en prod verificado antes del deploy; funciones `qa*` inertes.
-- **OBS-3** — redacción de la constancia de B-4 ajustada a "sin cambios persistentes remanentes".
-- **OBS-4** — esta carpeta (evidencia versionada). Índice de la cola por `estado`+`proximoIntento`: diferido.
-- **OBS-1** — poda de suscripción muerta (`statusCode=undefined`) tras N fallos de red: diferido.
+- **OBS-2 (v2)** — `QA_HELPERS` ausente en prod verificado antes del deploy; funciones `qa*` inertes.
+- **OBS-3 (v2/v3)** — redacción ajustada a "sin residuos funcionales salvo la fila terminal documentada"
+  en las actas de despliegue y B-4; evidencia sanitizada archivada en esta carpeta.
+- **OBS-1 (v3) — RESUELTA:** el cron horario **se observó en vivo** ejecutando `flushNotificaciones` con
+  `caller: "Cron"` a las **21:15:01 y 22:15:01 UTC** del 2026-07-17 (schedule `minuteUTC: 15`); la
+  verificación de entrega usó un flush **invocado manualmente** (aclarado en el acta de despliegue).
+- **OBS-2 (v3)** — la fila terminal QA se registra en el inventario del acta de despliegue.
+- **OBS-4 (v2/v3) — diferidas:** poda de suscripción muerta (`statusCode=undefined`) tras N fallos de red;
+  índice de la cola por `estado`+`proximoIntento`. No condicionan el cierre.
 
 ## Verificación
 

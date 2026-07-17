@@ -72,7 +72,7 @@ dictamen: aun con B-4 cerrada, el **despliegue** requiere cargar las claves VAPI
 
 ## Constancia
 
-B-4 no modifica código de aplicación y quedó **sin cambios persistentes remanentes** (la prueba tocó
-temporalmente datos de Convex dev —suscripción, alerta y fixture— que se restauraron: 0 subs, 0 notifs,
-Sofía activa). Sin despliegue, sin `git push`, sin cambios en prod/remoto/Linear. (Redacción ajustada por
-OBS-3 del dictamen global v2.)
+B-4 (dev) no modifica código de aplicación y quedó **sin residuos funcionales**: la prueba tocó
+temporalmente datos de Convex dev —suscripción, alerta y fixture— que se restauraron (0 subs, 0 notifs
+—purgadas con el helper QA de dev—, Sofía activa). Sin despliegue, sin `git push`, sin cambios en
+prod/remoto/Linear. (Redacción ajustada por OBS-3 de los dictámenes v2/v3.)

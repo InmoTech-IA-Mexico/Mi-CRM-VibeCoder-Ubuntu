@@ -34,19 +34,34 @@ Con **cuenta QA revocable** (`qa-push-prod@test.mx`, operativo), no las cuentas 
 1. Invitada por la admin, activada por el operador, suscrito un dispositivo real (Chrome). El **interruptor
    apareció** → confirma la variable pública de Railway en el build.
 2. Flujo **automático** (no el botón de prueba): se reasignó **transitoriamente** un cliente frío
-   (`Beltrán & Co`, 33 días, inactivo) al usuario QA y se recicló → `flushNotificaciones` en prod:
-   `{ reclamadas: 1, enviadas: 1, conFallo: 0 }`.
+   (`Beltrán & Co`, 33 días, inactivo) al usuario QA y se recicló → se **invocó `flushNotificaciones`
+   manualmente** (`npx convex run … --prod`) para verificar de inmediato, sin esperar la pasada programada:
+   `{ reclamadas: 1, enviadas: 1, conFallo: 0 }`. (Precisión OBS-1 v3: el disparo del envío en ESTA prueba
+   fue manual; la detección/encolado/emisión/deep-link son los del flujo real.)
 3. En el dispositivo: llegó **"⚠️ Cliente frío"** con el nombre del cliente; al **tocarla abrió la ficha de
    Beltrán & Co**, no Inicio (verificado por el operador).
+
+### Evidencia del cron horario autónomo (OBS-1 v3)
+
+Los logs de Convex prod acreditan que el **scheduler horario ejecutó `pushEnvio:flushNotificaciones` por sí
+mismo**, con `caller: "Cron"`, en dos pasadas tras el despliegue:
+- **2026-07-17 21:15:01 UTC** (`caller: Cron`)
+- **2026-07-17 22:15:01 UTC** (`caller: Cron`)
+
+Ambas a `:15:01`, coincidiendo con `minuteUTC: 15` del `crons.hourly`. (La ejecución manual de la
+verificación aparece aparte, a las 22:42:48 UTC con `caller: HttpApi / instance_admin`.) Con esto, la
+pasada programada del cron queda **observada en vivo en producción**, no solo desplegada.
 
 ## Limpieza / restauración (salvaguarda 5)
 
 - Cliente `Beltrán & Co`: **responsable original restaurado** y estado **inactivo** (como estaba). No se
   tocaron recordatorios (no tenía uno próximo).
 - Usuario QA **revocado** (`usuarios.desactivar`): estado `inactivo`, **0 suscripciones** (se borraron).
-- **Residuo documentado (inevitable en prod):** queda **1 fila de notificación terminal** (`enviada`) del
-  usuario QA. En prod **no hay purga** (garantía de la salvaguarda 2: sin `QA_HELPERS`). Es un registro
-  histórico inocuo del propio test.
+- **Residuo documentado (inevitable en prod) — inventario QA (OBS-2 v3):** queda **1 fila de notificación
+  terminal** (`enviada`, `notificacionesPush`, usuario QA inactivo, cliente `Beltrán & Co`). No conserva
+  suscripción activa ni habilita entrega futura. En prod **no hay purga** (garantía de la salvaguarda 2:
+  sin `QA_HELPERS`). Registro histórico acotado; si el volumen de notificaciones terminales creciera,
+  definir una retención/purga (ligado a OBS-4).
 
 ## Estado
 
@@ -61,5 +76,8 @@ suscripción muerta tras N fallos de red) y el **índice `notificacionesPush` po
 ## Constancia
 
 Despliegue realizado con GO del dictamen global v2. Secretos cargados por el operador, ninguno en repo/
-drivers/actas. Datos de prod restaurados salvo el residuo terminal documentado. Evidencia a archivar
-(sanitizada) en `auditorias/2026-07-17-push-jua33/`.
+drivers/actas. Producción quedó **sin residuos funcionales salvo la fila terminal documentada** (OBS-3 v3):
+la prueba modificó temporalmente datos de dev y prod que fueron restaurados (cliente reasignado y reciclado
+→ devuelto a su responsable y estado; usuario QA revocado con sus suscripciones borradas). Evidencia
+sanitizada **ya archivada** en `auditorias/2026-07-17-push-jua33/` (commit `a5fde04`, pusheado). Ratificado
+por el dictamen postdespliegue v3 (GO, cierre productivo).
