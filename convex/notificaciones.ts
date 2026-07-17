@@ -1,47 +1,67 @@
-import { internalQuery, internalMutation } from "./_generated/server";
+import { internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 import type { Id } from "./_generated/dataModel";
 import { partesLocales } from "./fechas";
 
-// Cola de notificaciones push (JUA-33 Fase C). Estas funciones (runtime normal)
-// deciden QUÉ enviar y marcan el resultado; el envío real lo hace la action Node
-// `pushEnvio.flushNotificaciones`, que las orquesta.
+// Cola de notificaciones push (JUA-33 Fase C, remediación B-3). El envío real lo
+// hace la action Node `pushEnvio.flushNotificaciones`, que reclama un lote aquí,
+// envía, y registra el resultado. Estas mutaciones son la parte DURABLE del
+// protocolo: reclamación con lease, recuperación de leases vencidos, reintentos
+// con backoff y estado terminal según el resultado real del emisor.
 
 // Horario diurno del negocio para no enviar de noche (decisión de producto).
 const HORA_INICIO = 9;
 const HORA_FIN = 20; // [9:00, 20:00)
+const LEASE_MS = 5 * 60 * 1000; // vigencia de una reclamación "enviando"
+const MAX_INTENTOS = 3;
+const LOTE_MAX = 50; // reclama por lotes (obs. escala)
+const BACKOFF_MS = 30 * 60 * 1000; // reintento: intentos * 30 min
 
-type Item =
-  | { accion: "descartar"; id: Id<"notificacionesPush"> }
-  | {
-      accion: "enviar";
-      id: Id<"notificacionesPush">;
-      usuarioId: Id<"usuarios">;
-      clienteId: Id<"clientes">;
-      nombre: string;
-    };
+/** Ítem reclamado para enviar (id de la fila + datos del payload). */
+export type Reclamo = {
+  id: Id<"notificacionesPush">;
+  usuarioId: Id<"usuarios">;
+  clienteId: Id<"clientes">;
+  nombre: string;
+  intentos: number;
+};
 
 /**
- * Notificaciones pendientes con su decisión: `descartar` (cliente borrado o ya no
- * inactivo → alerta obsoleta) o `enviar` (cliente sigue frío Y es horario diurno en
- * la zona del negocio). Las que están fuera de horario se omiten (siguen pendientes).
+ * Reclama un lote de notificaciones listas para enviar. Antes: recupera las
+ * `enviando` con lease vencido (una action que cayó a medias) devolviéndolas a
+ * `pendiente`. Luego, de las pendientes elegibles (proximoIntento <= ahora):
+ * descarta las obsoletas (cliente borrado o ya no Inactivo), respeta el guard de
+ * horario diurno por zona del negocio, y reclama el resto moviéndolas a `enviando`
+ * con lease e incrementando `intentos`. Devuelve los reclamos a enviar.
  */
-export const paraEnviar = internalQuery({
+export const reclamarLote = internalMutation({
   args: {},
-  handler: async (ctx): Promise<Item[]> => {
+  handler: async (ctx): Promise<Reclamo[]> => {
+    const ahora = Date.now();
+
+    // 1) Recuperación: leases vencidos vuelven a la cola.
+    const enviando = await ctx.db
+      .query("notificacionesPush")
+      .withIndex("por_estado", (q) => q.eq("estado", "enviando"))
+      .collect();
+    for (const n of enviando) {
+      if ((n.leaseHasta ?? 0) < ahora) await ctx.db.patch(n._id, { estado: "pendiente" });
+    }
+
+    // 2) Reclamar pendientes elegibles.
     const pendientes = await ctx.db
       .query("notificacionesPush")
       .withIndex("por_estado", (q) => q.eq("estado", "pendiente"))
       .collect();
-    const ahora = Date.now();
+    const elegibles = pendientes.filter((n) => (n.proximoIntento ?? n.creadoEn) <= ahora).slice(0, LOTE_MAX);
+
     const negocioCache = new Map<Id<"negocios">, string>();
-    const out: Item[] = [];
-    for (const n of pendientes) {
+    const reclamos: Reclamo[] = [];
+    for (const n of elegibles) {
       const cliente = await ctx.db.get(n.clienteId);
-      // Revalidación: si el cliente se borró o dejó de estar Inactivo (lo
-      // contactaron entre encolar y enviar), la alerta es obsoleta → descartar.
+      // Revalidación (base; B-1 la ampliará con recordatorio próximo y destinatario).
       if (!cliente || cliente.eliminadoEn != null || cliente.estado !== "inactivo") {
-        out.push({ accion: "descartar", id: n._id });
+        await ctx.db.patch(n._id, { estado: "descartada", resultado: "cliente_obsoleto", leaseHasta: undefined });
         continue;
       }
       let tz = negocioCache.get(n.negocioId);
@@ -51,25 +71,48 @@ export const paraEnviar = internalQuery({
         negocioCache.set(n.negocioId, tz);
       }
       const hora = partesLocales(ahora, tz).hora;
-      if (hora < HORA_INICIO || hora >= HORA_FIN) continue; // fuera de horario: espera
-      out.push({ accion: "enviar", id: n._id, usuarioId: n.usuarioId, clienteId: n.clienteId, nombre: cliente.nombre });
+      if (hora < HORA_INICIO || hora >= HORA_FIN) continue; // fuera de horario: sigue pendiente
+
+      const intentos = (n.intentos ?? 0) + 1;
+      await ctx.db.patch(n._id, { estado: "enviando", leaseHasta: ahora + LEASE_MS, intentos });
+      reclamos.push({ id: n._id, usuarioId: n.usuarioId, clienteId: n.clienteId, nombre: cliente.nombre, intentos });
     }
-    return out;
+    return reclamos;
   },
 });
 
-/** Marca una notificación como enviada (procesada). Interno. */
-export const marcarEnviada = internalMutation({
-  args: { id: v.id("notificacionesPush") },
-  handler: async (ctx, { id }) => {
-    await ctx.db.patch(id, { estado: "enviada", enviadaEn: Date.now() });
+/**
+ * Registra el resultado REAL de un intento de envío (obs. B-3): éxito o "sin
+ * dispositivos" → `enviada`; con fallos transitorios → reintento con backoff hasta
+ * `MAX_INTENTOS`, luego `descartada`. Idempotente frente a leases perdidos: solo
+ * actúa si la fila sigue en `enviando` y en el MISMO intento reclamado.
+ */
+export const registrarResultado = internalMutation({
+  args: {
+    id: v.id("notificacionesPush"),
+    intentos: v.number(),
+    total: v.number(),
+    fallidas: v.number(),
   },
-});
-
-/** Marca una notificación como descartada (obsoleta). Interno. */
-export const marcarDescartada = internalMutation({
-  args: { id: v.id("notificacionesPush") },
-  handler: async (ctx, { id }) => {
-    await ctx.db.patch(id, { estado: "descartada" });
+  handler: async (ctx, { id, intentos, total, fallidas }) => {
+    const n = await ctx.db.get(id);
+    if (!n || n.estado !== "enviando" || (n.intentos ?? 0) !== intentos) return; // lease perdido / ya resuelto
+    const ahora = Date.now();
+    if (fallidas === 0) {
+      await ctx.db.patch(id, {
+        estado: "enviada",
+        enviadaEn: ahora,
+        leaseHasta: undefined,
+        resultado: total === 0 ? "sin_dispositivos" : "entregada",
+      });
+    } else if (intentos >= MAX_INTENTOS) {
+      await ctx.db.patch(id, { estado: "descartada", leaseHasta: undefined, resultado: "fallo_persistente" });
+    } else {
+      await ctx.db.patch(id, {
+        estado: "pendiente",
+        leaseHasta: undefined,
+        proximoIntento: ahora + BACKOFF_MS * intentos,
+      });
+    }
   },
 });

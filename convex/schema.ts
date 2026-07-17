@@ -242,15 +242,27 @@ export default defineSchema({
     .index("por_usuario", ["usuarioId"]),
 
   // Cola de notificaciones push (JUA-33, Fase C): se ENCOLA una fila al pasar un
-  // cliente a Inactivo (cliente frío), con destinatario. Un cron `flush` la envía
-  // en horario diurno de la zona del negocio (desacopla detección de entrega y
-  // permite el guard de horario). Estados: pendiente → enviada / descartada.
+  // cliente a Inactivo (cliente frío), con destinatario. Un cron `flush` reclama un
+  // lote (estado `enviando` con lease), lo envía y registra el resultado real
+  // (éxito / sin dispositivos / reintento con backoff / fallo persistente). El lease
+  // permite recuperar entregas cuya action cayó a medias. Estados: pendiente →
+  // enviando → enviada / descartada. El evento CRM es único; la entrega externa es
+  // best-effort (puede duplicarse excepcionalmente tras una recuperación).
   notificacionesPush: defineTable({
     negocioId: v.id("negocios"),
     usuarioId: v.id("usuarios"), // destinatario
     clienteId: v.id("clientes"),
     tipo: v.literal("cliente_frio"),
-    estado: v.union(v.literal("pendiente"), v.literal("enviada"), v.literal("descartada")),
+    estado: v.union(
+      v.literal("pendiente"),
+      v.literal("enviando"),
+      v.literal("enviada"),
+      v.literal("descartada"),
+    ),
+    intentos: v.optional(v.number()),
+    proximoIntento: v.optional(v.number()), // epoch; elegible cuando <= ahora
+    leaseHasta: v.optional(v.number()), // epoch; vigencia de la reclamación "enviando"
+    resultado: v.optional(v.string()), // razón del estado terminal
     creadoEn: v.number(),
     enviadaEn: v.optional(v.number()),
   })

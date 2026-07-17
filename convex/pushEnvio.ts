@@ -77,25 +77,28 @@ export const enviarPrueba = action({
  */
 export const flushNotificaciones = internalAction({
   args: {},
-  handler: async (ctx): Promise<{ enviadas: number; descartadas: number }> => {
-    const items = await ctx.runQuery(internal.notificaciones.paraEnviar, {});
+  handler: async (ctx): Promise<{ reclamadas: number; enviadas: number; conFallo: number }> => {
+    const reclamos = await ctx.runMutation(internal.notificaciones.reclamarLote, {});
     let enviadas = 0;
-    let descartadas = 0;
-    for (const it of items) {
-      if (it.accion === "descartar") {
-        await ctx.runMutation(internal.notificaciones.marcarDescartada, { id: it.id });
-        descartadas++;
-        continue;
-      }
-      await enviarAUsuario(ctx, it.usuarioId, {
+    let conFallo = 0;
+    for (const r of reclamos) {
+      const res = await enviarAUsuario(ctx, r.usuarioId, {
         titulo: "⚠️ Cliente frío",
-        cuerpo: `${it.nombre} lleva 15 días sin contacto`,
-        url: `/clientes/${it.clienteId}`,
-        tag: `frio-${it.clienteId}`,
+        cuerpo: `${r.nombre} lleva 15 días sin contacto`,
+        url: `/clientes/${r.clienteId}`,
+        tag: `frio-${r.clienteId}`,
       });
-      await ctx.runMutation(internal.notificaciones.marcarEnviada, { id: it.id });
-      enviadas++;
+      // El resultado REAL decide el estado (éxito/sin dispositivos → enviada;
+      // fallo transitorio → reintento con backoff o descarte tras MAX_INTENTOS).
+      await ctx.runMutation(internal.notificaciones.registrarResultado, {
+        id: r.id,
+        intentos: r.intentos,
+        total: res.total,
+        fallidas: res.fallidas,
+      });
+      if (res.fallidas === 0) enviadas++;
+      else conFallo++;
     }
-    return { enviadas, descartadas };
+    return { reclamadas: reclamos.length, enviadas, conFallo };
   },
 });

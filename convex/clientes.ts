@@ -684,6 +684,8 @@ async function encolarClienteFrio(
       clienteId: c._id,
       tipo: "cliente_frio",
       estado: "pendiente",
+      intentos: 0,
+      proximoIntento: ahora, // elegible de inmediato (el flush aplica el guard de horario)
       creadoEn: ahora,
     });
   }
