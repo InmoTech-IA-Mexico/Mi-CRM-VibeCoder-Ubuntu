@@ -632,19 +632,24 @@ async function transicionarClientes(
   ahora: number,
 ) {
   const conRecordatorioProximo = recordatorioProximoIds(seguimientos, ahora);
-  const adminsPorNegocio = new Map<Id<"negocios">, Id<"usuarios">[]>();
+  const usuariosPorNegocio = new Map<Id<"negocios">, Doc<"usuarios">[]>();
   let cambiados = 0;
   for (const c of clientes) {
     if (debeMarcarseInactivo(c, ahora, conRecordatorioProximo)) {
       await ctx.db.patch(c._id, { estado: "inactivo", actualizadoEn: ahora });
       cambiados++;
-      // Alerta de cliente frío (JUA-33 Fase C): encola una notificación push para
-      // el responsable (o, si está en el pool, los admin activos). El cron `flush`
-      // la envía en horario diurno. La entrega efectiva es best-effort.
-      await encolarClienteFrio(ctx, c, ahora, adminsPorNegocio);
+      // Alerta de cliente frío (JUA-33 Fase C): encola una notificación push según
+      // la PREFERENCIA de cada usuario (JUA-33 B-2). El cron `flush` la envía en
+      // horario diurno; la entrega efectiva es best-effort.
+      await encolarClienteFrio(ctx, c, ahora, usuariosPorNegocio);
     }
   }
   return cambiados;
+}
+
+/** Preferencia efectiva de alertas de cliente frío (ausente → por defecto de rol). */
+function prefFrio(u: Doc<"usuarios">): "ninguna" | "cartera" | "pool" | "negocio" {
+  return u.prefClienteFrio ?? (u.rol === "admin" ? "ninguna" : "cartera");
 }
 
 /** Encola la alerta de cliente frío para sus destinatarios, con dedup por pendiente. */
@@ -652,23 +657,31 @@ async function encolarClienteFrio(
   ctx: MutationCtx,
   c: Doc<"clientes">,
   ahora: number,
-  adminsPorNegocio: Map<Id<"negocios">, Id<"usuarios">[]>,
+  usuariosPorNegocio: Map<Id<"negocios">, Doc<"usuarios">[]>,
 ) {
-  let destinatarios: Id<"usuarios">[];
-  if (c.responsableId) {
-    destinatarios = [c.responsableId];
-  } else {
-    let admins = adminsPorNegocio.get(c.negocioId);
-    if (!admins) {
-      const us = await ctx.db
-        .query("usuarios")
-        .withIndex("por_negocio", (q) => q.eq("negocioId", c.negocioId))
-        .collect();
-      admins = us.filter((u) => u.rol === "admin" && u.estado === "activo").map((u) => u._id);
-      adminsPorNegocio.set(c.negocioId, admins);
-    }
-    destinatarios = admins;
+  let usuarios = usuariosPorNegocio.get(c.negocioId);
+  if (!usuarios) {
+    usuarios = (
+      await ctx.db.query("usuarios").withIndex("por_negocio", (q) => q.eq("negocioId", c.negocioId)).collect()
+    ).filter((u) => u.estado === "activo");
+    usuariosPorNegocio.set(c.negocioId, usuarios);
   }
+  // Destinatarios según preferencia (JUA-33 B-2): el responsable recibe si su pref
+  // incluye su cartera; los admin reciben según "negocio" (todas) o "pool" (solo sin
+  // asignar). La suscripción del dispositivo es transporte, no aceptación de alertas.
+  const destinatarios = new Set<Id<"usuarios">>();
+  if (c.responsableId) {
+    const resp = usuarios.find((u) => u._id === c.responsableId);
+    if (resp && (prefFrio(resp) === "cartera" || prefFrio(resp) === "negocio")) destinatarios.add(resp._id);
+  }
+  for (const u of usuarios) {
+    if (u.rol !== "admin") continue;
+    const p = prefFrio(u);
+    if (p === "negocio") destinatarios.add(u._id);
+    else if (p === "pool" && !c.responsableId) destinatarios.add(u._id);
+  }
+  if (destinatarios.size === 0) return;
+
   // Dedup: no dupliques una PENDIENTE del mismo cliente para el mismo destinatario
   // (una nueva alerta solo se encola en un episodio de enfriamiento posterior).
   const previas = await ctx.db

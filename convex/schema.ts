@@ -65,6 +65,11 @@ export default defineSchema({
     rol,
     estado: v.union(v.literal("activo"), v.literal("pendiente"), v.literal("inactivo")),
     ultimoAcceso: v.optional(v.number()),
+    // Preferencia de alertas push de cliente frío (JUA-33). Ausente = por defecto de
+    // rol (operativo: "cartera"; admin: "ninguna", opt-in).
+    prefClienteFrio: v.optional(
+      v.union(v.literal("ninguna"), v.literal("cartera"), v.literal("pool"), v.literal("negocio")),
+    ),
     // Autenticación (JUA-6):
     passwordHash: v.optional(v.string()), // "saltHex:hashHex" (scrypt)
     intentosFallidos: v.optional(v.number()),

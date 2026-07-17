@@ -27,6 +27,13 @@ export type Frecuencia = (typeof FRECUENCIAS)[number];
 export const ROLES = ["admin", "operativo", "observador"] as const;
 export type Rol = (typeof ROLES)[number];
 
+// Preferencia de alertas push de cliente frío (JUA-33). Operativo: "cartera" (sus
+// clientes) u "ninguna". Admin: "ninguna" (por defecto, opt-in) / "pool" (solo sin
+// asignar) / "negocio" (todas). La suscripción del dispositivo es el transporte;
+// esta preferencia es QUÉ alertas quiere el usuario.
+export const PREFS_CLIENTE_FRIO = ["ninguna", "cartera", "pool", "negocio"] as const;
+export type PrefClienteFrio = (typeof PREFS_CLIENTE_FRIO)[number];
+
 export const ESTADOS_CUENTA = ["activo", "pendiente", "inactivo"] as const;
 export type EstadoCuenta = (typeof ESTADOS_CUENTA)[number];
 
@@ -46,6 +53,7 @@ export const LABELS = {
   tipoInteraccion: { llamada: "Llamada", reunion: "Reunión", correo: "Correo", mensaje: "Mensaje", visita: "Visita", interno: "Interno" },
   frecuencia: { una_vez: "Una vez", semanal: "Semanal", mensual: "Mensual" },
   rol: { admin: "Administrador", operativo: "Operativo", observador: "Observador" },
+  prefClienteFrio: { ninguna: "Ninguna", cartera: "Mis clientes", pool: "Solo sin asignar", negocio: "Todo el negocio" },
 } as const;
 
 /** Reglas de negocio (PRD). */

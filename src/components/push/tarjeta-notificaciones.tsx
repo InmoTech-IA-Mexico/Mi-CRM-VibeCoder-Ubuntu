@@ -1,10 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useMutation, useAction } from "convex/react";
+import { useMutation, useAction, useQuery } from "convex/react";
 import { Bell, AlertCircle, Smartphone, Send } from "lucide-react";
 import { api } from "../../../convex/_generated/api";
 import { useSesion } from "@/components/session/use-sesion";
+import { LABELS, type PrefClienteFrio } from "@/lib/enums";
 import { cn } from "@/lib/utils";
 
 // Alerta push de cliente frío (JUA-33): activar/desactivar las notificaciones de
@@ -28,6 +29,8 @@ export function TarjetaNotificaciones() {
   const guardar = useMutation(api.push.guardarSubscription);
   const borrar = useMutation(api.push.borrarSubscription);
   const enviarPrueba = useAction(api.pushEnvio.enviarPrueba);
+  const preferencia = useQuery(api.push.miPreferenciaFrio, { token });
+  const guardarPref = useMutation(api.push.guardarPreferenciaFrio);
 
   // Navegador compatible (independiente de la config). `configurado` = la clave
   // pública VAPID está presente (obs. OBS-3: distinguir "no compatible" de "config
@@ -188,6 +191,34 @@ export function TarjetaNotificaciones() {
             </button>
           )}
         </div>
+
+        {/* Preferencia de alertas (JUA-33 B-2): QUÉ alertas quiere el usuario, aparte del dispositivo */}
+        {soportado && configurado && preferencia && preferencia.rol !== "observador" && (
+          <div className="flex flex-col gap-2 border-t border-neutral-100 pt-3">
+            <p className="text-[13px] font-medium text-ink">¿Qué alertas de cliente frío recibir?</p>
+            <div className="flex gap-1.5 rounded-2xl border border-[#E0D9C9] bg-[#F0ECE2] p-1">
+              {(preferencia.rol === "admin"
+                ? (["ninguna", "pool", "negocio"] as const)
+                : (["cartera", "ninguna"] as const)
+              ).map((op: PrefClienteFrio) => (
+                <button
+                  key={op}
+                  type="button"
+                  aria-pressed={preferencia.pref === op}
+                  onClick={() => {
+                    if (preferencia.pref !== op) void guardarPref({ token, pref: op });
+                  }}
+                  className={cn(
+                    "h-9 flex-1 rounded-[10px] text-[12.5px] transition",
+                    preferencia.pref === op ? "bg-surface font-semibold text-ink shadow-sm" : "font-medium text-body",
+                  )}
+                >
+                  {LABELS.prefClienteFrio[op]}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {activa && soportado && configurado && (
           <div className="flex flex-col gap-2 border-t border-neutral-100 pt-3">

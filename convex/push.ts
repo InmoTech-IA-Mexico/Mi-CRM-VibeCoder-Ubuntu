@@ -109,6 +109,42 @@ export const borrarSubscription = mutation({
   },
 });
 
+const PREF_V = v.union(v.literal("ninguna"), v.literal("cartera"), v.literal("pool"), v.literal("negocio"));
+
+/** Preferencia efectiva de alertas de cliente frío (ausente → por defecto de rol). */
+function prefEfectiva(rol: string, pref: string | undefined): "ninguna" | "cartera" | "pool" | "negocio" {
+  if (pref === "ninguna" || pref === "cartera" || pref === "pool" || pref === "negocio") return pref;
+  return rol === "admin" ? "ninguna" : "cartera";
+}
+
+/** Preferencia de alertas de cliente frío del propio usuario (JUA-33 B-2), con su rol. */
+export const miPreferenciaFrio = query({
+  args: { token: v.string() },
+  handler: async (ctx, { token }) => {
+    const sesion = await resolverSesion(ctx, token);
+    if (!sesion) return null;
+    return { rol: sesion.usuario.rol, pref: prefEfectiva(sesion.usuario.rol, sesion.usuario.prefClienteFrio) };
+  },
+});
+
+/** Guarda la preferencia de alertas de cliente frío del usuario de la sesión. */
+export const guardarPreferenciaFrio = mutation({
+  args: { token: v.string(), pref: PREF_V },
+  handler: async (ctx, { token, pref }) => {
+    const sesion = await resolverSesion(ctx, token);
+    if (!sesion) throw new Error("No autorizado");
+    // El observador (solo lectura) no tiene cartera ni recibe alertas de gestión.
+    const permitida =
+      sesion.usuario.rol === "admin"
+        ? ["ninguna", "pool", "negocio"]
+        : sesion.usuario.rol === "operativo"
+          ? ["ninguna", "cartera"]
+          : ["ninguna"];
+    if (!permitida.includes(pref)) throw new Error("Preferencia no válida para el rol");
+    await ctx.db.patch(sesion.usuario._id, { prefClienteFrio: pref });
+  },
+});
+
 /** Nº de dispositivos (suscripciones) del propio usuario de la sesión. */
 export const misDispositivos = query({
   args: { token: v.string() },
