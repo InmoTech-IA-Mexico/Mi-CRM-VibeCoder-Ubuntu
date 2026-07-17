@@ -1,0 +1,10 @@
+Reporte driver-35 B-2 preferencias de alerta de cliente frío (JUA-33)
+fecha: 2026-07-17T11:27:08-0600
+resultado: OK (5 PASS / 0 FAIL)
+helpers QA (dev); prefs y datos restaurados; sin secretos.
+
+PASS — T1 defaults: solo el operativo (cartera); admin 'ninguna' no recibe (1)
+PASS — T2: operativo 'ninguna' → no se encola para él
+PASS — T3: admin 'negocio' recibe además del responsable (2)
+PASS — T4: cliente en pool + admin 'pool' → solo el admin (True)
+PASS — T4b: admin 'pool' NO recibe si el cliente tiene responsable

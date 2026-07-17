@@ -1,0 +1,27 @@
+Reporte — JUA-33 Fase C (disparo automático) verificado en dev (merry-squirrel-978)
+fecha: 2026-07-16
+método: se hizo transicionar un cliente demo (reprogramando su recordatorio al pasado para que dejara
+        de ser "próximo"), se observó el encolado y el flush, y se restauró el recordatorio. No hay
+        forma pública de antedatar un cliente, por eso se usó un cliente ya frío por fecha.
+sin secretos: verificaciones por consulta directa (MCP runOneoffQuery); sin claves ni tokens.
+
+PASS — ENCOLADO: al pasar el cliente a Inactivo (sincronizarInactividad, cambiados=1) se creó 1 fila
+       notificacionesPush {estado: pendiente, tipo: cliente_frio, destinatario: el responsable}.
+PASS — GUARD DE HORARIO + FLUSH: con hora local del negocio 19:59 (dentro de [9:00,20:00)),
+       flushNotificaciones → {enviadas: 1, descartadas: 0}; la fila quedó {estado: enviada}.
+       (El destinatario tenía 0 dispositivos suscritos, así que no hubo entrega efectiva; la entrega
+        real ya se validó manualmente por separado — ver reporte-entrega-real-manual-dev.txt.)
+PASS — DEDUP: re-ejecutar sincronizarInactividad → cambiados=0 (el cliente ya está Inactivo; no se
+       re-encola en el mismo episodio).
+PASS — FLUSH VACÍO: segunda ejecución de flushNotificaciones → {enviadas: 0, descartadas: 0}.
+PASS — RESTAURACIÓN: el recordatorio del cliente demo se devolvió a su fecha original.
+
+Cobertura por código (no ejercido dinámicamente por límites del entorno):
+- Guard nocturno (hora < 9 o ≥ 20 → se deja pendiente): revisado; la rama diurna se probó positiva.
+- Descartar obsoletas (cliente borrado o reactivado entre encolar y enviar → estado descartada):
+  revisado en `notificaciones.paraEnviar`.
+- Destinatario del pool → admins activos del negocio: revisado en `encolarClienteFrio`.
+
+Estado del cron: `flush-notificaciones-push` (cada hora, minuto 15 UTC) en convex/crons.ts.
+Nota de demo: el cliente quedó Inactivo (estado correcto: lleva 15+ días frío; el cron lo haría igual);
+1 fila notificacionesPush en estado "enviada" (inerte).

@@ -1,0 +1,12 @@
+Reporte driver-36 B-1/B-2 audiencia + preferencia vigente (JUA-33)
+fecha: 2026-07-17T12:56:38-0600
+resultado: OK (7 PASS / 0 FAIL)
+helpers QA (dev); usuarios/prefs/responsable/recordatorio restaurados; sin secretos.
+
+PASS — T1: audiencias materializadas y ambas filas reclaman a distinto usuario (['Carlos', 'Marta'])
+PASS — T2: admin que pasó a 'ninguna' se descarta (no se redirige); Carlos NO duplica (['Carlos'])
+PASS — T3: responsable redirigido al actual; admin_negocio permanece admin (['Marta', 'Vendedor Dos'])
+PASS — T4a: admin_pool se descarta cuando el cliente deja de estar sin asignar
+PASS — T4b: admin_pool se descarta cuando el admin pasa a 'ninguna'
+PASS — T5a: responsable inactivo → fila descartada (ejecutado dinámicamente)
+PASS — T5b: pool con admin inactivo → fila descartada (ejecutado dinámicamente)

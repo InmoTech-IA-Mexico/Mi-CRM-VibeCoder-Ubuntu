@@ -1,0 +1,7 @@
+Reporte driver-32 ENTREGA REAL de Web Push (JUA-33)
+fecha: 2026-07-17T01:39:35.748Z
+baseUrl: http://localhost:3000
+resultado: CON FALLOS (0 PASS / 1 FAIL)
+suscripción QA creada y eliminada; sin tokens ni contraseñas.
+
+FAIL — excepción: Error: page.evaluate: AbortError: Registration failed - permission denied

@@ -1,0 +1,12 @@
+Reporte driver-33 B-3 cobertura dinámica (JUA-33, obs. P-1 + condición #2)
+fecha: 2026-07-17T10:53:46-0600
+resultado: OK (7 PASS / 0 FAIL)
+helpers QA internos gateados por env (inertes en prod); residuos purgados; sin secretos.
+
+PASS — setup: 1 notif pendiente encolada (1)
+PASS — P-1: todo caducado (404/410) → 'suscripcion_caducada', NO 'entregada' (enviada/suscripcion_caducada)
+PASS — complemento: enviadas>0 → 'entregada'
+PASS — complemento: sin suscripciones → 'sin_dispositivos'
+PASS — recuperación: enviando con lease vencido → vuelve a pendiente
+PASS — 3er fallo: intentos=MAX + fallo → descartada/fallo_persistente (descartada/fallo_persistente)
+PASS — idempotencia: resultado de un intento viejo → no-op (sigue enviando, intentos=2): enviando/2

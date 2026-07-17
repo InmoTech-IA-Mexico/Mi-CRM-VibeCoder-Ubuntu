@@ -1,0 +1,17 @@
+Reporte driver-31 remediación push NO-GO A+B (JUA-33)
+fecha: 2026-07-16T19:32:36-0600
+resultado: OK (11 PASS / 0 FAIL)
+B-2: verificar aparte que js7445ee1x076e6cmg72c8sja18aphw1 quedó con 0 pushSubscriptions (mcp runOneoffQuery).
+operativo QA creado y desactivado; sin tokens ni contraseñas.
+
+PASS — OBS-2: endpoint no-HTTPS → rechazado
+PASS — OBS-2: clave excesivamente larga → rechazada
+PASS — B-1: Carlos suscribe el endpoint (sus dispositivos suben 1)
+PASS — B-1: tras re-suscribir desde otra cuenta, el endpoint YA NO es de Carlos
+PASS — B-1: el endpoint pasó al nuevo usuario (Vendedor Dos)
+PASS — B-1: el dueño anterior NO puede borrar el endpoint reasignado
+PASS — B-1: el nuevo dueño sí lo borra
+PASS — B-3: con sub que falla → total>0 y 0 enviadas (UI mostrará fallo, no 'sin dispositivos'): {'caducadas': 0, 'enviadas': 0, 'fallidas': 1, 'total': 1}
+PASS — B-3: limpieza — Carlos vuelve a su línea base de dispositivos
+PASS — Auth: enviarPrueba con token inválido → No autorizado
+PASS — B-2: el operativo QA tiene 1 dispositivo antes de desactivar

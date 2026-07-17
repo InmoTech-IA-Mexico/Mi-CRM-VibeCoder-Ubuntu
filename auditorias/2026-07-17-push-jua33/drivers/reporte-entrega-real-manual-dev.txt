@@ -1,0 +1,33 @@
+Reporte — Prueba de ENTREGA REAL de Web Push (JUA-33), manual en navegador real
+fecha: 2026-07-16
+
+*** ERRATA (2026-07-17, obs. B-4 dictamen Fase C) ***
+La línea "se abrió Inicio (notificationclick / deep-link)" es IMPRECISA: el botón "Enviar
+notificación de prueba" manda `url:/inicio` POR DISEÑO, así que abrir Inicio es lo correcto para
+ESE botón, pero NO valida el deep-link de la alerta AUTOMÁTICA de cliente frío (`/clientes/[id]`).
+Esa validación se hizo aparte en B-4 (flujo automático real): ver
+`tmp/auditoria-push-jua33-faseC-B4-entrega-real.md` y `reporte-B4-entrega-real-dev.txt`.
+*** fin errata ***
+
+entorno: dev (merry-squirrel-978) + frontend local http://localhost:3000, tras reiniciar
+         `npm run dev` para cargar NEXT_PUBLIC_VAPID_PUBLIC_KEY. Navegador real de escritorio.
+motivo: la entrega real no es reproducible en headless (Chromium sin push service falla al
+        suscribirse: "Registration failed - permission denied"); se valida manualmente.
+sin secretos: no se incluyen claves VAPID ni endpoints/tokens.
+
+Procedimiento:
+  1. Iniciar sesión y abrir Perfil y ajustes → Notificaciones.
+  2. Activar "Avisos de cliente frío" y conceder el permiso del navegador.
+  3. Pulsar "Enviar notificación de prueba".
+
+Resultado (verificado por el usuario):
+  PASS — la notificación "Notificación de prueba" APARECIÓ en el dispositivo (entrega real).
+  PASS — al TOCAR la notificación se abrió Inicio (notificationclick / deep-link).
+  PASS — el mensaje de resultado del botón fue coherente (B-3), no "sin dispositivos".
+
+Cobertura: valida el transporte extremo a extremo (suscripción real → firma VAPID + web-push →
+push service → service worker → showNotification → notificationclick). Cubre la aserción de UI de
+B-3 y OBS-4 (recepción + clic) en dev.
+
+Pendiente para producción: repetir esta prueba en prod tras cargar las env VAPID en Railway
+(pública) y Convex prod (privada/subject), y comprobar contra prod que ambas las consumen.

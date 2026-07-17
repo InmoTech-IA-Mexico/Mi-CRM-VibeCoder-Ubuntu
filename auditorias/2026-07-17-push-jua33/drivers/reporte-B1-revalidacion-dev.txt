@@ -1,0 +1,10 @@
+Reporte driver-34 B-1 revalidación transaccional (JUA-33)
+fecha: 2026-07-17T11:07:12-0600
+resultado: OK (4 PASS / 0 FAIL)
+helpers QA internos gateados (dev); residuos purgados; Sofía restaurada a Carlos. Sin secretos.
+responsable_inactivo y pool→no-admin cubiertos por código (revalidarDestino).
+
+PASS — T1 setup: 1 pendiente encolada
+PASS — T1: recordatorio próximo (≤3 días) → descartada/recordatorio_proximo (descartada/recordatorio_proximo)
+PASS — T2 setup: notif encolada para Carlos (responsable)
+PASS — T2: tras reasignar, la alerta se REDIRIGE al responsable actual (Vendedor Dos) y se reclama (True/enviando)

@@ -1,0 +1,46 @@
+Reporte — B-4: ENTREGA REAL de la alerta AUTOMÁTICA de cliente frío + deep-link (JUA-33)
+fecha: 2026-07-17
+entorno: dev (merry-squirrel-978) + frontend local http://localhost:3000. Navegador real (Chrome escritorio).
+motivo: la entrega real no es automatizable en headless; se valida manualmente con el usuario.
+sin secretos: no se incluyen claves VAPID ni endpoints/tokens.
+
+Diferencia clave con la prueba del 2026-07-16: aquí se ejercita el FLUJO AUTOMÁTICO
+(`pushEnvio.flushNotificaciones`), NO el botón "Enviar notificación de prueba". El payload
+automático lleva `url:/clientes/[id]` y `tag:frio-[id]` (el del botón lleva `/inicio`).
+
+Procedimiento:
+  1. Sesión de Carlos (operativo, responsable de Sofía Beltrán, pref 'cartera').
+     Perfil → Notificaciones → activar "Avisos de cliente frío" + conceder permiso.
+  2. Reciclar a Sofía a fría (cambiarEstado→activo conserva ultimaInteraccion; recordatorio al pasado;
+     sincronizarInactividad) → `encolarClienteFrio` encola 1 fila (audiencia 'responsable', usuario=Carlos).
+  3. `pushEnvio.flushNotificaciones` (flujo automático real).
+
+Resultado del emisor (flush limpio):
+  { reclamadas: 1, enviadas: 1, conFallo: 0 }
+  fila terminal → estado: "enviada", resultado: "entregada", audiencia: "responsable".
+
+Resultado en el dispositivo (verificado por el usuario):
+  PASS — llegó la notificación AUTOMÁTICA con título "⚠️ Cliente frío" y cuerpo
+         "Sofía Beltrán lleva 15 días sin contacto" (nombre del cliente esperado).
+  PASS — al TOCARLA se abrió la FICHA DE SOFÍA (/clientes/[id]), NO Inicio.
+
+Incidencia y resolución durante la prueba:
+  - El primer flush dio {enviadas:0, conFallo:1} porque Carlos tenía 2 subs: una NUEVA (viva) y una
+    VIEJA muerta. Diagnóstico local (web-push con las claves de .env.local): la nueva entregó 201; la
+    vieja falló con statusCode=undefined (error de red, no 404/410). Se verificó que las claves VAPID
+    pública y privada COINCIDEN entre .env.local y el entorno de Convex dev (hash md5 igual).
+  - Se eliminó la sub muerta (push.borrarSubCaducada) → una sola sub viva → flush limpio "entregada".
+
+Limpieza del fixture (condición 4 del dictamen):
+  - Sofía restaurada a "activo" con su recordatorio futuro (1784350182771); 0 notificaciones residuales.
+  - El usuario apagó el interruptor → 0 suscripciones de Carlos.
+  - Prefs por defecto: Carlos 'cartera', Marta 'ninguna'; usuarios activos.
+
+Observación no bloqueante (OBS):
+  Una suscripción muerta que falla con statusCode=undefined se trata como fallo TRANSITORIO
+  (reintento con backoff hasta MAX_INTENTOS→descartada), no se auto-borra (solo 404/410 la borran).
+  Defendible (undefined puede ser un corte pasajero), pero conviene documentarlo: un endpoint
+  permanentemente inalcanzable churnea 3 intentos antes de descartarse sin limpiar la fila de sub.
+
+Pendiente para producción: cargar las env VAPID en Railway (pública) y Convex prod (privada/subject),
+`npx convex deploy`, verificar contrato en prod, `git push`, y repetir esta prueba real contra prod.

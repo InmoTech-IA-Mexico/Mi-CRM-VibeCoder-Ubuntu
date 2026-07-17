@@ -1,0 +1,33 @@
+Reporte — JUA-33 remediación B-3 (cola durable: reclamación + lease + reintento) en dev
+fecha: 2026-07-17
+método: se recicla un cliente demo ya frío (cambiarEstado→activo conserva su ultimaInteraccion vieja,
+        así que sigue frío) para generar encolados nuevos; no hay antedatado público. Verificación de
+        estados por consulta directa (MCP runOneoffQuery). Sin secretos.
+
+PASS — RECLAMACIÓN: al encolar (transición) y ejecutar flushNotificaciones, reclamarLote movió la fila
+       a "enviando" con lease e intentos=1 (flush: reclamadas=1).
+PASS — FALLO → REINTENTO (fix central de B-3): con una suscripción fake del destinatario (el envío
+       falla), flush → {reclamadas:1, enviadas:0, conFallo:1}; la fila quedó estado="pendiente",
+       intentos=1, proximoIntento en el FUTURO (backoff), lease limpio. Es decir, un fallo NO se marca
+       "enviada" (el bug de B-3): se reintenta según el resultado real del emisor.
+PASS — ÉXITO / SIN DISPOSITIVOS → "enviada": cubierto en la verificación de Fase C
+       (reporte-faseC-flujo-automatico-dev.txt): destinatario sin dispositivos → fila "enviada"
+       (resultado "sin_dispositivos"), procesada una sola vez.
+
+Cubierto por código (ramas dependientes del tiempo/estado, no ejercidas dinámicamente por no poder
+controlar el reloj ni antedatar en el entorno; se probarán junto a B-1 y en la prueba real de prod):
+- Recuperación de lease vencido: una "enviando" con leaseHasta < ahora vuelve a "pendiente"
+  (reclamarLote, paso 1). Evita filas atascadas si la action cae a medias.
+- Progresión de reintentos con backoff (proximoIntento += intentos*30min) hasta MAX_INTENTOS=3 →
+  estado "descartada" (resultado "fallo_persistente").
+- Idempotencia: registrarResultado solo actúa si la fila sigue en "enviando" y en el MISMO intento
+  reclamado (n.intentos === intentos), ignorando resultados de un lease perdido.
+- Descarte de obsoletas: reclamarLote descarta (resultado "cliente_obsoleto") si el cliente se borró o
+  ya no está Inactivo entre encolar y reclamar.
+
+Semántica declarada: el evento CRM es único (una alerta por episodio de enfriamiento, dedup por
+pendiente); la entrega externa es best-effort y puede duplicarse excepcionalmente tras una recuperación
+de lease. El cron `flush-notificaciones-push` corre cada hora.
+
+Residuo de demo (dev): filas notificacionesPush de Sofía Beltrán (1 "enviada", 1 "pendiente" en
+backoff que el cron resolverá); Sofía quedó Inactiva (estado correcto) con su recordatorio restaurado.
