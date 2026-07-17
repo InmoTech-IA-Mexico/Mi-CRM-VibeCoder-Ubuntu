@@ -10,6 +10,7 @@ import {
 import { api } from "../../../../../convex/_generated/api";
 import { useSesion } from "@/components/session/use-sesion";
 import { BarraFortaleza } from "@/components/ui/barra-fortaleza";
+import { TarjetaNotificaciones } from "@/components/push/tarjeta-notificaciones";
 import { LABELS } from "@/lib/enums";
 import { cn } from "@/lib/utils";
 
@@ -66,6 +67,9 @@ export function PantallaPerfil() {
 
         <DatosPersonales token={token} nombreActual={usuario.nombre} emailActual={usuario.email} />
         <CambiarPassword token={token} />
+
+        {/* Alerta push de cliente frío (JUA-33) */}
+        <TarjetaNotificaciones />
 
         {/* Accesos de administrador (solo Marta) */}
         {rol === "admin" && (

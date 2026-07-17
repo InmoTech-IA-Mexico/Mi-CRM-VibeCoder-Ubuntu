@@ -224,4 +224,20 @@ export default defineSchema({
   })
     .index("por_token", ["token"])
     .index("por_negocio", ["negocioId"]),
+
+  // Suscripciones Web Push (JUA-33): un dispositivo/navegador = una fila
+  // (identificada por su `endpoint` único). Guarda las claves de cifrado del
+  // navegador (p256dh/auth) para poder enviarle notificaciones. El usuario se
+  // suscribe desde /perfil con permiso explícito; se borra al desactivar o si el
+  // push service responde 404/410 (caducada).
+  pushSubscriptions: defineTable({
+    usuarioId: v.id("usuarios"),
+    negocioId: v.id("negocios"),
+    endpoint: v.string(),
+    p256dh: v.string(),
+    auth: v.string(),
+    creadoEn: v.number(),
+  })
+    .index("por_endpoint", ["endpoint"])
+    .index("por_usuario", ["usuarioId"]),
 });
