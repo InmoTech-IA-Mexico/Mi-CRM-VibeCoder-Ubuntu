@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useMutation } from "convex/react";
-import { Bell, AlertCircle, Smartphone } from "lucide-react";
+import { useMutation, useAction } from "convex/react";
+import { Bell, AlertCircle, Smartphone, Send } from "lucide-react";
 import { api } from "../../../convex/_generated/api";
 import { useSesion } from "@/components/session/use-sesion";
 import { cn } from "@/lib/utils";
@@ -27,28 +27,43 @@ export function TarjetaNotificaciones() {
   const { token } = useSesion();
   const guardar = useMutation(api.push.guardarSubscription);
   const borrar = useMutation(api.push.borrarSubscription);
+  const enviarPrueba = useAction(api.pushEnvio.enviarPrueba);
 
   const [soportado, setSoportado] = useState<boolean | null>(null);
   const [activa, setActiva] = useState(false);
   const [ocupado, setOcupado] = useState(false);
   const [denegado, setDenegado] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [probando, setProbando] = useState(false);
+  const [resultadoPrueba, setResultadoPrueba] = useState<string | null>(null);
 
   useEffect(() => {
-    const ok =
-      typeof window !== "undefined" &&
-      "serviceWorker" in navigator &&
-      "PushManager" in window &&
-      "Notification" in window &&
-      !!VAPID_PUBLIC;
-    setSoportado(ok);
-    if (!ok) return;
-    setDenegado(Notification.permission === "denied");
-    navigator.serviceWorker
-      .getRegistration()
-      .then((reg) => reg?.pushManager.getSubscription())
-      .then((sub) => setActiva(!!sub))
-      .catch(() => {});
+    let cancelado = false;
+    const detectar = async () => {
+      const ok =
+        typeof window !== "undefined" &&
+        "serviceWorker" in navigator &&
+        "PushManager" in window &&
+        "Notification" in window &&
+        !!VAPID_PUBLIC;
+      let activaLocal = false;
+      if (ok) {
+        try {
+          const reg = await navigator.serviceWorker.getRegistration();
+          activaLocal = !!(await reg?.pushManager.getSubscription());
+        } catch {
+          /* sin registro previo */
+        }
+      }
+      if (cancelado) return;
+      setSoportado(ok);
+      setDenegado(ok && Notification.permission === "denied");
+      setActiva(activaLocal);
+    };
+    void detectar();
+    return () => {
+      cancelado = true;
+    };
   }, []);
 
   const activar = useCallback(async () => {
@@ -98,6 +113,25 @@ export function TarjetaNotificaciones() {
     }
   }, [borrar, token]);
 
+  const probar = useCallback(async () => {
+    setProbando(true);
+    setResultadoPrueba(null);
+    setError(null);
+    try {
+      const r = await enviarPrueba({ token });
+      setResultadoPrueba(
+        r.enviadas > 0
+          ? `Enviada a ${r.enviadas} ${r.enviadas === 1 ? "dispositivo" : "dispositivos"}.`
+          : "No hay dispositivos suscritos ahora mismo.",
+      );
+    } catch (e) {
+      console.error("No se pudo enviar la notificación de prueba", e);
+      setError("No se pudo enviar la notificación de prueba.");
+    } finally {
+      setProbando(false);
+    }
+  }, [enviarPrueba, token]);
+
   if (soportado === null) return null; // detectando (evita parpadeo)
 
   return (
@@ -135,6 +169,24 @@ export function TarjetaNotificaciones() {
             </button>
           )}
         </div>
+
+        {activa && soportado && (
+          <div className="flex flex-col gap-2 border-t border-neutral-100 pt-3">
+            <button
+              type="button"
+              onClick={probar}
+              disabled={probando}
+              aria-busy={probando}
+              className="flex h-10 items-center justify-center gap-2 rounded-xl border border-border-input bg-surface text-[13.5px] font-semibold text-ink active:scale-[0.99] disabled:opacity-50"
+            >
+              <Send size={15} strokeWidth={1.9} className="text-body" />
+              {probando ? "Enviando…" : "Enviar notificación de prueba"}
+            </button>
+            {resultadoPrueba && (
+              <p className="text-center text-[12px] text-muted">{resultadoPrueba}</p>
+            )}
+          </div>
+        )}
 
         {!soportado && (
           <div className="flex items-start gap-2 rounded-xl border border-neutral-100 bg-neutral-50 px-3 py-2.5">
