@@ -56,7 +56,7 @@ export default defineSchema({
     emailAdmin: v.string(),
     zonaHoraria: v.string(),
     estado: v.union(v.literal("activo"), v.literal("suspendido")),
-  }),
+  }).index("por_email_admin", ["emailAdmin"]),
 
   usuarios: defineTable({
     negocioId: v.id("negocios"),
