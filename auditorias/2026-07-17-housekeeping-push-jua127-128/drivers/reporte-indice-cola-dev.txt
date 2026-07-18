@@ -1,0 +1,8 @@
+Reporte driver-42 JUA-128 índice por_estado_intento (rango proximoIntento)
+fecha: 2026-07-17T18:45:35-0600
+resultado: OK (3 PASS / 0 FAIL)
+helpers QA (dev); datos restaurados; sin secretos.
+
+PASS — setup: notif de Sofía encolada (pendiente)
+PASS — T1: proximoIntento futuro → excluido del reclamo (sigue pendiente)
+PASS — T2: proximoIntento pasado → incluido en el reclamo (pasa a enviando)

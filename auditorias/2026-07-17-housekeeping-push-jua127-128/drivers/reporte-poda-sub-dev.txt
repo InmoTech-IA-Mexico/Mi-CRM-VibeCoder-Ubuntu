@@ -1,0 +1,13 @@
+Reporte driver-41 JUA-127 clasificación del fallo de envío por código (procesarFalloEnvio)
+fecha: 2026-07-17T18:56:59-0600
+resultado: OK (8 PASS / 0 FAIL)
+subs fake de dev, limpiadas; sin secretos.
+
+PASS — T1: 404 → caducada (borra la sub)
+PASS — T1b: 410 → caducada (borra la sub)
+PASS — T2: sin código HTTP → red (1,2) y poda al 3º
+PASS — T3: 429/5xx/401/403 → http (no poda, no incrementa) — evita poda por config VAPID
+PASS — T4: una respuesta HTTP reinicia la racha de red (no se acumula a través de un 5xx)
+PASS — T5: un envío con éxito reinicia el contador de red
+PASS — T6: p256dh no coincidente → no actúa (no incrementa ni borra)
+PASS — T7 (OBS-1): re-suscribir el mismo endpoint reinicia fallosRed a 0
