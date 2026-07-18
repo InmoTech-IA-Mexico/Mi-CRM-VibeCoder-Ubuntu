@@ -26,7 +26,6 @@ import type * as oportunidades from "../oportunidades.js";
 import type * as push from "../push.js";
 import type * as pushEnvio from "../pushEnvio.js";
 import type * as recuperacion from "../recuperacion.js";
-import type * as registro from "../registro.js";
 import type * as seed from "../seed.js";
 import type * as seguimientos from "../seguimientos.js";
 import type * as usuarios from "../usuarios.js";
@@ -57,7 +56,6 @@ declare const fullApi: ApiFromModules<{
   push: typeof push;
   pushEnvio: typeof pushEnvio;
   recuperacion: typeof recuperacion;
-  registro: typeof registro;
   seed: typeof seed;
   seguimientos: typeof seguimientos;
   usuarios: typeof usuarios;

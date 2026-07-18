@@ -221,11 +221,6 @@ export function FormularioLogin({
             ¿Olvidaste tu contraseña?
           </Link>
         </div>
-        <div className="mt-3 border-t border-neutral-100 pt-3 text-center">
-          <Link href="/registro" className="text-[13px] font-medium text-body">
-            ¿Nuevo negocio? <span className="font-semibold text-gold-text">Crea tu cuenta</span>
-          </Link>
-        </div>
       </form>
     </>
   );

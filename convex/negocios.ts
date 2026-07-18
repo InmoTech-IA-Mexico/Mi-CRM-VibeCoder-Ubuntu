@@ -22,6 +22,7 @@ import { randomBytes, bytesToHex } from "@noble/hashes/utils.js";
 
 const SIETE_DIAS_MS = 7 * 24 * 60 * 60 * 1000;
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/; // misma regla que usuarios/invitaciones
+const EMAIL_ADMIN_DEMO = "marta@demo.mx"; // negocio demo (seed): nunca borrable por QA
 const ZONA_DEFECTO = "America/Mexico_City"; // el admin la fija al activar (JUA-8)
 const NOMBRE_MAX = 80;
 
@@ -36,7 +37,7 @@ function zonaValida(tz: string): boolean {
 }
 
 /** Nombre de negocio saneado, o ConvexError. */
-export function validarNombre(nombre: string): string {
+function validarNombre(nombre: string): string {
   const n = nombre.trim();
   if (!n) throw new ConvexError("El nombre del negocio es obligatorio");
   if (n.length > NOMBRE_MAX) throw new ConvexError("El nombre del negocio es demasiado largo");
@@ -44,7 +45,7 @@ export function validarNombre(nombre: string): string {
 }
 
 /** Zona horaria saneada (por defecto `America/Mexico_City`), validada IANA (OBS-1). */
-export function validarZona(zonaHoraria: string | undefined): string {
+function validarZona(zonaHoraria: string | undefined): string {
   const z = zonaHoraria?.trim() || ZONA_DEFECTO;
   if (!zonaValida(z)) throw new ConvexError("Zona horaria no válida (usa una zona IANA, p. ej. America/Mexico_City)");
   return z;
@@ -65,7 +66,7 @@ function validarBaseUrl(baseUrl: string | undefined): void {
  * ni OTRO negocio (índice `por_email_admin`, excluyendo `negocioIdExcluir`) lo usan.
  * Devuelve el email normalizado o lanza ConvexError.
  */
-export async function validarEmailAdminLibre(
+async function validarEmailAdminLibre(
   ctx: MutationCtx,
   emailRaw: string,
   negocioIdExcluir?: Id<"negocios">,
@@ -226,17 +227,20 @@ export const listarNegocios = internalQuery({
 // --- Helper SOLO para pruebas (dev) -----------------------------------------
 // Borra un negocio de PRUEBA y sus dependientes directos (usuarios + sesiones +
 // invitaciones). Interno y gateado por `QA_HELPERS=1` (solo dev, inerte en prod).
-// Restringido a negocios de prueba (email `@test.mx`) para no poder tocar el demo
-// ni un negocio real (obs. OBS-3).
+// Guard basado en DATOS (obs. OBS-3, más robusto que un patrón de email): nunca el
+// negocio demo, y solo si NO tiene clientes — los negocios con datos reales quedan
+// protegidos (el demo, que siempre tiene clientes, también).
 
-/** Borra un negocio de prueba (`@test.mx`) y sus dependientes (solo pruebas, dev). */
+/** Borra un negocio de prueba SIN clientes (nunca el demo) y sus dependientes (solo pruebas, dev). */
 export const qaBorrarNegocio = internalMutation({
   args: { negocioId: v.id("negocios") },
   handler: async (ctx, { negocioId }) => {
     if (process.env.QA_HELPERS !== "1") throw new Error("QA helpers deshabilitados");
     const negocio = await ctx.db.get(negocioId);
     if (!negocio) throw new Error("Negocio no encontrado");
-    if (!negocio.emailAdmin.endsWith("@test.mx")) throw new Error("qaBorrarNegocio solo borra negocios de prueba (@test.mx)");
+    if (negocio.emailAdmin === EMAIL_ADMIN_DEMO) throw new Error("No se borra el negocio demo");
+    const conClientes = await ctx.db.query("clientes").withIndex("por_negocio", (q) => q.eq("negocioId", negocioId)).first();
+    if (conClientes) throw new Error("qaBorrarNegocio solo borra negocios SIN clientes (protege datos reales)");
     const usuarios = await ctx.db.query("usuarios").withIndex("por_negocio", (q) => q.eq("negocioId", negocioId)).collect();
     for (const u of usuarios) {
       const sesiones = await ctx.db.query("sesiones").withIndex("por_usuario", (q) => q.eq("usuarioId", u._id)).collect();
