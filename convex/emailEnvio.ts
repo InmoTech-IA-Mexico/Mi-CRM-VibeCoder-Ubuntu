@@ -2,7 +2,7 @@
 
 import { internalAction } from "./_generated/server";
 import { internal } from "./_generated/api";
-import { plantillaInvitacion, plantillaRecuperacion } from "./emailPlantillas";
+import { plantillaInvitacion, plantillaRecuperacion, normalizarBaseUrl } from "./emailPlantillas";
 import type { Correo } from "./emailPlantillas";
 import type { EmailReclamo } from "./emailCola";
 
@@ -23,10 +23,13 @@ type FlushResultado = { reclamados: number; enviados: number; fallidos: number }
 
 const dormir = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-/** Base absoluta para componer los enlaces en el servidor (la action no tiene `window`). */
+/**
+ * Base para componer los enlaces en el servidor (la action no tiene `window`). Validada y
+ * normalizada (HTTPS salvo localhost; solo el origen) — obs. B-2 del dictamen v2. `null`
+ * si falta o es inválida → `flush` inerte, sin reclamar.
+ */
 function baseUrl(): string | null {
-  const b = process.env.APP_BASE_URL?.trim().replace(/\/+$/, "");
-  return b || null;
+  return normalizarBaseUrl(process.env.APP_BASE_URL);
 }
 
 /** Compone el correo de un reclamo (o null si falta la base). El token va solo aquí, en memoria. */
@@ -88,7 +91,7 @@ export const flush = internalAction({
     // cola espera a que existan la key y la base. Validación al iniciar (no por correo).
     const base = baseUrl();
     if (!process.env.RESEND_API_KEY || !base) {
-      console.log("[email] deshabilitado (falta RESEND_API_KEY o APP_BASE_URL); no se reclama la cola");
+      console.log("[email] deshabilitado (falta RESEND_API_KEY, o APP_BASE_URL ausente/inválida); no se reclama la cola");
       return { reclamados: 0, enviados: 0, fallidos: 0 };
     }
 

@@ -17,6 +17,8 @@ const LEASE_MS = 5 * 60 * 1000; // vigencia de una reclamación "enviando"
 const MAX_INTENTOS = 3;
 const LOTE_MAX = 50;
 const BACKOFF_MS = 2 * 60 * 1000; // reintento: intentos * 2 min (correo es sensible al tiempo)
+const RETENCION_MS = 7 * 24 * 60 * 60 * 1000; // eventos terminales se purgan a los 7 días
+const PURGA_LOTE = 200;
 
 /** Referencia de dominio para encolar un correo (nunca el token). */
 export type RefEmail =
@@ -118,11 +120,11 @@ export const reclamarLote = internalMutation({
   handler: async (ctx): Promise<EmailReclamo[]> => {
     const ahora = Date.now();
 
-    // 1) Recuperación de leases vencidos.
+    // 1) Recuperación de leases vencidos (acotado a un lote, obs. escala del dictamen v2).
     const enviando = await ctx.db
       .query("emailsSalientes")
       .withIndex("por_estado_intento", (q) => q.eq("estado", "enviando"))
-      .collect();
+      .take(LOTE_MAX);
     for (const e of enviando) {
       if ((e.leaseHasta ?? 0) < ahora) await ctx.db.patch(e._id, { estado: "pendiente" });
     }
@@ -190,6 +192,32 @@ export const registrarResultado = internalMutation({
       return;
     }
     await ctx.db.patch(id, { estado: "pendiente", leaseHasta: undefined, proximoIntento: ahora + BACKOFF_MS * intentos });
+  },
+});
+
+/**
+ * Purga los eventos TERMINALES (`enviado`/`descartado`) con más de 7 días (obs. escala
+ * del dictamen v2: la outbox no debe crecer indefinidamente). Acotado por lote; un cron
+ * diario lo repite. Índice por rango de estado; filtra por antigüedad en memoria.
+ */
+export const purgarAntiguos = internalMutation({
+  args: {},
+  handler: async (ctx): Promise<{ borrados: number }> => {
+    const corte = Date.now() - RETENCION_MS;
+    let borrados = 0;
+    for (const estado of ["enviado", "descartado"] as const) {
+      const lote = await ctx.db
+        .query("emailsSalientes")
+        .withIndex("por_estado_intento", (q) => q.eq("estado", estado))
+        .take(PURGA_LOTE);
+      for (const e of lote) {
+        if (e.creadoEn < corte) {
+          await ctx.db.delete(e._id);
+          borrados++;
+        }
+      }
+    }
+    return { borrados };
   },
 });
 

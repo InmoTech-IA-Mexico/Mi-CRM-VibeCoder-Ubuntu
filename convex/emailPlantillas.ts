@@ -9,6 +9,28 @@
 
 export type Correo = { asunto: string; html: string; texto: string };
 
+/**
+ * Valida y normaliza `APP_BASE_URL` antes de componer enlaces que transportan tokens
+ * (capacidades). Rechaza cadenas no parseables y orígenes no HTTPS (salvo
+ * `http://localhost` / `127.0.0.1` para desarrollo). Devuelve SOLO el **origen**
+ * (esquema+host+puerto) → descarta cualquier path/query/fragmento, de modo que una base
+ * accidental o maliciosa no pueda inyectar nada en el `href`. `null` si es inválida:
+ * entonces `flush` queda inerte y no reclama (no quema intentos).
+ */
+export function normalizarBaseUrl(raw: string | undefined | null): string | null {
+  const s = raw?.trim();
+  if (!s) return null;
+  let u: URL;
+  try {
+    u = new URL(s);
+  } catch {
+    return null;
+  }
+  const esLocal = u.hostname === "localhost" || u.hostname === "127.0.0.1";
+  if (u.protocol === "https:" || (u.protocol === "http:" && esLocal)) return u.origin;
+  return null;
+}
+
 /** Escapa entidades HTML para interpolar datos del usuario en el cuerpo del correo. */
 export function escaparHtml(s: string): string {
   return s
@@ -23,13 +45,16 @@ export function escaparHtml(s: string): string {
 // no aplican <style> ni clases). `parrafosHtml` YA viene escapado por quien llama.
 function documentoHtml(parrafosHtml: string[], enlace: string, textoBoton: string, nota: string): string {
   const parrafos = parrafosHtml.map((p) => `<p style="margin:0 0 16px;font-size:15px;line-height:1.5;color:#2b2b2b">${p}</p>`).join("");
+  // Defensa en profundidad: aunque el enlace se compone del origen normalizado + token hex
+  // (sin comillas), se escapa al interpolarlo en el atributo `href` y en el cuerpo.
+  const enlaceHtml = escaparHtml(enlace);
   return [
     '<div style="max-width:480px;margin:0 auto;padding:24px;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif">',
     '<h1 style="margin:0 0 20px;font-size:20px;color:#0f3d3e">InmoTech IA México</h1>',
     parrafos,
-    `<p style="margin:24px 0"><a href="${enlace}" style="display:inline-block;background:#c9a227;color:#1a1a1a;text-decoration:none;font-weight:600;padding:12px 20px;border-radius:10px">${textoBoton}</a></p>`,
+    `<p style="margin:24px 0"><a href="${enlaceHtml}" style="display:inline-block;background:#c9a227;color:#1a1a1a;text-decoration:none;font-weight:600;padding:12px 20px;border-radius:10px">${textoBoton}</a></p>`,
     `<p style="margin:0 0 8px;font-size:13px;color:#6b6b6b">${nota}</p>`,
-    `<p style="margin:0;font-size:12px;color:#9a9a9a">Si el botón no funciona, copia y pega este enlace:<br>${enlace}</p>`,
+    `<p style="margin:0;font-size:12px;color:#9a9a9a">Si el botón no funciona, copia y pega este enlace:<br>${enlaceHtml}</p>`,
     "</div>",
   ].join("");
 }

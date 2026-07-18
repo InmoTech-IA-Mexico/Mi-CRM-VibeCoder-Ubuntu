@@ -32,4 +32,8 @@ crons.hourly("purgar-nonces-oauth", { minuteUTC: 45 }, internal.google.purgarNon
 // vencido), y recoge la acumulación si el envío estuvo deshabilitado (sin Resend).
 crons.interval("flush-emails", { minutes: 5 }, internal.emailEnvio.flush, {});
 
+// Retención de la outbox de correo (JUA-129, obs. escala): purga diaria de los eventos
+// terminales (enviado/descartado) con más de 7 días, para que la tabla no crezca sin fin.
+crons.daily("purgar-emails-antiguos", { hourUTC: 9, minuteUTC: 30 }, internal.emailCola.purgarAntiguos);
+
 export default crons;
