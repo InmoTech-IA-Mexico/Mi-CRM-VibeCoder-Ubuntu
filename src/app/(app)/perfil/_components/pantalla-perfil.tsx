@@ -264,6 +264,8 @@ function CuentaGoogle({ token }: { token: string }) {
 
   const quitar = async () => {
     if (ocupado) return;
+    // Confirmación breve para evitar una desvinculación accidental (obs. OBS-3).
+    if (!window.confirm("¿Desvincular tu cuenta de Google? Podrás volver a vincularla cuando quieras.")) return;
     setOcupado(true);
     setError(null);
     try {
