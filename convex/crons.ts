@@ -22,4 +22,8 @@ crons.daily("purga-exportaciones", { hourUTC: 9, minuteUTC: 0 }, internal.export
 // las zonas; el guard evita envíos nocturnos.
 crons.hourly("flush-notificaciones-push", { minuteUTC: 15 }, internal.pushEnvio.flushNotificaciones);
 
+// OAuth de Google (JUA-40): purga programada de los nonces expirados (TTL 5 min), como
+// red de seguridad además de la purga perezosa al emitir. Acota el tamaño de la tabla.
+crons.hourly("purgar-nonces-oauth", { minuteUTC: 45 }, internal.google.purgarNoncesExpirados);
+
 export default crons;

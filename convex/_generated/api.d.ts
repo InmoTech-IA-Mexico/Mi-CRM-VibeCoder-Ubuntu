@@ -16,6 +16,8 @@ import type * as enumsServidor from "../enumsServidor.js";
 import type * as etiquetas from "../etiquetas.js";
 import type * as exportaciones from "../exportaciones.js";
 import type * as fechas from "../fechas.js";
+import type * as google from "../google.js";
+import type * as googleAction from "../googleAction.js";
 import type * as inactividad from "../inactividad.js";
 import type * as inicio from "../inicio.js";
 import type * as invitaciones from "../invitaciones.js";
@@ -46,6 +48,8 @@ declare const fullApi: ApiFromModules<{
   etiquetas: typeof etiquetas;
   exportaciones: typeof exportaciones;
   fechas: typeof fechas;
+  google: typeof google;
+  googleAction: typeof googleAction;
   inactividad: typeof inactividad;
   inicio: typeof inicio;
   invitaciones: typeof invitaciones;

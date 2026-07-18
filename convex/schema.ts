@@ -74,9 +74,27 @@ export default defineSchema({
     passwordHash: v.optional(v.string()), // "saltHex:hashHex" (scrypt)
     intentosFallidos: v.optional(v.number()),
     bloqueadoHasta: v.optional(v.number()), // epoch; si > ahora, cuenta bloqueada
+    // Identidad federada de Google (JUA-40): el `sub` ESTABLE de la cuenta (no el
+    // email). Se vincula desde el perfil (sesión válida = prueba de control) y el
+    // login por Google resuelve por este campo. Ausente = sin cuenta de Google vinculada.
+    googleSub: v.optional(v.string()),
   })
     .index("por_email", ["email"])
-    .index("por_negocio", ["negocioId"]),
+    .index("por_negocio", ["negocioId"])
+    .index("por_google_sub", ["googleSub"]),
+
+  // Nonces de un solo uso para el OAuth de Google (JUA-40, anti-replay). El frontend
+  // pide un nonce, lo pasa a Google (viaja en el ID token), y el backend lo verifica y
+  // CONSUME una vez. Contextual por `operacion` (y por `usuarioId` en el vínculo). TTL
+  // corto; se purga por cron y al consumir.
+  noncesLogin: defineTable({
+    nonce: v.string(),
+    expiraEn: v.number(),
+    operacion: v.union(v.literal("login"), v.literal("vincular")),
+    usuarioId: v.optional(v.id("usuarios")), // solo "vincular": la sesión que lo pidió
+  })
+    .index("por_nonce", ["nonce"])
+    .index("por_expira", ["expiraEn"]),
 
   invitaciones: defineTable({
     negocioId: v.id("negocios"),
