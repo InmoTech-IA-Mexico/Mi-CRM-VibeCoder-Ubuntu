@@ -1,0 +1,15 @@
+Reporte driver-44 JUA-40 OAuth Google — modelo de nonce consumido (anti-replay sin emisión pública)
+fecha: 2026-07-18T16:54:42-0600
+resultado: OK (10 PASS / 0 FAIL)
+sub simulados de dev; vínculos limpiados; sin tokens/sub/email reales.
+
+PASS — T1: vincular fija googleSub
+PASS — T2: rechaza vincular un sub que ya es de otro
+PASS — T3: login por googleSub → sesión del usuario vinculado
+PASS — T4: login con sub sin vínculo → rechazado
+PASS — T5: login con usuario inactivo → rechazado
+PASS — T6: replay del mismo nonce → rechazado
+PASS — T7: un nonce consumido por login no sirve para vincular
+PASS — T8: la purga elimina nonces consumidos expirados
+PASS — T9: no existe una mutación pública de emisión de nonce (emitirNonceLogin)
+PASS — T10: desvincular (con contraseña) quita el vínculo

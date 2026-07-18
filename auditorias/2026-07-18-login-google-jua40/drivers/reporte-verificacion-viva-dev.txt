@@ -1,0 +1,32 @@
+Reporte — Verificación EN VIVO del Login con Google (JUA-40), manual en navegador real
+fecha: 2026-07-18
+entorno: dev (merry-squirrel-978) + frontend local http://localhost:3000, con
+         GOOGLE_CLIENT_ID (Convex dev) y NEXT_PUBLIC_GOOGLE_CLIENT_ID (.env.local).
+         Navegador real de escritorio + cuenta de Google real (usuario de prueba del Client ID).
+motivo: la criptografía real (GIS + google-auth-library + verificación server-side) no es
+        automatizable en headless; se valida manualmente.
+higiene: NO se registran ID tokens, `sub`, email, nonces ni el Client ID.
+
+Procedimiento y resultado (verificado por el operador):
+
+  FASE 1 — Vincular (prueba de control con sesión de contraseña)
+  1. Iniciar sesión con contraseña (usuario demo Carlos).
+  2. Perfil y ajustes → tarjeta "Cuenta de Google" → botón de Google → autorizar en Google.
+  PASS — la tarjeta pasó a "Tu cuenta está vinculada".
+  PASS — confirmado en la BD: el usuario quedó con `googleSub` registrado (valor no incluido).
+
+  FASE 2 — Entrar con Google
+  3. Cerrar sesión → /login → "Continuar con Google" → elegir la cuenta de Google.
+  PASS — entró directo a Inicio como el usuario vinculado, sin contraseña (sesión 8 h).
+
+  FASE 3 — Desvincular
+  4. Perfil → "Desvincular Google" (con confirmación).
+  PASS — `estadoVinculo` pasó de vinculado=true a vinculado=false (estado limpio).
+
+Cobertura: valida extremo a extremo la verificación real del ID token (firma/aud/iss/exp/
+email_verified/nonce), el registro atómico del nonce consumido, la resolución por `googleSub`,
+la creación de sesión y la desvinculación protegida.
+
+Pendiente para producción: repetir esta verificación en prod con una cuenta QA revocable tras
+cargar el Client ID en Convex prod (GOOGLE_CLIENT_ID) y Railway (NEXT_PUBLIC_GOOGLE_CLIENT_ID),
+incluyendo el rechazo genérico de una credencial de Google NO vinculada.
