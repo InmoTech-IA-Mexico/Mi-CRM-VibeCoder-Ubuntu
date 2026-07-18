@@ -14,6 +14,12 @@ import { OAuth2Client } from "google-auth-library";
 
 const client = new OAuth2Client();
 
+// Cotas de entrada (obs. OBS-2): acotan coste/memoria ante tráfico arbitrario antes de
+// pasar los valores a la librería. Un ID token de Google es un JWT (~1–2 KB); el nonce
+// del cliente son 32 hex.
+const IDTOKEN_MAX = 8192;
+const NONCE_MAX = 128;
+
 /**
  * Verifica el ID token y comprueba el nonce. Devuelve `sub` + `expiraEn` (= `exp` del
  * token, ms), o null (rechazo genérico). `expiraEn` se usa para purgar el nonce consumido
@@ -22,6 +28,7 @@ const client = new OAuth2Client();
 async function verificar(idToken: string, nonce: string): Promise<{ sub: string; expiraEn: number } | null> {
   const audience = process.env.GOOGLE_CLIENT_ID;
   if (!audience) throw new Error("Falta GOOGLE_CLIENT_ID en el entorno de Convex");
+  if (idToken.length > IDTOKEN_MAX || nonce.length > NONCE_MAX || nonce.length === 0) return null;
   try {
     const ticket = await client.verifyIdToken({ idToken, audience });
     const p = ticket.getPayload();
