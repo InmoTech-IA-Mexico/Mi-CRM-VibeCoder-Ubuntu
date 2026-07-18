@@ -57,7 +57,9 @@ export const guardarSubscription = mutation({
       .first();
     let id;
     if (existente) {
-      await ctx.db.patch(existente._id, { usuarioId: sesion.usuario._id, negocioId: sesion.negocioId, p256dh, auth });
+      // Re-suscribir reinicia el contador de fallos de red (obs. OBS-1): una sub que
+      // vuelve a registrarse no debe heredar fallos antiguos y podarse al primer error.
+      await ctx.db.patch(existente._id, { usuarioId: sesion.usuario._id, negocioId: sesion.negocioId, p256dh, auth, fallosRed: 0 });
       id = existente._id;
     } else {
       id = await ctx.db.insert("pushSubscriptions", {
@@ -186,22 +188,49 @@ export const subsDeUsuario = internalQuery({
 const MAX_FALLOS_RED = 3;
 
 /**
- * Registra un fallo de red al enviar. Incrementa `fallosRed`; si alcanza
- * `MAX_FALLOS_RED`, **poda** la suscripción (endpoint muerto) y devuelve `podada:true`.
- * Interno.
+ * Procesa el fallo de un envío SEGÚN el código de respuesta del push service, en una
+ * sola mutación (clasificación testeable, obs. B-1). Condicional por id+usuarioId+p256dh
+ * (no actúa sobre una fila reasignada o con claves rotadas). Clasificación:
+ *  - `404`/`410` → suscripción caducada: se **borra** (`resultado:"caducada"`).
+ *  - **sin `statusCode`** (error de RED, sin respuesta HTTP) → cuenta consecutivos y, al
+ *    `MAX_FALLOS_RED`.º, **poda** la sub muerta (`"podada"`); si no, `"red"`.
+ *  - **cualquier otra respuesta HTTP** (429, 5xx, 401, 403…) → hubo conectividad, así que
+ *    NO se poda: se **reinicia** el contador de red (para que "consecutivos" sea literal) y
+ *    se trata como transitorio (`"http"`). Así un 401/403 por config VAPID no poda subs sanas.
+ * El emisor cuenta `caducada`/`podada` como caducadas (sin reintento) y `red`/`http` como
+ * fallidas (la notificación reintenta con backoff).
  */
-export const contarFalloRed = internalMutation({
-  args: { id: v.id("pushSubscriptions"), usuarioId: v.id("usuarios"), p256dh: v.string() },
-  handler: async (ctx, { id, usuarioId, p256dh }): Promise<{ podada: boolean }> => {
+export const procesarFalloEnvio = internalMutation({
+  args: {
+    id: v.id("pushSubscriptions"),
+    usuarioId: v.id("usuarios"),
+    p256dh: v.string(),
+    statusCode: v.optional(v.number()),
+  },
+  handler: async (
+    ctx,
+    { id, usuarioId, p256dh, statusCode },
+  ): Promise<{ resultado: "caducada" | "podada" | "red" | "http" }> => {
     const s = await ctx.db.get(id);
-    if (!s || s.usuarioId !== usuarioId || s.p256dh !== p256dh) return { podada: false };
-    const fallos = (s.fallosRed ?? 0) + 1;
-    if (fallos >= MAX_FALLOS_RED) {
-      await ctx.db.delete(id);
-      return { podada: true };
+    if (!s || s.usuarioId !== usuarioId || s.p256dh !== p256dh) return { resultado: "http" };
+
+    if (statusCode === 404 || statusCode === 410) {
+      await ctx.db.delete(id); // el endpoint ya no existe
+      return { resultado: "caducada" };
     }
-    await ctx.db.patch(id, { fallosRed: fallos });
-    return { podada: false };
+    if (statusCode === undefined) {
+      // Error de RED (sin respuesta HTTP): cuenta consecutivos; poda la sub muerta al 3.º.
+      const fallos = (s.fallosRed ?? 0) + 1;
+      if (fallos >= MAX_FALLOS_RED) {
+        await ctx.db.delete(id);
+        return { resultado: "podada" };
+      }
+      await ctx.db.patch(id, { fallosRed: fallos });
+      return { resultado: "red" };
+    }
+    // Otra respuesta HTTP: hubo conectividad → NO podar; reinicia la racha de red.
+    if ((s.fallosRed ?? 0) > 0) await ctx.db.patch(id, { fallosRed: 0 });
+    return { resultado: "http" };
   },
 });
 
@@ -216,16 +245,3 @@ export const resetFalloRed = internalMutation({
   },
 });
 
-/**
- * Borra una suscripción caducada (404/410). Interno. Condicional por **id + versión**
- * (obs. OBS-2): solo borra si la fila con ese id SIGUE siendo del mismo usuario y con
- * la misma clave `p256dh` que leyó el emisor. Evita borrar una fila reasignada a otro
- * usuario o con claves renovadas por una carrera entre la lectura y la respuesta.
- */
-export const borrarSubCaducada = internalMutation({
-  args: { id: v.id("pushSubscriptions"), usuarioId: v.id("usuarios"), p256dh: v.string() },
-  handler: async (ctx, { id, usuarioId, p256dh }) => {
-    const s = await ctx.db.get(id);
-    if (s && s.usuarioId === usuarioId && s.p256dh === p256dh) await ctx.db.delete(id);
-  },
-});

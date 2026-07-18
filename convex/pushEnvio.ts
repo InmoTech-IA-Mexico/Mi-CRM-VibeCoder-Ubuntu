@@ -41,21 +41,15 @@ async function enviarAUsuario(ctx: ActionCtx, usuarioId: Id<"usuarios">, payload
       enviadas++;
     } catch (e) {
       const code = (e as { statusCode?: number }).statusCode;
-      if (code === 404 || code === 410) {
-        await ctx.runMutation(internal.push.borrarSubCaducada, { id: s.id, usuarioId, p256dh: s.p256dh });
-        caducadas++;
-      } else {
-        // Fallo de red sin código HTTP: cuenta consecutivos y poda la sub muerta tras N
-        // (JUA-127). Podada → cuenta como caducada (no provoca un reintento inútil); si
-        // aún no se poda, es transitorio → `fallidas` (reintento con backoff).
-        const r: { podada: boolean } = await ctx.runMutation(internal.push.contarFalloRed, {
-          id: s.id,
-          usuarioId,
-          p256dh: s.p256dh,
-        });
-        if (r.podada) caducadas++;
-        else fallidas++;
-      }
+      // Clasificación por código en una sola mutación (JUA-127, obs. B-1): 404/410 y la
+      // poda por red muerta → `caducadas` (sin reintento inútil); red-transitorio y otras
+      // respuestas HTTP (429/5xx/401/403) → `fallidas` (la notificación reintenta con backoff).
+      const r: { resultado: "caducada" | "podada" | "red" | "http" } = await ctx.runMutation(
+        internal.push.procesarFalloEnvio,
+        { id: s.id, usuarioId, p256dh: s.p256dh, statusCode: code },
+      );
+      if (r.resultado === "caducada" || r.resultado === "podada") caducadas++;
+      else fallidas++;
     }
   }
   return { total: subs.length, enviadas, caducadas, fallidas };
