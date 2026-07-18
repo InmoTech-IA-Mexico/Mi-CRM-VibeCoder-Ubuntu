@@ -256,19 +256,48 @@ function CambiarPassword({ token }: { token: string }) {
 // vive en /login; aquí solo se vincula/consulta.
 function CuentaGoogle({ token }: { token: string }) {
   const estado = useQuery(api.google.estadoVinculo, { token });
+  const desvincular = useMutation(api.google.desvincularGoogle);
   const [error, setError] = useState<string | null>(null);
-  const [reciente, setReciente] = useState(false);
-  const vinculado = reciente || estado?.vinculado === true;
+  const [reciente, setReciente] = useState<boolean | null>(null);
+  const [ocupado, setOcupado] = useState(false);
+  const vinculado = reciente ?? estado?.vinculado === true;
+
+  const quitar = async () => {
+    if (ocupado) return;
+    setOcupado(true);
+    setError(null);
+    try {
+      await desvincular({ token });
+      setReciente(false);
+    } catch (e) {
+      console.error("No se pudo desvincular Google", e);
+      setError(mensajeError(e, "No se pudo desvincular. Inténtalo de nuevo."));
+    } finally {
+      setOcupado(false);
+    }
+  };
 
   return (
     <Tarjeta titulo="Cuenta de Google">
       {vinculado ? (
-        <div className="flex items-center gap-2 rounded-xl border border-[#2E7D6B]/30 bg-[#E2EFEB] px-3 py-2.5">
-          <Check size={16} strokeWidth={2.2} className="flex-shrink-0 text-success" />
-          <p className="text-[12.5px] font-medium text-[#2E6E5E]">
-            Tu cuenta está vinculada. Ya puedes entrar con &ldquo;Continuar con Google&rdquo;.
-          </p>
-        </div>
+        <>
+          <div className="flex items-center gap-2 rounded-xl border border-[#2E7D6B]/30 bg-[#E2EFEB] px-3 py-2.5">
+            <Check size={16} strokeWidth={2.2} className="flex-shrink-0 text-success" />
+            <p className="text-[12.5px] font-medium text-[#2E6E5E]">
+              Tu cuenta está vinculada. Ya puedes entrar con &ldquo;Continuar con Google&rdquo;.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={quitar}
+            disabled={ocupado}
+            aria-busy={ocupado}
+            className="h-10 w-full rounded-xl border border-border-input bg-surface text-[13.5px] font-semibold text-body active:scale-[0.99] disabled:opacity-50"
+          >
+            {ocupado ? "Desvinculando…" : "Desvincular Google"}
+          </button>
+          <Aviso error={error} ok={false} okTexto="" />
+        </>
       ) : (
         <>
           <p className="text-[12.5px] leading-snug text-muted">

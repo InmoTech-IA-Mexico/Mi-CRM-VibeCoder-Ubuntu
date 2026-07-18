@@ -1,6 +1,6 @@
-import { query, internalMutation, internalQuery } from "./_generated/server";
+import { mutation, query, internalMutation, internalQuery } from "./_generated/server";
 import type { MutationCtx } from "./_generated/server";
-import { v } from "convex/values";
+import { v, ConvexError } from "convex/values";
 import { randomBytes, bytesToHex } from "@noble/hashes/utils.js";
 import { resolverSesion } from "./auth";
 
@@ -62,6 +62,21 @@ export const consumirNonceVincular = internalMutation({
     if (dueno && dueno._id !== usuarioId) return { ok: false }; // el sub ya es de otro
     await ctx.db.patch(usuarioId, { googleSub: sub });
     return { ok: true };
+  },
+});
+
+/**
+ * Desvincula la cuenta de Google del usuario de la sesión (JUA-40, obs. OBS-1). Requiere
+ * sesión válida (prueba de control) y que el usuario **conserve contraseña**, para no
+ * quedar sin ningún método de acceso.
+ */
+export const desvincularGoogle = mutation({
+  args: { token: v.string() },
+  handler: async (ctx, { token }) => {
+    const sesion = await resolverSesion(ctx, token);
+    if (!sesion) throw new ConvexError("No autorizado");
+    if (!sesion.usuario.passwordHash) throw new ConvexError("Configura una contraseña antes de desvincular Google.");
+    await ctx.db.patch(sesion.usuario._id, { googleSub: undefined });
   },
 });
 
