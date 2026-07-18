@@ -223,9 +223,10 @@ export function FormularioLogin({
           </Link>
         </div>
 
-        {/* Login con Google (JUA-40): solo aparece si hay Client ID configurado. */}
+        {/* Login con Google (JUA-40): solo si hay Client ID. Independiente del bloqueo por
+            intentos de contraseña (es otra credencial, no una adivinación de contraseña). */}
         {googleConfigurado && (
-          <div className={cn(bloqueado && "pointer-events-none opacity-55")}>
+          <div>
             <div className="my-4 flex items-center gap-3">
               <span className="h-px flex-1 bg-neutral-100" />
               <span className="text-[12px] text-muted">o</span>

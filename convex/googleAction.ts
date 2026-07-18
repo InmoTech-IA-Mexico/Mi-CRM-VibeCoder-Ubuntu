@@ -14,15 +14,19 @@ import { OAuth2Client } from "google-auth-library";
 
 const client = new OAuth2Client();
 
-/** Verifica el ID token y comprueba el nonce. Devuelve el `sub`, o null (rechazo genérico). */
-async function verificar(idToken: string, nonce: string): Promise<{ sub: string } | null> {
+/**
+ * Verifica el ID token y comprueba el nonce. Devuelve `sub` + `expiraEn` (= `exp` del
+ * token, ms), o null (rechazo genérico). `expiraEn` se usa para purgar el nonce consumido
+ * cuando el token ya no es válido.
+ */
+async function verificar(idToken: string, nonce: string): Promise<{ sub: string; expiraEn: number } | null> {
   const audience = process.env.GOOGLE_CLIENT_ID;
   if (!audience) throw new Error("Falta GOOGLE_CLIENT_ID en el entorno de Convex");
   try {
     const ticket = await client.verifyIdToken({ idToken, audience });
     const p = ticket.getPayload();
-    if (!p || p.email_verified !== true || !p.sub || p.nonce !== nonce) return null;
-    return { sub: p.sub };
+    if (!p || p.email_verified !== true || !p.sub || p.nonce !== nonce || !p.exp) return null;
+    return { sub: p.sub, expiraEn: p.exp * 1000 };
   } catch {
     return null; // firma / iss / exp inválidos
   }
@@ -41,6 +45,7 @@ export const iniciarSesionGoogle = action({
     const r: { ok: boolean; token?: string } = await ctx.runMutation(internal.google.consumirNonceLoginGoogle, {
       nonce,
       sub: ver.sub,
+      expiraEn: ver.expiraEn,
     });
     if (!r.ok || !r.token) throw new ConvexError("No pudimos iniciar sesión con Google.");
     return { token: r.token };
@@ -63,6 +68,7 @@ export const vincularGoogle = action({
       nonce,
       usuarioId: sesion.usuarioId,
       sub: ver.sub,
+      expiraEn: ver.expiraEn,
     });
     if (!r.ok) throw new ConvexError("No pudimos vincular tu cuenta de Google.");
     return { ok: true };

@@ -1,19 +1,27 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { useMutation, useAction } from "convex/react";
+import { useEffect, useState } from "react";
+import { useAction } from "convex/react";
 import { GoogleOAuthProvider, GoogleLogin, type CredentialResponse } from "@react-oauth/google";
 import { api } from "../../../convex/_generated/api";
 
 // Botón "Continuar con Google" (JUA-40). Solo AUTENTICA (no registra). Se muestra solo
-// si hay Client ID configurado (sin la env `NEXT_PUBLIC_GOOGLE_CLIENT_ID` se oculta,
-// como la tarjeta de push). Pide un nonce al backend, lo pasa a GIS (viaja en el ID
-// token) y llama a la action, que verifica el token EN SERVIDOR. Errores genéricos.
+// si hay Client ID configurado (sin `NEXT_PUBLIC_GOOGLE_CLIENT_ID` se oculta, como la
+// tarjeta de push). El nonce (anti-replay) se genera EN EL CLIENTE y viaja en el ID
+// token; el backend lo registra como consumido solo tras verificar el token EN SERVIDOR
+// (sin ruta de emisión anónima → sin DoS de nonces, obs. B-1). Errores genéricos.
 
 const CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
 /** ¿Está configurado el login con Google? (para ocultar separadores/secciones sin Client ID.) */
 export const googleConfigurado = !!CLIENT_ID;
+
+/** Nonce aleatorio del lado del cliente (hex de 16 bytes). */
+function generarNonce(): string {
+  const a = new Uint8Array(16);
+  crypto.getRandomValues(a);
+  return Array.from(a, (b) => b.toString(16).padStart(2, "0")).join("");
+}
 
 type Props =
   | { modo: "login"; onOk: (token: string) => void; onError?: (msg: string) => void }
@@ -35,40 +43,22 @@ function mensajeError(e: unknown): string {
 
 function BotonInterno(props: Props) {
   const modo = props.modo;
-  const token = props.modo === "vincular" ? props.token : undefined;
-  const emitirLogin = useMutation(api.google.emitirNonceLogin);
-  const emitirVincular = useMutation(api.google.emitirNonceVincular);
   const iniciar = useAction(api.googleAction.iniciarSesionGoogle);
   const vincular = useAction(api.googleAction.vincularGoogle);
   const [nonce, setNonce] = useState<string | null>(null);
   const [ocupado, setOcupado] = useState(false);
 
-  // Reintento de nonce tras consumir/expirar (se llama desde el manejador de éxito).
-  const pedirNonce = useCallback(async () => {
-    try {
-      const r = modo === "login" ? await emitirLogin({}) : await emitirVincular({ token: token! });
-      setNonce(r.nonce);
-    } catch {
-      setNonce(null);
-    }
-  }, [modo, token, emitirLogin, emitirVincular]);
-
-  // Primer nonce al montar: el setState va DENTRO de la async (tras await), no en el
-  // cuerpo del efecto (regla react-hooks/set-state-in-effect).
+  // Genera el nonce tras montar (evita desajuste de hidratación: null en SSR y primer
+  // render; el setState va dentro de una async, no en el cuerpo del efecto).
   useEffect(() => {
     let cancelado = false;
     void (async () => {
-      try {
-        const r = modo === "login" ? await emitirLogin({}) : await emitirVincular({ token: token! });
-        if (!cancelado) setNonce(r.nonce);
-      } catch {
-        if (!cancelado) setNonce(null);
-      }
+      if (!cancelado) setNonce(generarNonce());
     })();
     return () => {
       cancelado = true;
     };
-  }, [modo, token, emitirLogin, emitirVincular]);
+  }, []);
 
   const onSuccess = async (cred: CredentialResponse) => {
     if (!cred.credential || !nonce || ocupado) return;
@@ -84,13 +74,13 @@ function BotonInterno(props: Props) {
     } catch (e) {
       console.error("No se pudo continuar con Google", e);
       props.onError?.(mensajeError(e));
-      void pedirNonce(); // el nonce se consumió/expiró → pide otro para reintentar
+      setNonce(generarNonce()); // el nonce se consumió → uno nuevo para reintentar
     } finally {
       setOcupado(false);
     }
   };
 
-  if (!nonce) return null; // esperando el nonce
+  if (!nonce) return null; // brevísimo, hasta generar el nonce en el cliente
 
   return (
     <div className="flex justify-center">

@@ -83,15 +83,14 @@ export default defineSchema({
     .index("por_negocio", ["negocioId"])
     .index("por_google_sub", ["googleSub"]),
 
-  // Nonces de un solo uso para el OAuth de Google (JUA-40, anti-replay). El frontend
-  // pide un nonce, lo pasa a Google (viaja en el ID token), y el backend lo verifica y
-  // CONSUME una vez. Contextual por `operacion` (y por `usuarioId` en el vínculo). TTL
-  // corto; se purga por cron y al consumir.
-  noncesLogin: defineTable({
+  // Nonces YA CONSUMIDOS del OAuth de Google (JUA-40, anti-replay). El nonce lo genera
+  // el CLIENTE (aleatorio) y viaja en el ID token; se registra aquí SOLO tras verificar
+  // una credencial de Google VÁLIDA (evita el DoS de emisión anónima, obs. B-1). Un ID
+  // token reenviado falla porque su nonce ya está registrado. `expiraEn` = `exp` del
+  // token; se purga después (el token ya no es válido). Sin ruta de emisión pública.
+  noncesConsumidos: defineTable({
     nonce: v.string(),
     expiraEn: v.number(),
-    operacion: v.union(v.literal("login"), v.literal("vincular")),
-    usuarioId: v.optional(v.id("usuarios")), // solo "vincular": la sesión que lo pidió
   })
     .index("por_nonce", ["nonce"])
     .index("por_expira", ["expiraEn"]),
