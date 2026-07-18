@@ -16,7 +16,7 @@ type Payload = { titulo: string; cuerpo: string; url: string; tag?: string };
 // Tipos de retorno EXPLÍCITOS: rompen la inferencia circular entre la action y la
 // API generada (si se omiten, el codegen degrada `api`/`internal` a `any`).
 type Resultado = { total: number; enviadas: number; caducadas: number; fallidas: number };
-type Suscripcion = { id: Id<"pushSubscriptions">; endpoint: string; p256dh: string; auth: string };
+type Suscripcion = { id: Id<"pushSubscriptions">; endpoint: string; p256dh: string; auth: string; fallosRed: number };
 
 function configurarVapid() {
   const pub = process.env.VAPID_PUBLIC_KEY;
@@ -36,6 +36,8 @@ async function enviarAUsuario(ctx: ActionCtx, usuarioId: Id<"usuarios">, payload
   for (const s of subs) {
     try {
       await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, cuerpo);
+      // Éxito: reinicia el contador de fallos de red si venía acumulando (JUA-127).
+      if (s.fallosRed > 0) await ctx.runMutation(internal.push.resetFalloRed, { id: s.id, usuarioId, p256dh: s.p256dh });
       enviadas++;
     } catch (e) {
       const code = (e as { statusCode?: number }).statusCode;
@@ -43,7 +45,16 @@ async function enviarAUsuario(ctx: ActionCtx, usuarioId: Id<"usuarios">, payload
         await ctx.runMutation(internal.push.borrarSubCaducada, { id: s.id, usuarioId, p256dh: s.p256dh });
         caducadas++;
       } else {
-        fallidas++;
+        // Fallo de red sin código HTTP: cuenta consecutivos y poda la sub muerta tras N
+        // (JUA-127). Podada → cuenta como caducada (no provoca un reintento inútil); si
+        // aún no se poda, es transitorio → `fallidas` (reintento con backoff).
+        const r: { podada: boolean } = await ctx.runMutation(internal.push.contarFalloRed, {
+          id: s.id,
+          usuarioId,
+          p256dh: s.p256dh,
+        });
+        if (r.podada) caducadas++;
+        else fallidas++;
       }
     }
   }

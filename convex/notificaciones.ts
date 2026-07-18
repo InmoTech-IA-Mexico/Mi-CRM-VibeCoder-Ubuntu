@@ -108,12 +108,14 @@ export const reclamarLote = internalMutation({
       if ((n.leaseHasta ?? 0) < ahora) await ctx.db.patch(n._id, { estado: "pendiente" });
     }
 
-    // 2) Reclamar pendientes elegibles.
-    const pendientes = await ctx.db
+    // 2) Reclamar pendientes elegibles por RANGO indexado (JUA-128): estado=pendiente
+    //    ∧ proximoIntento<=ahora, acotado a LOTE_MAX, sin recorrer toda la partición.
+    //    `encolarClienteFrio` y el reintento siempre fijan `proximoIntento`, así que el
+    //    rango cubre todas las pendientes elegibles.
+    const elegibles = await ctx.db
       .query("notificacionesPush")
-      .withIndex("por_estado", (q) => q.eq("estado", "pendiente"))
-      .collect();
-    const elegibles = pendientes.filter((n) => (n.proximoIntento ?? n.creadoEn) <= ahora).slice(0, LOTE_MAX);
+      .withIndex("por_estado_intento", (q) => q.eq("estado", "pendiente").lte("proximoIntento", ahora))
+      .take(LOTE_MAX);
 
     const negocioCache = new Map<Id<"negocios">, string>();
     const reclamos: Reclamo[] = [];

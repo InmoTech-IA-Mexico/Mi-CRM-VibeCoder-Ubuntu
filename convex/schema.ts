@@ -242,6 +242,10 @@ export default defineSchema({
     p256dh: v.string(),
     auth: v.string(),
     creadoEn: v.number(),
+    // Fallos de red CONSECUTIVOS al enviar (JUA-127): tras N sin respuesta HTTP
+    // (statusCode indefinido, no 404/410) se poda la suscripción muerta. Un envío
+    // con éxito lo reinicia. Ausente = 0.
+    fallosRed: v.optional(v.number()),
   })
     .index("por_endpoint", ["endpoint"])
     .index("por_usuario", ["usuarioId"]),
@@ -279,5 +283,8 @@ export default defineSchema({
     enviadaEn: v.optional(v.number()),
   })
     .index("por_estado", ["estado"])
+    // Reclamar por RANGO (estado=pendiente ∧ proximoIntento<=ahora) sin recorrer toda
+    // la partición del estado (JUA-128, obs. escala del dictamen JUA-33).
+    .index("por_estado_intento", ["estado", "proximoIntento"])
     .index("por_cliente_tipo", ["clienteId", "tipo"]),
 });

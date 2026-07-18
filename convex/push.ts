@@ -175,7 +175,44 @@ export const subsDeUsuario = internalQuery({
       .query("pushSubscriptions")
       .withIndex("por_usuario", (q) => q.eq("usuarioId", usuarioId))
       .collect();
-    return subs.map((s) => ({ id: s._id, endpoint: s.endpoint, p256dh: s.p256dh, auth: s.auth }));
+    return subs.map((s) => ({ id: s._id, endpoint: s.endpoint, p256dh: s.p256dh, auth: s.auth, fallosRed: s.fallosRed ?? 0 }));
+  },
+});
+
+// Poda de suscripciones muertas por fallos de RED consecutivos (JUA-127). Un fallo
+// sin código HTTP (statusCode indefinido, no 404/410) puede ser un corte pasajero;
+// solo tras MAX_FALLOS_RED consecutivos se considera muerta y se poda. Las condiciones
+// (id + usuarioId + p256dh) evitan actuar sobre una fila reasignada o con claves rotadas.
+const MAX_FALLOS_RED = 3;
+
+/**
+ * Registra un fallo de red al enviar. Incrementa `fallosRed`; si alcanza
+ * `MAX_FALLOS_RED`, **poda** la suscripción (endpoint muerto) y devuelve `podada:true`.
+ * Interno.
+ */
+export const contarFalloRed = internalMutation({
+  args: { id: v.id("pushSubscriptions"), usuarioId: v.id("usuarios"), p256dh: v.string() },
+  handler: async (ctx, { id, usuarioId, p256dh }): Promise<{ podada: boolean }> => {
+    const s = await ctx.db.get(id);
+    if (!s || s.usuarioId !== usuarioId || s.p256dh !== p256dh) return { podada: false };
+    const fallos = (s.fallosRed ?? 0) + 1;
+    if (fallos >= MAX_FALLOS_RED) {
+      await ctx.db.delete(id);
+      return { podada: true };
+    }
+    await ctx.db.patch(id, { fallosRed: fallos });
+    return { podada: false };
+  },
+});
+
+/** Reinicia el contador de fallos de red tras un envío con éxito (solo si venía >0). Interno. */
+export const resetFalloRed = internalMutation({
+  args: { id: v.id("pushSubscriptions"), usuarioId: v.id("usuarios"), p256dh: v.string() },
+  handler: async (ctx, { id, usuarioId, p256dh }) => {
+    const s = await ctx.db.get(id);
+    if (s && s.usuarioId === usuarioId && s.p256dh === p256dh && (s.fallosRed ?? 0) > 0) {
+      await ctx.db.patch(id, { fallosRed: 0 });
+    }
   },
 });
 
