@@ -3,6 +3,7 @@ import type { MutationCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import { v, ConvexError } from "convex/values";
 import { randomBytes, bytesToHex } from "@noble/hashes/utils.js";
+import { encolar } from "./emailCola";
 
 // Alta y soporte inicial de negocios (JUA-41). Funciones INTERNAS: solo se
 // ejecutan desde el CLI/dashboard con credenciales de administrador
@@ -91,6 +92,10 @@ async function crearInvitacionAdmin(ctx: MutationCtx, negocioId: Id<"negocios">,
     token,
     expiraEn: Date.now() + SIETE_DIAS_MS,
   });
+  // Envía el enlace de activación del primer admin por correo (JUA-129). El retorno con
+  // el enlace se conserva (el operador del CLI lo comparte como fallback); el envío es
+  // durable e inerte sin Resend.
+  await encolar(ctx, { tipo: "invitacion", invitacionId });
   const base = baseUrl?.trim().replace(/\/+$/, "");
   return { invitacionId, token, enlaceActivacion: base ? `${base}/activar?token=${token}` : null };
 }

@@ -304,4 +304,36 @@ export default defineSchema({
     // la partición del estado (JUA-128, obs. escala del dictamen JUA-33).
     .index("por_estado_intento", ["estado", "proximoIntento"])
     .index("por_cliente_tipo", ["clienteId", "tipo"]),
+
+  // Cola durable de correo transaccional (JUA-129, remediación del NO-GO de diseño).
+  // Se ENCOLA una fila cuando una mutación crea/renueva un token de invitación o de
+  // recuperación; una action Node (`emailEnvio.flush`) reclama un lote con lease, lo
+  // envía por Resend y registra el resultado. La outbox da durabilidad a la entrega
+  // que NO tiene fallback "copiar enlace" (recuperación es pública; obs. B-1) y evita
+  // que el token viaje como argumento del scheduler (obs. B-2): la fila solo guarda una
+  // REFERENCIA no secreta al recurso de dominio; el token se deriva y revalida al
+  // reclamar. `idempotencyKey` (no secreta, estable por evento) va en el header
+  // Idempotency-Key de Resend en TODOS los intentos → sin correos duplicados (obs. B-3).
+  // Estados: pendiente → enviando → enviado / descartado.
+  emailsSalientes: defineTable({
+    tipo: v.union(v.literal("invitacion"), v.literal("recuperacion"), v.literal("reactivacion")),
+    // Referencia NO secreta al recurso de dominio (nunca el token). Una según `tipo`.
+    invitacionId: v.optional(v.id("invitaciones")),
+    recuperacionId: v.optional(v.id("recuperaciones")),
+    idempotencyKey: v.string(), // no secreta; Idempotency-Key de Resend en todos los intentos
+    estado: v.union(
+      v.literal("pendiente"),
+      v.literal("enviando"),
+      v.literal("enviado"),
+      v.literal("descartado"),
+    ),
+    intentos: v.number(),
+    proximoIntento: v.number(), // epoch; elegible cuando <= ahora
+    leaseHasta: v.optional(v.number()), // epoch; vigencia de la reclamación "enviando"
+    resultado: v.optional(v.string()), // sanitizado (nunca token ni cuerpo)
+    creadoEn: v.number(),
+  })
+    .index("por_estado_intento", ["estado", "proximoIntento"])
+    .index("por_invitacion", ["invitacionId"])
+    .index("por_recuperacion", ["recuperacionId"]),
 });

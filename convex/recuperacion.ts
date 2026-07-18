@@ -2,6 +2,7 @@ import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { randomBytes, bytesToHex } from "@noble/hashes/utils.js";
 import { hashPassword } from "./auth";
+import { encolar } from "./emailCola";
 
 // Recuperación de contraseña (JUA-7). Funciones PÚBLICAS: el usuario no tiene
 // sesión (olvidó su clave). Token de un solo uso, expira en 24 h; solicitar de
@@ -39,11 +40,15 @@ export const solicitar = mutation({
       if (!reciente) {
         // Invalidar enlaces previos (el anterior se invalida) y crear uno nuevo.
         for (const p of previos) await ctx.db.delete(p._id);
-        await ctx.db.insert("recuperaciones", {
+        const recuperacionId = await ctx.db.insert("recuperaciones", {
           usuarioId: usuario._id,
           token: bytesToHex(randomBytes(32)),
           expiraEn: ahora + RECUP_MS,
         });
+        // Envía el enlace por correo (JUA-129). SOLO dentro de este bloque (usuario activo
+        // con contraseña) → la respuesta pública sigue siendo genérica: no revela si el
+        // email existe (anti-enumeración, obs. B-1). Entrega DURABLE (sin fallback copiable).
+        await encolar(ctx, { tipo: "recuperacion", recuperacionId });
       }
     }
 

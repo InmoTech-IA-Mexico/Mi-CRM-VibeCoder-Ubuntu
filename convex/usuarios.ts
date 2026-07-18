@@ -6,6 +6,7 @@ import { ConvexError } from "convex/values";
 import { randomBytes, bytesToHex } from "@noble/hashes/utils.js";
 import { resolverSesion } from "./auth";
 import { rol as rolValidator } from "./schema";
+import { encolar } from "./emailCola";
 
 // Gestión de usuarios del negocio (JUA-29). Solo admin. Invitar / reenviar
 // invitación / revocar (desactivar) / reactivar. El aislamiento por negocio
@@ -212,7 +213,7 @@ export const invitar = mutation({
       throw new ConvexError("Ya hay una invitación pendiente para ese email");
     }
 
-    return await ctx.db.insert("invitaciones", {
+    const invitacionId = await ctx.db.insert("invitaciones", {
       negocioId: sesion.negocioId,
       email: correo,
       nombre: nombre?.trim() || undefined,
@@ -221,6 +222,10 @@ export const invitar = mutation({
       token: bytesToHex(randomBytes(32)),
       expiraEn: ahora + SIETE_DIAS_MS,
     });
+    // Envía el enlace de activación por correo (JUA-129). "Copiar enlace" sigue como
+    // fallback; el envío es durable (cola con reintentos) e inerte sin Resend.
+    await encolar(ctx, { tipo: "invitacion", invitacionId });
+    return invitacionId;
   },
 });
 
@@ -243,6 +248,10 @@ export const reenviar = mutation({
       estado: "pendiente",
       expiraEn: Date.now() + SIETE_DIAS_MS,
     });
+    // Reenvía el enlace por correo (JUA-129). `encolar` supersede el evento anterior:
+    // el token viejo dejó de valer, se envía el nuevo (evento nuevo, clave idempotente
+    // propia — obs. B-3).
+    await encolar(ctx, { tipo: "invitacion", invitacionId });
   },
 });
 
@@ -340,11 +349,14 @@ export const reactivar = mutation({
     for (const p of previos) await ctx.db.delete(p._id);
 
     const tokenRecuperacion = bytesToHex(randomBytes(32));
-    await ctx.db.insert("recuperaciones", {
+    const recuperacionId = await ctx.db.insert("recuperaciones", {
       usuarioId,
       token: tokenRecuperacion,
       expiraEn: Date.now() + REACTIVACION_MS,
     });
+    // Envía el enlace de nueva contraseña por correo (JUA-129). "Nuevo enlace" sigue
+    // como fallback para el admin; el envío es durable e inerte sin Resend.
+    await encolar(ctx, { tipo: "reactivacion", recuperacionId });
     return { token: tokenRecuperacion };
   },
 });

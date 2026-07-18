@@ -26,4 +26,10 @@ crons.hourly("flush-notificaciones-push", { minuteUTC: 15 }, internal.pushEnvio.
 // red de seguridad además de la purga perezosa al emitir. Acota el tamaño de la tabla.
 crons.hourly("purgar-nonces-oauth", { minuteUTC: 45 }, internal.google.purgarNoncesExpirados);
 
+// Correo transaccional (JUA-129): red de seguridad de la cola durable. El envío normal
+// lo dispara `encolar` con un flush inmediato; este cron reclama los eventos que
+// quedaron pendientes por un fallo transitorio (backoff) o una action caída (lease
+// vencido), y recoge la acumulación si el envío estuvo deshabilitado (sin Resend).
+crons.interval("flush-emails", { minutes: 5 }, internal.emailEnvio.flush, {});
+
 export default crons;
