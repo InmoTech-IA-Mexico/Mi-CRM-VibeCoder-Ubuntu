@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import {
   ChevronLeft, User, Mail, Lock, LogOut, ChevronRight, BarChart3, Users, Trash2, AlertCircle, Check, ShieldCheck, Tag, Download,
 } from "lucide-react";
@@ -11,6 +11,7 @@ import { api } from "../../../../../convex/_generated/api";
 import { useSesion } from "@/components/session/use-sesion";
 import { BarraFortaleza } from "@/components/ui/barra-fortaleza";
 import { TarjetaNotificaciones } from "@/components/push/tarjeta-notificaciones";
+import { BotonGoogle, googleConfigurado } from "@/components/auth/boton-google";
 import { LABELS } from "@/lib/enums";
 import { cn } from "@/lib/utils";
 
@@ -67,6 +68,9 @@ export function PantallaPerfil() {
 
         <DatosPersonales token={token} nombreActual={usuario.nombre} emailActual={usuario.email} />
         <CambiarPassword token={token} />
+
+        {/* Cuenta de Google (JUA-40): vincular / estado. Solo si hay Client ID configurado. */}
+        {googleConfigurado && <CuentaGoogle token={token} />}
 
         {/* Alerta push de cliente frío (JUA-33) */}
         <TarjetaNotificaciones />
@@ -243,6 +247,42 @@ function CambiarPassword({ token }: { token: string }) {
         ocupado={guardando}
         texto={guardando ? "Guardando…" : "Cambiar contraseña"}
       />
+    </Tarjeta>
+  );
+}
+
+// Cuenta de Google (JUA-40): muestra si está vinculada (sin exponer el `sub`) o el
+// botón para vincular desde una sesión válida (prueba de control). El login por Google
+// vive en /login; aquí solo se vincula/consulta.
+function CuentaGoogle({ token }: { token: string }) {
+  const estado = useQuery(api.google.estadoVinculo, { token });
+  const [error, setError] = useState<string | null>(null);
+  const [reciente, setReciente] = useState(false);
+  const vinculado = reciente || estado?.vinculado === true;
+
+  return (
+    <Tarjeta titulo="Cuenta de Google">
+      {vinculado ? (
+        <div className="flex items-center gap-2 rounded-xl border border-[#2E7D6B]/30 bg-[#E2EFEB] px-3 py-2.5">
+          <Check size={16} strokeWidth={2.2} className="flex-shrink-0 text-success" />
+          <p className="text-[12.5px] font-medium text-[#2E6E5E]">
+            Tu cuenta está vinculada. Ya puedes entrar con &ldquo;Continuar con Google&rdquo;.
+          </p>
+        </div>
+      ) : (
+        <>
+          <p className="text-[12.5px] leading-snug text-muted">
+            Vincula tu cuenta de Google para iniciar sesión con ella, además de tu contraseña.
+          </p>
+          <BotonGoogle
+            modo="vincular"
+            token={token}
+            onOk={() => { setReciente(true); setError(null); }}
+            onError={(m) => setError(m)}
+          />
+          <Aviso error={error} ok={false} okTexto="" />
+        </>
+      )}
     </Tarjeta>
   );
 }

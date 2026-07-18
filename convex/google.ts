@@ -1,4 +1,4 @@
-import { mutation, internalMutation, internalQuery } from "./_generated/server";
+import { mutation, query, internalMutation, internalQuery } from "./_generated/server";
 import type { MutationCtx } from "./_generated/server";
 import { v, ConvexError } from "convex/values";
 import { randomBytes, bytesToHex } from "@noble/hashes/utils.js";
@@ -110,6 +110,16 @@ export const consumirNonceVincular = internalMutation({
     if (dueno && dueno._id !== usuarioId) return { ok: false }; // el sub ya es de otro
     await ctx.db.patch(usuarioId, { googleSub: sub });
     return { ok: true };
+  },
+});
+
+/** ¿La cuenta del usuario de la sesión tiene Google vinculado? (para el Perfil, JUA-40). No expone el `sub`. */
+export const estadoVinculo = query({
+  args: { token: v.string() },
+  handler: async (ctx, { token }) => {
+    const sesion = await resolverSesion(ctx, token);
+    if (!sesion) return null;
+    return { vinculado: !!sesion.usuario.googleSub };
   },
 });
 

@@ -7,6 +7,7 @@ import { useMutation } from "convex/react";
 import { AlertCircle, CheckCircle2, Clock, Eye, EyeOff, Lock, Mail } from "lucide-react";
 import { api } from "../../../../../convex/_generated/api";
 import { guardarToken } from "@/components/session/session-provider";
+import { BotonGoogle, googleConfigurado } from "@/components/auth/boton-google";
 import { cn } from "@/lib/utils";
 
 // Login con autenticación real (JUA-6). Estados: normal · error genérico ·
@@ -221,6 +222,25 @@ export function FormularioLogin({
             ¿Olvidaste tu contraseña?
           </Link>
         </div>
+
+        {/* Login con Google (JUA-40): solo aparece si hay Client ID configurado. */}
+        {googleConfigurado && (
+          <div className={cn(bloqueado && "pointer-events-none opacity-55")}>
+            <div className="my-4 flex items-center gap-3">
+              <span className="h-px flex-1 bg-neutral-100" />
+              <span className="text-[12px] text-muted">o</span>
+              <span className="h-px flex-1 bg-neutral-100" />
+            </div>
+            <BotonGoogle
+              modo="login"
+              onOk={(token) => {
+                guardarToken(token);
+                router.push("/inicio");
+              }}
+              onError={(m) => setError(m)}
+            />
+          </div>
+        )}
       </form>
     </>
   );
