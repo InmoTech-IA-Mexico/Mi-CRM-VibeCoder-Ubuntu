@@ -1,0 +1,22 @@
+Reporte driver-45 JUA-129 — cola durable de correo (outbox): idempotencia, clasificación, revalidación
+fecha: 2026-07-18T18:18:48-0600
+entorno: dev, QA_HELPERS=1, SIN RESEND_API_KEY (transporte inerte; se prueba el protocolo)
+resultado: OK (16 PASS / 0 FAIL)
+sin tokens/correos reales en la fila; negocio QA cancelado; carlos restaurado activo.
+
+PASS — T1 (B-1): email inexistente → respuesta genérica y 0 eventos
+PASS — T2: usuario activo → evento recuperacion pendiente
+PASS — T3a (B-2): reclamo deriva token + destinatario + idempotencyKey en memoria
+PASS — T3b (B-2): la fila/lista NO expone el token; queda 'enviando' con lease
+PASS — T4: clase ok → 'enviado'
+PASS — T5a: transitorio → 'pendiente' (fallosTransitorios=1) con backoff futuro
+PASS — T5b: 3.º fallo transitorio → 'descartado' (fallo_persistente)
+PASS — T6a (B-3): config 403 → 'pendiente' (bloqueado_config), NO descartado
+PASS — T6b (B-3): al corregir el entorno el MISMO evento se reanuda → 'enviado'
+PASS — T6c (B-4): 3 config no consumen el presupuesto; un transitorio posterior aún se reintenta (pendiente, no descartado)
+PASS — T7: terminal 422 → 'descartado' (error_422)
+PASS — T8: lease vencido → se recupera y re-reclama (intentos 1→2)
+PASS — T9: usuario inactivo al reclamar → 'descartado' (usuario_inactivo)
+PASS — T10: alta de negocio → evento invitacion; reclamo deriva correo del admin + token
+PASS — T11 (B-3): reenvío supersede el evento anterior ('reemplazado') y crea uno nuevo
+PASS — T12: sin RESEND_API_KEY el flush es inerte (0 reclamados; no quema intentos)
