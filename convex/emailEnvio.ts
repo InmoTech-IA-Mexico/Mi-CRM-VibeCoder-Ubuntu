@@ -2,7 +2,7 @@
 
 import { internalAction } from "./_generated/server";
 import { internal } from "./_generated/api";
-import { plantillaInvitacion, plantillaRecuperacion, normalizarBaseUrl } from "./emailPlantillas";
+import { plantillaInvitacion, plantillaRecuperacion, normalizarBaseUrl, normalizarRemitente, clasificarRespuestaEnvio } from "./emailPlantillas";
 import type { Correo } from "./emailPlantillas";
 import type { EmailReclamo } from "./emailCola";
 
@@ -13,12 +13,12 @@ import type { EmailReclamo } from "./emailCola";
 // Sin claves ni tokens en logs (obs. B-2): solo tipo + status.
 
 const RESEND_ENDPOINT = "https://api.resend.com/emails";
-const FROM_DEFECTO = "InmoTech IA <onboarding@resend.dev>"; // dev: envía a tu propio correo sin dominio
 const MAX_FETCH = 3;
 
 // Tipos de retorno EXPLÍCITOS: rompen la inferencia circular entre la action y la API
 // generada (si se omiten, el codegen degrada `internal` a `any`).
-type EnvioResultado = { ok: boolean; retriable: boolean; status?: number };
+type ClaseEnvio = "ok" | "config" | "transitorio" | "terminal";
+type EnvioResultado = { clase: ClaseEnvio; status?: number };
 type FlushResultado = { reclamados: number; enviados: number; fallidos: number };
 
 const dormir = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -47,12 +47,12 @@ function componer(r: EmailReclamo, base: string): Correo {
  * los intentos (y entre flushes) → un reintento tras un envío ya aceptado NO se duplica
  * dentro de la ventana de deduplicación de Resend (24 h). Semántica: entrega **al menos
  * una vez**, dedup *best-effort* en esa ventana (un lease recuperado > 24 h después podría,
- * en el extremo, reenviar). 4xx (salvo 429) = terminal no reintentable; red/429/5xx =
- * transitorio (la cola reintenta con backoff).
+ * en el extremo, reenviar). Clasifica la respuesta (obs. B-3): `ok`, `config` (401/403,
+ * error del sistema → la cola espera, NO descarta), `transitorio` (429/5xx → reintenta) y
+ * `terminal` (otros 4xx → descarta). Solo los transitorios se reintentan en el bucle.
  */
-async function enviarResend(para: string, correo: Correo, idempotencyKey: string): Promise<EnvioResultado> {
+async function enviarResend(para: string, correo: Correo, from: string, idempotencyKey: string): Promise<EnvioResultado> {
   const key = process.env.RESEND_API_KEY as string;
-  const from = process.env.EMAIL_FROM?.trim() || FROM_DEFECTO;
   const cuerpo = JSON.stringify({ from, to: [para], subject: correo.asunto, html: correo.html, text: correo.texto });
   let ultimoStatus: number | undefined;
   for (let intento = 1; intento <= MAX_FETCH; intento++) {
@@ -67,18 +67,15 @@ async function enviarResend(para: string, correo: Correo, idempotencyKey: string
         body: cuerpo,
       });
       ultimoStatus = res.status;
-      if (res.ok) return { ok: true, retriable: false, status: res.status };
-      if (res.status < 500 && res.status !== 429) {
-        console.log(`[email] rechazado status=${res.status} (no se reintenta)`);
-        return { ok: false, retriable: false, status: res.status };
-      }
+      const clase = clasificarRespuestaEnvio(res.status);
+      if (clase !== "transitorio") return { clase, status: res.status }; // ok / config / terminal
       console.log(`[email] transitorio status=${res.status} intento=${intento}`);
     } catch {
       console.log(`[email] fallo de red intento=${intento}`);
     }
     if (intento < MAX_FETCH) await dormir(intento * 400);
   }
-  return { ok: false, retriable: true, status: ultimoStatus };
+  return { clase: "transitorio", status: ultimoStatus };
 }
 
 /**
@@ -89,11 +86,13 @@ async function enviarResend(para: string, correo: Correo, idempotencyKey: string
 export const flush = internalAction({
   args: {},
   handler: async (ctx): Promise<FlushResultado> => {
-    // Inerte si no está configurado el envío: NO se reclama (no se queman intentos); la
-    // cola espera a que existan la key y la base. Validación al iniciar (no por correo).
+    // Inerte si no está COMPLETAMENTE configurado el envío: NO se reclama (no se queman
+    // intentos); la cola espera. Se exigen la key, una base válida y un remitente válido
+    // (obs. B-3: EMAIL_FROM obligatorio, sin fallback silencioso). Validación al iniciar.
     const base = baseUrl();
-    if (!process.env.RESEND_API_KEY || !base) {
-      console.log("[email] deshabilitado (falta RESEND_API_KEY, o APP_BASE_URL ausente/inválida); no se reclama la cola");
+    const from = normalizarRemitente(process.env.EMAIL_FROM);
+    if (!process.env.RESEND_API_KEY || !base || !from) {
+      console.log("[email] deshabilitado (falta RESEND_API_KEY, o APP_BASE_URL/EMAIL_FROM ausente/inválida); no se reclama la cola");
       return { reclamados: 0, enviados: 0, fallidos: 0 };
     }
 
@@ -102,17 +101,16 @@ export const flush = internalAction({
     let fallidos = 0;
     for (const r of reclamos) {
       const correo = componer(r, base);
-      const res = await enviarResend(r.para, correo, r.idempotencyKey);
+      const res = await enviarResend(r.para, correo, from, r.idempotencyKey);
       await ctx.runMutation(internal.emailCola.registrarResultado, {
         id: r.id,
         intentos: r.intentos,
-        ok: res.ok,
-        retriable: res.retriable,
+        clase: res.clase,
         status: res.status,
       });
-      if (res.ok) enviados++;
+      if (res.clase === "ok") enviados++;
       else fallidos++;
-      console.log(`[email] ${r.tipo} resultado=${res.ok ? "enviado" : res.retriable ? "reintento" : "descartado"}`);
+      console.log(`[email] ${r.tipo} resultado=${res.clase}`);
     }
     return { reclamados: reclamos.length, enviados, fallidos };
   },

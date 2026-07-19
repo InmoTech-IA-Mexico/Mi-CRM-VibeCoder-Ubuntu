@@ -17,6 +17,7 @@ const LEASE_MS = 5 * 60 * 1000; // vigencia de una reclamación "enviando"
 const MAX_INTENTOS = 3;
 const LOTE_MAX = 50;
 const BACKOFF_MS = 2 * 60 * 1000; // reintento: intentos * 2 min (correo es sensible al tiempo)
+const CONFIG_BACKOFF_MS = 15 * 60 * 1000; // espera ante error de config del sistema (401/403)
 const RETENCION_MS = 7 * 24 * 60 * 60 * 1000; // eventos terminales se purgan a los 7 días
 const PURGA_LOTE = 200;
 
@@ -162,31 +163,42 @@ export const reclamarLote = internalMutation({
 });
 
 /**
- * Registra el resultado REAL de un intento de envío. Idempotente frente a leases
- * perdidos: solo actúa si la fila sigue en `enviando` y en el MISMO intento reclamado.
- * `ok` → `enviado`. Fallo no reintentable (4xx salvo 429) → `descartado`. Fallo
- * transitorio (red/429/5xx) → backoff hasta `MAX_INTENTOS`, luego `descartado`.
+ * Registra el resultado REAL de un intento de envío según su clase (obs. B-3). Idempotente
+ * frente a leases perdidos: solo actúa si la fila sigue en `enviando` y en el MISMO intento.
+ *  - `ok` → `enviado`.
+ *  - `config` (401/403 del sistema) → **vuelve a `pendiente`** con espera de config; NUNCA
+ *    se descarta: al corregir el entorno se reanuda sin emitir un token nuevo. Un evento
+ *    bloqueado se descarta solo cuando su recurso caduca (revalidación al reclamar).
+ *  - `terminal` (otros 4xx, error real de la petición) → `descartado`.
+ *  - `transitorio` (red/429/5xx) → backoff hasta `MAX_INTENTOS`, luego `descartado`.
  */
 export const registrarResultado = internalMutation({
   args: {
     id: v.id("emailsSalientes"),
     intentos: v.number(),
-    ok: v.boolean(),
-    retriable: v.boolean(),
+    clase: v.union(v.literal("ok"), v.literal("config"), v.literal("transitorio"), v.literal("terminal")),
     status: v.optional(v.number()),
   },
-  handler: async (ctx, { id, intentos, ok, retriable, status }) => {
+  handler: async (ctx, { id, intentos, clase, status }) => {
     const e = await ctx.db.get(id);
     if (!e || e.estado !== "enviando" || e.intentos !== intentos) return; // lease perdido / ya resuelto
     const ahora = Date.now();
-    if (ok) {
+    if (clase === "ok") {
       await ctx.db.patch(id, { estado: "enviado", leaseHasta: undefined, resultado: status ? `ok_${status}` : "ok" });
       return;
     }
-    if (!retriable) {
+    if (clase === "config") {
+      // Error de configuración/autorización del SISTEMA: no es culpa del destinatario, así
+      // que no se descarta. Espera y se reanuda al corregir el entorno (una recuperación,
+      // sin fallback, no se pierde). El recurso caduca por su cuenta si nunca se arregla.
+      await ctx.db.patch(id, { estado: "pendiente", leaseHasta: undefined, proximoIntento: ahora + CONFIG_BACKOFF_MS, resultado: "bloqueado_config" });
+      return;
+    }
+    if (clase === "terminal") {
       await ctx.db.patch(id, { estado: "descartado", leaseHasta: undefined, resultado: status ? `error_${status}` : "error" });
       return;
     }
+    // transitorio
     if (intentos >= MAX_INTENTOS) {
       await ctx.db.patch(id, { estado: "descartado", leaseHasta: undefined, resultado: "fallo_persistente" });
       return;
@@ -196,9 +208,10 @@ export const registrarResultado = internalMutation({
 });
 
 /**
- * Purga los eventos TERMINALES (`enviado`/`descartado`) con más de 7 días (obs. escala
- * del dictamen v2: la outbox no debe crecer indefinidamente). Acotado por lote; un cron
- * diario lo repite. Índice por rango de estado; filtra por antigüedad en memoria.
+ * Purga los eventos TERMINALES (`enviado`/`descartado`) con más de 7 días (la outbox no
+ * debe crecer indefinidamente). Rango indexado por `(estado, creadoEn)` → reclama los más
+ * antiguos primero, sin depender de correlaciones (obs. OBS-1 del dictamen v3). Acotado por
+ * lote; un cron diario lo repite.
  */
 export const purgarAntiguos = internalMutation({
   args: {},
@@ -208,13 +221,11 @@ export const purgarAntiguos = internalMutation({
     for (const estado of ["enviado", "descartado"] as const) {
       const lote = await ctx.db
         .query("emailsSalientes")
-        .withIndex("por_estado_intento", (q) => q.eq("estado", estado))
+        .withIndex("por_estado_creado", (q) => q.eq("estado", estado).lt("creadoEn", corte))
         .take(PURGA_LOTE);
       for (const e of lote) {
-        if (e.creadoEn < corte) {
-          await ctx.db.delete(e._id);
-          borrados++;
-        }
+        await ctx.db.delete(e._id);
+        borrados++;
       }
     }
     return { borrados };

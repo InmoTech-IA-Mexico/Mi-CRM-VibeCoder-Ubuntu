@@ -31,6 +31,38 @@ export function normalizarBaseUrl(raw: string | undefined | null): string | null
   return null;
 }
 
+/**
+ * Valida `EMAIL_FROM`. Acepta `correo@dominio` o `Nombre <correo@dominio>`. Devuelve la
+ * cadena original si el correo es sintácticamente válido, o `null`. El remitente es
+ * OBLIGATORIO cuando hay `RESEND_API_KEY` (obs. B-3 del dictamen v3): no se asume
+ * `onboarding@resend.dev` en silencio. `null` → `flush` inerte, así nunca se envía con un
+ * remitente malformado (que Resend rechazaría con 4xx y descartaría el correo).
+ */
+export function normalizarRemitente(raw: string | undefined | null): string | null {
+  const s = raw?.trim();
+  if (!s) return null;
+  const m = s.match(/<([^>]+)>\s*$/);
+  const correo = (m ? m[1] : s).trim();
+  return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(correo) ? s : null;
+}
+
+/**
+ * Clasifica la respuesta HTTP de Resend para decidir el destino del evento (obs. B-3):
+ *  - `ok` (2xx): entregado.
+ *  - `config` (401/403): error de configuración/autorización DEL SISTEMA (key revocada,
+ *    remitente/dominio no autorizado). NO es culpa del destinatario → **no se descarta**:
+ *    la fila espera con backoff y se reanuda al corregir el entorno, sin emitir un token
+ *    nuevo (una recuperación, que no tiene fallback, nunca se pierde por config nuestra).
+ *  - `transitorio` (429/5xx): reintento con backoff hasta el tope.
+ *  - `terminal` (otros 4xx): error real de la petición/destinatario → se descarta.
+ */
+export function clasificarRespuestaEnvio(status: number): "ok" | "config" | "transitorio" | "terminal" {
+  if (status >= 200 && status < 300) return "ok";
+  if (status === 401 || status === 403) return "config";
+  if (status === 429 || status >= 500) return "transitorio";
+  return "terminal";
+}
+
 /** Escapa entidades HTML para interpolar datos del usuario en el cuerpo del correo. */
 export function escaparHtml(s: string): string {
   return s

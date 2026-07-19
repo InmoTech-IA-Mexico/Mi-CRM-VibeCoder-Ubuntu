@@ -335,6 +335,7 @@ export default defineSchema({
     creadoEn: v.number(),
   })
     .index("por_estado_intento", ["estado", "proximoIntento"])
+    .index("por_estado_creado", ["estado", "creadoEn"]) // purga estricta por antigüedad (obs. OBS-1)
     .index("por_invitacion", ["invitacionId"])
     .index("por_recuperacion", ["recuperacionId"]),
 });
