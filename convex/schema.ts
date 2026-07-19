@@ -328,7 +328,13 @@ export default defineSchema({
       v.literal("enviado"),
       v.literal("descartado"),
     ),
+    // `intentos` = nº de RECLAMACIONES (secuencia monotónica): identifica la reclamación
+    // para la guarda idempotente del lease (un resultado tardío de un lease perdido no casa).
     intentos: v.number(),
+    // Presupuesto de fallos TRANSITORIOS (obs. B-4): SOLO lo incrementa un 429/5xx/red, no un
+    // bloqueo de config ni una recuperación de lease. El tope `MAX_INTENTOS` se mide aquí, así
+    // un evento reanudado tras corregir la config conserva sus reintentos transitorios. Ausente = 0.
+    fallosTransitorios: v.optional(v.number()),
     proximoIntento: v.number(), // epoch; elegible cuando <= ahora
     leaseHasta: v.optional(v.number()), // epoch; vigencia de la reclamación "enviando"
     resultado: v.optional(v.string()), // sanitizado (nunca token ni cuerpo)

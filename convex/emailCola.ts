@@ -164,13 +164,16 @@ export const reclamarLote = internalMutation({
 
 /**
  * Registra el resultado REAL de un intento de envío según su clase (obs. B-3). Idempotente
- * frente a leases perdidos: solo actúa si la fila sigue en `enviando` y en el MISMO intento.
+ * frente a leases perdidos: solo actúa si la fila sigue en `enviando` y en la MISMA
+ * reclamación (`intentos`, la secuencia monotónica).
  *  - `ok` → `enviado`.
  *  - `config` (401/403 del sistema) → **vuelve a `pendiente`** con espera de config; NUNCA
- *    se descarta: al corregir el entorno se reanuda sin emitir un token nuevo. Un evento
- *    bloqueado se descarta solo cuando su recurso caduca (revalidación al reclamar).
+ *    se descarta y NO toca el presupuesto de transitorios (obs. B-4): al corregir el entorno
+ *    se reanuda con TODOS sus reintentos transitorios intactos. Caduca solo por revalidación.
  *  - `terminal` (otros 4xx, error real de la petición) → `descartado`.
- *  - `transitorio` (red/429/5xx) → backoff hasta `MAX_INTENTOS`, luego `descartado`.
+ *  - `transitorio` (red/429/5xx) → incrementa `fallosTransitorios`; backoff hasta
+ *    `MAX_INTENTOS` transitorios, luego `descartado`. El tope se mide SOLO con este contador,
+ *    no con `intentos` (que también sube por bloqueos de config o recuperaciones de lease).
  */
 export const registrarResultado = internalMutation({
   args: {
@@ -188,9 +191,9 @@ export const registrarResultado = internalMutation({
       return;
     }
     if (clase === "config") {
-      // Error de configuración/autorización del SISTEMA: no es culpa del destinatario, así
-      // que no se descarta. Espera y se reanuda al corregir el entorno (una recuperación,
-      // sin fallback, no se pierde). El recurso caduca por su cuenta si nunca se arregla.
+      // Error de configuración/autorización del SISTEMA: no es culpa del destinatario, así que
+      // no se descarta y NO consume el presupuesto de transitorios. Espera y se reanuda al
+      // corregir el entorno (una recuperación, sin fallback, no se pierde). Caduca por su cuenta.
       await ctx.db.patch(id, { estado: "pendiente", leaseHasta: undefined, proximoIntento: ahora + CONFIG_BACKOFF_MS, resultado: "bloqueado_config" });
       return;
     }
@@ -198,12 +201,13 @@ export const registrarResultado = internalMutation({
       await ctx.db.patch(id, { estado: "descartado", leaseHasta: undefined, resultado: status ? `error_${status}` : "error" });
       return;
     }
-    // transitorio
-    if (intentos >= MAX_INTENTOS) {
+    // transitorio: el tope se mide con `fallosTransitorios` (independiente de `intentos`).
+    const fallos = (e.fallosTransitorios ?? 0) + 1;
+    if (fallos >= MAX_INTENTOS) {
       await ctx.db.patch(id, { estado: "descartado", leaseHasta: undefined, resultado: "fallo_persistente" });
       return;
     }
-    await ctx.db.patch(id, { estado: "pendiente", leaseHasta: undefined, proximoIntento: ahora + BACKOFF_MS * intentos });
+    await ctx.db.patch(id, { estado: "pendiente", leaseHasta: undefined, fallosTransitorios: fallos, proximoIntento: ahora + BACKOFF_MS * fallos });
   },
 });
 
@@ -250,6 +254,7 @@ export const qaListarEmails = internalMutation({
       tipo: e.tipo,
       estado: e.estado,
       intentos: e.intentos,
+      fallosTransitorios: e.fallosTransitorios ?? 0,
       resultado: e.resultado ?? null,
       invitacionId: e.invitacionId ?? null,
       recuperacionId: e.recuperacionId ?? null,
@@ -267,14 +272,16 @@ export const qaAjustarEmail = internalMutation({
     id: v.id("emailsSalientes"),
     estado: v.optional(ESTADO_V),
     intentos: v.optional(v.number()),
+    fallosTransitorios: v.optional(v.number()),
     proximoIntento: v.optional(v.number()),
     leaseHasta: v.optional(v.union(v.number(), v.null())),
   },
-  handler: async (ctx, { id, estado, intentos, proximoIntento, leaseHasta }) => {
+  handler: async (ctx, { id, estado, intentos, fallosTransitorios, proximoIntento, leaseHasta }) => {
     if (process.env.QA_HELPERS !== "1") throw new Error("QA helpers deshabilitados");
     const patch: Record<string, unknown> = {};
     if (estado !== undefined) patch.estado = estado;
     if (intentos !== undefined) patch.intentos = intentos;
+    if (fallosTransitorios !== undefined) patch.fallosTransitorios = fallosTransitorios;
     if (proximoIntento !== undefined) patch.proximoIntento = proximoIntento;
     if (leaseHasta !== undefined) patch.leaseHasta = leaseHasta ?? undefined;
     await ctx.db.patch(id, patch);
