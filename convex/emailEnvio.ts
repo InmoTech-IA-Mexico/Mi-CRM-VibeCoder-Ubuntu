@@ -43,10 +43,12 @@ function componer(r: EmailReclamo, base: string): Correo {
 }
 
 /**
- * Envía un correo por Resend con reintentos acotados. La MISMA `Idempotency-Key` en
- * todos los intentos (y entre flushes) → aunque un reintento ocurra tras un envío ya
- * aceptado, Resend no lo duplica (obs. B-3). 4xx (salvo 429) = terminal no reintentable;
- * red / 429 / 5xx = transitorio (la cola reintenta con backoff).
+ * Envía un correo por Resend con reintentos acotados. La MISMA `Idempotency-Key` en todos
+ * los intentos (y entre flushes) → un reintento tras un envío ya aceptado NO se duplica
+ * dentro de la ventana de deduplicación de Resend (24 h). Semántica: entrega **al menos
+ * una vez**, dedup *best-effort* en esa ventana (un lease recuperado > 24 h después podría,
+ * en el extremo, reenviar). 4xx (salvo 429) = terminal no reintentable; red/429/5xx =
+ * transitorio (la cola reintenta con backoff).
  */
 async function enviarResend(para: string, correo: Correo, idempotencyKey: string): Promise<EnvioResultado> {
   const key = process.env.RESEND_API_KEY as string;

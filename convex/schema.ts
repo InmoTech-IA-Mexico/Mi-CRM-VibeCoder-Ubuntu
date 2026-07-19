@@ -313,7 +313,8 @@ export default defineSchema({
   // que el token viaje como argumento del scheduler (obs. B-2): la fila solo guarda una
   // REFERENCIA no secreta al recurso de dominio; el token se deriva y revalida al
   // reclamar. `idempotencyKey` (no secreta, estable por evento) va en el header
-  // Idempotency-Key de Resend en TODOS los intentos → sin correos duplicados (obs. B-3).
+  // Idempotency-Key de Resend en TODOS los intentos → entrega al menos una vez con
+  // deduplicación best-effort en la ventana de 24 h de Resend (obs. B-3).
   // Estados: pendiente → enviando → enviado / descartado.
   emailsSalientes: defineTable({
     tipo: v.union(v.literal("invitacion"), v.literal("recuperacion"), v.literal("reactivacion")),
