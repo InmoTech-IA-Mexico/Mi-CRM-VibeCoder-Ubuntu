@@ -1,0 +1,17 @@
+Reporte driver-46 JUA-39 — backend del registro público (verificar-antes-de-crear)
+fecha: 2026-07-20T02:18:25-0600
+entorno: dev, QA_HELPERS=1. Sin Turnstile/Route Handler (se prueba la lógica de dominio).
+resultado: OK (11 PASS / 0 FAIL)
+sin passwordHash/token en la salida; negocios QA borrados; pendientes/eventos purgados.
+
+PASS — T1 (B-1): solicitar → pendiente, SIN crear negocio/usuario
+PASS — T1b: se encoló el email de verificación (tipo verificacion_registro)
+PASS — T2 (OBS-1): email existente → ok genérico, sin pendiente
+PASS — T3: throttle por email → una sola solicitud reciente crea un pendiente
+PASS — T4 (precisión 3): supersesión por email en una transacción (viejo borrado + correo reemplazado)
+PASS — T5 (B-3): fusible global → rate_limited
+PASS — T6: confirmar → negocio activo + admin activo; pendiente borrado
+PASS — T6b: la sesión creada es del nuevo admin (aislada en su negocio)
+PASS — T7: token ya usado → confirmar falla
+PASS — T8 (precisión 4): email ocupado en la espera → confirmar falla, sin crear 2.º negocio
+PASS — T9 (B-3): purga por rango elimina los vencidos
