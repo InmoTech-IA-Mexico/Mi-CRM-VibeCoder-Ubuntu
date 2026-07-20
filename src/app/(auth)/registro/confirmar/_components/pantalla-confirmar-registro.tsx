@@ -54,7 +54,7 @@ export function PantallaConfirmarRegistro({ token }: { token: string }) {
       router.replace("/inicio");
     } catch (e) {
       const msg = e instanceof Error ? e.message.replace(/^\[.*?\]\s*/, "") : "";
-      console.error("No se pudo confirmar el registro", e);
+      // Sin volcar el error crudo a la consola (obs.): evita imprimir detalles inesperados.
       setError(msg && !/Uncaught|Server Error/.test(msg) ? msg : "No se pudo confirmar el registro. Inténtalo de nuevo.");
       setCargando(false);
     }

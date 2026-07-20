@@ -10,7 +10,8 @@ import { internal } from "./_generated/api";
 
 const http = httpRouter();
 
-const MAX_CAMPO = 512; // cota defensiva de tamaño antes de pasar a la mutación (la mutación revalida)
+const MAX_BODY = 8 * 1024; // cota total del cuerpo (defensa en profundidad, remediación B-1)
+const MAX_CAMPO = 512; // cota por campo antes de pasar a la mutación (la mutación revalida)
 
 /** Comparación en tiempo (casi) constante del secreto (obs. control 1). */
 function igualConstante(a: string, b: string): boolean {
@@ -18,6 +19,46 @@ function igualConstante(a: string, b: string): boolean {
   let diff = 0;
   for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
   return diff === 0;
+}
+
+/**
+ * Lee el cuerpo ACOTADO por bytes ANTES de parsear (remediación B-1): aunque esta acción está
+ * protegida por el secreto, rechaza un cuerpo enorme para no convertir el parseo en un vector de
+ * coste si una integración de servidor fallara. Devuelve null si excede el máximo (→ 413).
+ */
+async function leerCuerpoAcotado(request: Request, max: number): Promise<string | null> {
+  const cl = request.headers.get("content-length");
+  if (cl) {
+    const n = Number(cl);
+    if (Number.isFinite(n) && n > max) return null;
+  }
+  if (!request.body) return "";
+  const reader = request.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (value) {
+        total += value.byteLength;
+        if (total > max) {
+          await reader.cancel();
+          return null;
+        }
+        chunks.push(value);
+      }
+    }
+  } catch {
+    return null;
+  }
+  const buf = new Uint8Array(total);
+  let off = 0;
+  for (const c of chunks) {
+    buf.set(c, off);
+    off += c.byteLength;
+  }
+  return new TextDecoder().decode(buf);
 }
 
 function json(cuerpo: unknown, status: number): Response {
@@ -34,9 +75,12 @@ http.route({
     const provided = auth.startsWith("Bearer ") ? auth.slice(7) : "";
     if (!igualConstante(provided, secret)) return json({ ok: false, error: "no autorizado" }, 401);
 
+    // Cuerpo acotado por bytes ANTES de parsear (remediación B-1).
+    const crudo = await leerCuerpoAcotado(request, MAX_BODY);
+    if (crudo === null) return json({ ok: false, error: "payload demasiado grande" }, 413);
     let body: unknown;
     try {
-      body = await request.json();
+      body = JSON.parse(crudo);
     } catch {
       return json({ ok: false, error: "payload inválido" }, 400);
     }

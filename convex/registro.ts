@@ -28,6 +28,7 @@ const EMAIL_MAX = 254; // RFC 5321
 const PASSWORD_MIN = 8;
 const PASSWORD_MAX = 128;
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+const TOKEN_RE = /^[0-9a-f]{64}$/; // acota el token al formato exacto antes de consultar (obs. no bloq.)
 
 /**
  * Crea un registro PENDIENTE de verificar el email (JUA-39). INTERNAL: solo la llama la
@@ -120,6 +121,7 @@ export const crearPendiente = internalMutation({
 export const porToken = query({
   args: { token: v.string() },
   handler: async (ctx, { token }) => {
+    if (!TOKEN_RE.test(token)) return { estado: "invalido" as const };
     const pend = await ctx.db.query("registrosPendientes").withIndex("por_token", (q) => q.eq("token", token)).first();
     if (!pend) return { estado: "invalido" as const };
     if (pend.expiraEn <= Date.now()) return { estado: "expirado" as const };
@@ -137,6 +139,7 @@ export const porToken = query({
 export const confirmar = mutation({
   args: { token: v.string() },
   handler: async (ctx, { token }) => {
+    if (!TOKEN_RE.test(token)) throw new ConvexError("Enlace no válido o ya usado");
     const pend = await ctx.db.query("registrosPendientes").withIndex("por_token", (q) => q.eq("token", token)).first();
     if (!pend) throw new ConvexError("Enlace no válido o ya usado");
     const ahora = Date.now();
