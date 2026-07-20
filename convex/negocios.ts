@@ -37,16 +37,16 @@ function zonaValida(tz: string): boolean {
   }
 }
 
-/** Nombre de negocio saneado, o ConvexError. */
-function validarNombre(nombre: string): string {
+/** Nombre de negocio saneado, o ConvexError. Exportado para reuso (registro público JUA-39). */
+export function validarNombre(nombre: string): string {
   const n = nombre.trim();
   if (!n) throw new ConvexError("El nombre del negocio es obligatorio");
   if (n.length > NOMBRE_MAX) throw new ConvexError("El nombre del negocio es demasiado largo");
   return n;
 }
 
-/** Zona horaria saneada (por defecto `America/Mexico_City`), validada IANA (OBS-1). */
-function validarZona(zonaHoraria: string | undefined): string {
+/** Zona horaria saneada (por defecto `America/Mexico_City`), validada IANA (OBS-1). Exportada (JUA-39). */
+export function validarZona(zonaHoraria: string | undefined): string {
   const z = zonaHoraria?.trim() || ZONA_DEFECTO;
   if (!zonaValida(z)) throw new ConvexError("Zona horaria no válida (usa una zona IANA, p. ej. America/Mexico_City)");
   return z;

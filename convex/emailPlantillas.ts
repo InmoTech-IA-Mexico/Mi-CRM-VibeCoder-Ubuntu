@@ -148,3 +148,31 @@ export function plantillaRecuperacion(datos: { enlace: string; esReactivacion?: 
     texto: documentoTexto(p, datos.enlace, nota),
   };
 }
+
+/**
+ * Verificación del email en el registro público (JUA-39). Enlace `/registro/confirmar?token=`,
+ * válido 24 h, un solo uso. Confirma la propiedad del buzón ANTES de crear la cuenta. La nota
+ * deja claro que, si no fue el destinatario, no se crea nada (no ocupa su identidad).
+ */
+export function plantillaVerificacionRegistro(datos: { nombre?: string | null; negocioNombre?: string | null; enlace: string }): Correo {
+  const negocio = datos.negocioNombre?.trim() || "tu negocio";
+  const negocioHtml = escaparHtml(negocio);
+  const saludoTxt = datos.nombre?.trim() ? `Hola ${datos.nombre.trim()},` : "Hola,";
+  const saludoHtml = datos.nombre?.trim() ? `Hola ${escaparHtml(datos.nombre.trim())},` : "Hola,";
+  const nota =
+    "El enlace es válido 24 horas y solo puede usarse una vez. Si no solicitaste este registro, ignora este correo: no se creará ninguna cuenta.";
+  return {
+    asunto: `Confirma tu registro en InmoTech IA — ${negocio}`,
+    html: documentoHtml(
+      [saludoHtml, `Recibimos una solicitud para crear la cuenta de <strong>${negocioHtml}</strong> en InmoTech IA México.`, "Confirma que este correo es tuyo para activar tu cuenta de administrador:"],
+      datos.enlace,
+      "Confirmar mi registro",
+      nota,
+    ),
+    texto: documentoTexto(
+      [saludoTxt, `Recibimos una solicitud para crear la cuenta de ${negocio} en InmoTech IA México.`, "Confirma que este correo es tuyo para activar tu cuenta de administrador:"],
+      datos.enlace,
+      nota,
+    ),
+  };
+}

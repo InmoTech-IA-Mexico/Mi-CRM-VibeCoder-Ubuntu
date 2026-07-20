@@ -317,10 +317,16 @@ export default defineSchema({
   // deduplicación best-effort en la ventana de 24 h de Resend (obs. B-3).
   // Estados: pendiente → enviando → enviado / descartado.
   emailsSalientes: defineTable({
-    tipo: v.union(v.literal("invitacion"), v.literal("recuperacion"), v.literal("reactivacion")),
+    tipo: v.union(
+      v.literal("invitacion"),
+      v.literal("recuperacion"),
+      v.literal("reactivacion"),
+      v.literal("verificacion_registro"), // JUA-39: confirmar propiedad del email en el registro público
+    ),
     // Referencia NO secreta al recurso de dominio (nunca el token). Una según `tipo`.
     invitacionId: v.optional(v.id("invitaciones")),
     recuperacionId: v.optional(v.id("recuperaciones")),
+    registroPendienteId: v.optional(v.id("registrosPendientes")),
     idempotencyKey: v.string(), // no secreta; Idempotency-Key de Resend en todos los intentos
     estado: v.union(
       v.literal("pendiente"),
@@ -343,5 +349,28 @@ export default defineSchema({
     .index("por_estado_intento", ["estado", "proximoIntento"])
     .index("por_estado_creado", ["estado", "creadoEn"]) // purga estricta por antigüedad (obs. OBS-1)
     .index("por_invitacion", ["invitacionId"])
-    .index("por_recuperacion", ["recuperacionId"]),
+    .index("por_recuperacion", ["recuperacionId"])
+    .index("por_registro", ["registroPendienteId"]),
+
+  // Registro público autoservicio de nuevos negocios (JUA-39). Un alta pendiente de
+  // VERIFICAR EL EMAIL: NO crea negocio ni usuario ni ocupa la identidad global del
+  // correo (eso ocurre solo al confirmar, tras probar control del buzón → cierra el B-1
+  // del NO-GO v1). Efímero: `confirmar` BORRA la fila (consumo = borrado, un solo uso) y
+  // un cron purga los expirados. Índices por TIEMPO (B-3 v2): throttle por email, fusible
+  // global y purga se resuelven por RANGO acotado, nunca por escaneo global. La contraseña
+  // se guarda solo hasheada y se borra al confirmar/purgar; nunca en claro ni en queries.
+  registrosPendientes: defineTable({
+    nombreNegocio: v.string(),
+    nombreAdmin: v.string(),
+    email: v.string(), // normalizado (trim + lowercase), como en `usuarios`/`negocios`
+    passwordHash: v.string(), // scrypt "saltHex:hashHex"; nunca en claro
+    zonaHoraria: v.string(),
+    token: v.string(), // aleatorio 32 bytes, un solo uso, viaja por el buzón
+    expiraEn: v.number(),
+    creadoEn: v.number(),
+  })
+    .index("por_token", ["token"])
+    .index("por_email_creado", ["email", "creadoEn"]) // throttle por email en ventana
+    .index("por_creado", ["creadoEn"]) // fusible global por ventana
+    .index("por_expira", ["expiraEn"]), // purga por vencimiento
 });

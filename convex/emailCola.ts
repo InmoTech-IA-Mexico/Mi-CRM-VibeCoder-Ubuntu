@@ -24,18 +24,19 @@ const PURGA_LOTE = 200;
 /** Referencia de dominio para encolar un correo (nunca el token). */
 export type RefEmail =
   | { tipo: "invitacion"; invitacionId: Id<"invitaciones"> }
-  | { tipo: "recuperacion" | "reactivacion"; recuperacionId: Id<"recuperaciones"> };
+  | { tipo: "recuperacion" | "reactivacion"; recuperacionId: Id<"recuperaciones"> }
+  | { tipo: "verificacion_registro"; registroPendienteId: Id<"registrosPendientes"> };
 
 /** Ítem reclamado para enviar. El token viaja SOLO en este retorno en memoria (no en el scheduler). */
 export type EmailReclamo = {
   id: Id<"emailsSalientes">;
-  tipo: "invitacion" | "recuperacion" | "reactivacion";
+  tipo: "invitacion" | "recuperacion" | "reactivacion" | "verificacion_registro";
   para: string;
   token: string;
   idempotencyKey: string;
   intentos: number;
-  nombre?: string | null; // solo invitacion
-  negocioNombre?: string | null; // solo invitacion
+  nombre?: string | null; // persona (invitacion / verificacion_registro)
+  negocioNombre?: string | null; // negocio (invitacion / verificacion_registro)
   rol?: string; // solo invitacion
 };
 
@@ -53,7 +54,9 @@ export async function encolar(ctx: MutationCtx, ref: RefEmail): Promise<void> {
   const previos =
     ref.tipo === "invitacion"
       ? await ctx.db.query("emailsSalientes").withIndex("por_invitacion", (q) => q.eq("invitacionId", ref.invitacionId)).collect()
-      : await ctx.db.query("emailsSalientes").withIndex("por_recuperacion", (q) => q.eq("recuperacionId", ref.recuperacionId)).collect();
+      : ref.tipo === "verificacion_registro"
+        ? await ctx.db.query("emailsSalientes").withIndex("por_registro", (q) => q.eq("registroPendienteId", ref.registroPendienteId)).collect()
+        : await ctx.db.query("emailsSalientes").withIndex("por_recuperacion", (q) => q.eq("recuperacionId", ref.recuperacionId)).collect();
   for (const p of previos) {
     if (p.estado === "pendiente" || p.estado === "enviando") {
       await ctx.db.patch(p._id, { estado: "descartado", resultado: "reemplazado", leaseHasta: undefined });
@@ -63,7 +66,8 @@ export async function encolar(ctx: MutationCtx, ref: RefEmail): Promise<void> {
   await ctx.db.insert("emailsSalientes", {
     tipo: ref.tipo,
     invitacionId: ref.tipo === "invitacion" ? ref.invitacionId : undefined,
-    recuperacionId: ref.tipo === "invitacion" ? undefined : ref.recuperacionId,
+    recuperacionId: ref.tipo === "recuperacion" || ref.tipo === "reactivacion" ? ref.recuperacionId : undefined,
+    registroPendienteId: ref.tipo === "verificacion_registro" ? ref.registroPendienteId : undefined,
     idempotencyKey: bytesToHex(randomBytes(16)), // no secreta, estable por evento
     estado: "pendiente",
     intentos: 0,
@@ -99,6 +103,15 @@ async function revalidar(
       negocioCache.set(inv.negocioId, negocioNombre);
     }
     return { ok: true, para: inv.email, token: inv.token, nombre: inv.nombre ?? null, negocioNombre, rol: inv.rol };
+  }
+
+  if (e.tipo === "verificacion_registro") {
+    if (!e.registroPendienteId) return { ok: false, razon: "sin_referencia" };
+    const pend = await ctx.db.get(e.registroPendienteId);
+    // Vigente = existe y no expiró. No hay estado "usado": `confirmar` BORRA el pendiente
+    // (un token consumido no encuentra fila → se descarta como no vigente).
+    if (!pend || pend.expiraEn <= ahora) return { ok: false, razon: "registro_no_vigente" };
+    return { ok: true, para: pend.email, token: pend.token, nombre: pend.nombreAdmin, negocioNombre: pend.nombreNegocio };
   }
 
   // recuperacion / reactivacion
@@ -258,6 +271,7 @@ export const qaListarEmails = internalMutation({
       resultado: e.resultado ?? null,
       invitacionId: e.invitacionId ?? null,
       recuperacionId: e.recuperacionId ?? null,
+      registroPendienteId: e.registroPendienteId ?? null,
       proximoIntentoFuturo: e.proximoIntento > Date.now(),
       leaseHasta: e.leaseHasta ?? null,
       // Aserción de higiene (obs. B-2): la clave idempotente es hex no secreto; el token NO está.
@@ -291,15 +305,19 @@ export const qaAjustarEmail = internalMutation({
 /** Encola un correo contra una referencia dada (para ejercer supersesión/reactivación en pruebas). */
 export const qaEncolar = internalMutation({
   args: {
-    tipo: v.union(v.literal("invitacion"), v.literal("recuperacion"), v.literal("reactivacion")),
+    tipo: v.union(v.literal("invitacion"), v.literal("recuperacion"), v.literal("reactivacion"), v.literal("verificacion_registro")),
     invitacionId: v.optional(v.id("invitaciones")),
     recuperacionId: v.optional(v.id("recuperaciones")),
+    registroPendienteId: v.optional(v.id("registrosPendientes")),
   },
-  handler: async (ctx, { tipo, invitacionId, recuperacionId }) => {
+  handler: async (ctx, { tipo, invitacionId, recuperacionId, registroPendienteId }) => {
     if (process.env.QA_HELPERS !== "1") throw new Error("QA helpers deshabilitados");
     if (tipo === "invitacion") {
       if (!invitacionId) throw new Error("falta invitacionId");
       await encolar(ctx, { tipo, invitacionId });
+    } else if (tipo === "verificacion_registro") {
+      if (!registroPendienteId) throw new Error("falta registroPendienteId");
+      await encolar(ctx, { tipo, registroPendienteId });
     } else {
       if (!recuperacionId) throw new Error("falta recuperacionId");
       await encolar(ctx, { tipo, recuperacionId });

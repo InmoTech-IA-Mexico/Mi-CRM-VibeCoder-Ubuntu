@@ -36,4 +36,8 @@ crons.interval("flush-emails", { minutes: 5 }, internal.emailEnvio.flush, {});
 // terminales (enviado/descartado) con más de 7 días, para que la tabla no crezca sin fin.
 crons.daily("purgar-emails-antiguos", { hourUTC: 9, minuteUTC: 30 }, internal.emailCola.purgarAntiguos);
 
+// Registro público (JUA-39): purga los registros pendientes vencidos (24 h) por rango
+// indexado, para que la tabla no crezca bajo abuso (obs. B-3). Cada 15 min.
+crons.interval("purgar-registros-pendientes", { minutes: 15 }, internal.registro.purgarPendientes, {});
+
 export default crons;

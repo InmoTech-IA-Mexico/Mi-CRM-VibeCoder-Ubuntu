@@ -243,6 +243,15 @@ export function FormularioLogin({
           </div>
         )}
       </form>
+      {/* Registro público (JUA-39): visible solo si está habilitado (hay site key de Turnstile). */}
+      {!!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && (
+        <p className="mt-5 text-center text-[13px] text-muted">
+          ¿Nuevo negocio?{" "}
+          <Link href="/registro" className="font-semibold text-gold-text">
+            Crea tu cuenta
+          </Link>
+        </p>
+      )}
     </>
   );
 }

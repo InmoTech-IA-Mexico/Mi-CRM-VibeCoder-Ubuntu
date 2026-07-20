@@ -2,7 +2,7 @@
 
 import { internalAction } from "./_generated/server";
 import { internal } from "./_generated/api";
-import { plantillaInvitacion, plantillaRecuperacion, normalizarBaseUrl, normalizarRemitente, clasificarRespuestaEnvio } from "./emailPlantillas";
+import { plantillaInvitacion, plantillaRecuperacion, plantillaVerificacionRegistro, normalizarBaseUrl, normalizarRemitente, clasificarRespuestaEnvio } from "./emailPlantillas";
 import type { Correo } from "./emailPlantillas";
 import type { EmailReclamo } from "./emailCola";
 
@@ -37,6 +37,10 @@ function componer(r: EmailReclamo, base: string): Correo {
   if (r.tipo === "invitacion") {
     const enlace = `${base}/activar?token=${r.token}`;
     return plantillaInvitacion({ nombre: r.nombre, negocioNombre: r.negocioNombre, rol: r.rol ?? "operativo", enlace });
+  }
+  if (r.tipo === "verificacion_registro") {
+    const enlace = `${base}/registro/confirmar?token=${r.token}`;
+    return plantillaVerificacionRegistro({ nombre: r.nombre, negocioNombre: r.negocioNombre, enlace });
   }
   const enlace = `${base}/nueva-password?token=${r.token}`;
   return plantillaRecuperacion({ enlace, esReactivacion: r.tipo === "reactivacion" });
