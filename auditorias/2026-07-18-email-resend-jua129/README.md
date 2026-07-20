@@ -54,6 +54,23 @@ prod** espera un **dominio verificado** en Resend (bloqueo externo, el mismo de 
 solo entrega al dueño de la cuenta. Al tener dominio: cargar `RESEND_API_KEY`/`EMAIL_FROM`/`APP_BASE_URL` en
 Convex prod + QA revocable → declarar Done.
 
+## Actualización — activación en producción (2026-07-19)
+
+El despliegue del 2026-07-18 fue **inerte** (sin key). El **2026-07-19** se **activó el envío real en prod**:
+
+- **Dominio `inmotechia.mx` verificado** en Resend (región us-east-1): DKIM (`resend._domainkey`) + SPF/MX
+  (`send`) añadidos en Cloudflare; propagación confirmada por `dig` antes de verificar. Remitente productivo
+  `InmoTech IA <no-reply@inmotechia.mx>`.
+- **Convex prod:** `RESEND_API_KEY` + `EMAIL_FROM` + `APP_BASE_URL` (URL de Railway → los enlaces abren en el
+  sitio real). `QA_HELPERS` sigue ausente. La key se cargó sin exponerla (recuperada de dev con
+  `npx convex env get` y seteada con `--prod`, enmascarando el eco).
+- **Verificación en vivo:** dev con el dominio → invitación `ok_200`; **prod QA revocable** → alta de prueba →
+  cron `flush` → log de prod `[email] invitacion resultado=ok` → negocio QA cancelado (sin residuo). Los logs
+  previos mostraban la cola **inerte** ("deshabilitado…"), confirmando el modo del despliegue anterior.
+- **JUA-129 = Done.** En prod ya se envían por correo invitaciones (JUA-8/9), primer admin (JUA-41) y
+  recuperación (JUA-7); "copiar enlace" queda como respaldo. Destraba la recuperación real de JUA-7 y la
+  verificación de email de JUA-39.
+
 ## Nota
 
 La `RESEND_API_KEY` (secreta) **no** se versiona. El correo del operador usado en la prueba viva y los tokens
